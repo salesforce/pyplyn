@@ -1,0 +1,24 @@
+<h1 id="contributing-to-pyplyn">Contributing to Pyplyn</h1>
+
+<h3 id="we-encourage-contributions-from-the-development-community">We encourage contributions from the development community!</h3>
+
+<p>We are open to any contributions (code, artwork, documentation, etc.) as long as it respects our <a href="#licensing-requirements">licensing requirements</a>.</p>
+
+<p><strong>All contributors are required to sign the Salesforce Contributor&rsquo;s License Agreement.</strong> 
+Please <a href="docs/SFDC_CLA.pdf">print this file</a>, sign and scan it, and send it to <a href="mailto:osscore@salesforce.com">osscore@salesforce.com</a>.</p>
+
+<p>Please see the <a href="https://github.com/salesforce/pyplyn/blob/master/CONTRIBUTE.md">CONTRIBUTE.MD</a> page, which explains the contribution process in detail.</p>
+
+<p>We look forward to collaborating with you!</p>
+
+<h3 id="licensing-requirements">Licensing requirements</h3>
+
+<p>We can only accept the following license types, and so, if you&rsquo;re adding new libraries in the project, please make sure to check that they conform to the following list:</p>
+
+<ul>
+<li>BSD</li>
+<li>Apache 2.0</li>
+<li>MIT</li>
+<li>ISC</li>
+<li>MPL</li>
+</ul>

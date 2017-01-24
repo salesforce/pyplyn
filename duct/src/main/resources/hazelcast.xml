@@ -1,0 +1,31 @@
+<!--
+  ~  Copyright (c) 2016-2017, Salesforce.com, Inc.
+  ~  All rights reserved.
+  ~  Licensed under the BSD 3-Clause license.
+  ~  For full license text, see the LICENSE.txt file in repo root
+  ~    or https://opensource.org/licenses/BSD-3-Clause
+  -->
+
+<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.5.xsd"
+           xmlns="http://www.hazelcast.com/schema/config"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <group>
+        <name>[set-cluster-username]</name>
+        <password>[set-cluster-password]</password>
+    </group>
+    <network>
+        <port auto-increment="true" port-count="100">5701</port>
+        <outbound-ports>
+            <ports>0</ports>
+        </outbound-ports>
+        <join>
+            <tcp-ip enabled="true">
+                <member>127.0.0.1</member>
+            </tcp-ip>
+            <multicast enabled="false"/>
+        </join>
+    </network>
+    <executor-service name="pyplyn-exec">
+        <pool-size>8</pool-size>
+    </executor-service>
+</hazelcast>

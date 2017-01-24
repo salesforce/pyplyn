@@ -1,0 +1,56 @@
+<h1 id="introduction-to-pyplyn">Introduction to Pyplyn</h1>
+
+<p>Pyplyn (meaning <em><em>pipeline</em></em> in <a href="https://translate.google.com/#af/en/pyplyn">Afrikaans</a>) is an 
+ <a href="https://en.wikipedia.org/wiki/Extract,_transform,_load">ETL</a> tool that converts <a href="https://github.com/Salesforce/Argus">Argus</a>&rsquo;s 
+ historical time-series data into real-time red/yellow/green lights displayed in <a href="https://github.com/Salesforce/refocus">Refocus</a>.</p>
+
+<p>Pyplyn was written in an effort to allow teams within Salesforce to provide real-time system health dashboards, that can be used to answer questions such as</p>
+
+<p><big><strong>How is the X system doing today?</strong></big></p>
+
+<p>Below, you can see a high-level diagram of what <strong>Pyplyn</strong> does:</p>
+
+<p><img src="/images/pyplyn-system-diagram.png" alt="Pyplyn System Diagram" /></p>
+
+<h1 id="what-does-pyplyn-solve">What does Pyplyn solve?</h1>
+
+<p>Historical time-series are ideal for understanding the evolution metrics over time, but they do not do so well when it comes to providing an explanation of what the data means &ldquo;right now.&rdquo;</p>
+
+<p>Take a look at the example below:</p>
+
+<p><img src="/images/time-series-example.png" alt="Time series" /></p>
+
+<p>This chart shows two metrics and a threshold. By glancing through it, it is very hard to understand its current meaning instinctively.</p>
+
+<p>First of all, it&rsquo;s only normal that your attention will be drawn towards the two spikes. Second, you will most likely ask yourself what does the <em>threshold</em> apply to: </p>
+
+<ul>
+<li>Is it the <em>Average response time</em>?</li>
+<li>Is it the <em>Rate of errors per minute</em>?</li>
+<li>Is the <em>Average response time</em> under, at, or over the <em>Threshold</em>?</li>
+</ul>
+
+<p>Providing <em><strong>health</strong></em> information using line charts is pretty hard and requires a lot of graphs to be displayed, which in turn has its complications.  </p>
+
+<p>This is where <a href="https://medium.com/salesforce-open-source/take-a-moment-to-refocus-86b6546c90c#c169">Refocus steps in</a> and <strong>why Pyplyn exists today</strong>, to complement Refocus&rsquo; visualization capabilities by providing a solid pipeline that feeds dashboards with fresh data!</p>
+
+<h1 id="features">Features</h1>
+
+<p>Pyplyn&rsquo;s key features are:</p>
+
+<ul>
+<li>Easy, no-code, setup of ETL jobs with JSON-based configurations</li>
+<li>Reads data, from one or multiple sources, applies transformations and writes to one or multiple destinations</li>
+<li>Supports multiple endpoints of the same type (i.e.: publishing to two different Refocus endpoints)</li>
+<li>Developed with extensibility and modularity in mind (based on <a href="https://github.com/FasterXML/jackson">Jackson</a> polymorphic deserialization and dependency injection with <a href="https://github.com/google/guice">Guice</a>) </li>
+<li>Allows for easy <a href="#extending-pyplyn">extension</a> by other developers</li>
+<li>Comes with two clients (Argus/Refocus) written from scratch in <a href="https://square.github.io/retrofit/">Retrofit</a>, that you can use independently of the main project</li>
+</ul>
+
+<p>Pyplyn was built with <a href="https://en.wikipedia.org/wiki/High_availability">High availability</a> in mind:</p>
+
+<ul>
+<li>Reliable, always-on, multi-node processing based on <a href="https://hazelcast.org/">Hazelcast</a></li>
+<li>Configurable self-monitoring capabilities via runtime performance metrics that are publishable to external monitoring systems</li>
+<li>Allows updating configuration definitions without having to restart</li>
+</ul>

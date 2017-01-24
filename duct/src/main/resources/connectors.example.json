@@ -1,0 +1,10 @@
+[
+  {
+    "id": "unique-endpoint-id",
+    "endpoint": "https://endpoint/url/",
+    "username": "username",
+    "password": "password",
+    "proxyHost": "proxy-host-and-port-below-or-null-both",
+    "proxyPort": null
+  }
+]

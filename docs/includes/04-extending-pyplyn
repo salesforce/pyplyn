@@ -1,0 +1,103 @@
+<h1 id="extending-pyplyn">Extending Pyplyn</h1>
+
+<p>Pyplyn can be easily extended by other developers when the default functionality is not enough.</p>
+
+<p>While you can easily fork the project and modify its source code, we do not recommend this approach.</p>
+
+<p>It is much cleaner to add a static dependency on the project and add your new features as pyplyn modules.
+This ensures you can keep updating to the latest pyplyn version, without having to go through the hassle of integrating your changes every time.</p>
+
+<p>It is also the easiest way to develop new features, without having to navigate through all of Pyplyn&rsquo;s existing code and modules. Don&rsquo;t worry; you can still <a href="CONTRIBUTE.md">contribute</a> your changes back into the project after they&rsquo;re sufficiently tested!</p>
+
+<p>The modular nature of Pyplyn is supported by Guice&rsquo;s <a href="https://github.com/google/guice/wiki/Multibindings">Multibindings</a> extension.</p>
+
+<p>You can take a look at the <a href="https://github.com/salesforce/pyplyn/blob/master/plugin-api/src/main/java/com/salesforce/pyplyn/util/MultibinderFactory.java">MultibinderFactory</a> class in pyplyn, to see what&rsquo;s supported. You can also check out the list below:</p>
+
+<ul>
+<li>Add more AppConfig parameters</li>
+<li>Different Connector mechanism</li>
+<li>Support new Extract datasources</li>
+<li>Define Transform functions</li>
+<li>Push to other Load destinations</li>
+<li>Send monitoring data to other systems and APIs</li>
+</ul>
+
+<h2 id="importing-the-pyplyn-maven-dependency">Importing the Pyplyn Maven dependency</h2>
+<pre class="highlight xml"><code>  <span class="nt">&lt;dependencies&gt;</span>
+    ...
+    <span class="nt">&lt;dependency&gt;</span>
+      <span class="nt">&lt;groupId&gt;</span>com.salesforce.pyplyn<span class="nt">&lt;/groupId&gt;</span>
+      <span class="nt">&lt;artifactId&gt;</span>duct<span class="nt">&lt;/artifactId&gt;</span>
+      <span class="nt">&lt;version&gt;</span>LATEST<span class="nt">&lt;/version&gt;</span>
+    <span class="nt">&lt;/dependency&gt;</span>
+    ...
+<span class="nt">&lt;/dependencies&gt;</span>
+</code></pre>
+<p>Define <a href="https://github.com/salesforce/pyplyn">Pyplyn</a> as a <a href="https://maven.apache.org/guides/introduction/introduction-to-dependency-mechanism.html">Maven dependency</a> in your project&rsquo;s <em>pom.xml</em> file</p>
+
+<h2 id="write-new-functionality">Write new functionality</h2>
+
+<p>Check out some of the existing <a href="https://github.com/salesforce/pyplyn/tree/master/duct/src/main/java/com/salesforce/pyplyn/duct/etl/extract">Extract</a>, <a href="https://github.com/salesforce/pyplyn/tree/master/duct/src/main/java/com/salesforce/pyplyn/duct/etl/transform">Transform</a>, or <a href="https://github.com/salesforce/pyplyn/tree/master/duct/src/main/java/com/salesforce/pyplyn/duct/etl/load">Load</a> modules for inspiration.</p>
+
+<h2 id="replace-the-application-bootstrap-object">Replace the application bootstrap object</h2>
+<pre class="highlight java"><code><span class="kd">public</span> <span class="kd">class</span> <span class="nc">NewPluginBootstrap</span> <span class="kd">extends</span> <span class="n">AppBootstrap</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="nf">NewPluginBootstrap</span><span class="o">(</span><span class="n">String</span> <span class="n">configFile</span><span class="o">)</span> <span class="o">{</span>
+        <span class="kd">super</span><span class="o">(</span><span class="n">configFile</span><span class="o">);</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre>
+<p>Extend the <a href="https://github.com/salesforce/pyplyn/blob/master/duct/src/main/java/com/salesforce/pyplyn/duct/app/AppBootstrap.java">AppBootstrap</a> class</p>
+
+<h2 id="add-your-modules">Add your modules</h2>
+<pre class="highlight java"><code><span class="kd">public</span> <span class="kd">class</span> <span class="nc">NewPluginBootstrap</span> <span class="kd">extends</span> <span class="n">AppBootstrap</span> <span class="o">{</span>
+    <span class="o">...</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">Module</span><span class="o">&gt;</span> <span class="nf">modules</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">Collections</span><span class="o">.</span><span class="na">unmodifiableList</span><span class="o">(</span><span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span><span class="cm">/* your modules here */</span><span class="o">));</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre>
+<p>Return a list of modules by overriding <em>AppBootstrap.modules()</em>. These will be passed to the Guice injector before it is constructed, making them available for injection.</p>
+
+<h2 id="define-the-main-entry-point">Define the main entry point</h2>
+<pre class="highlight java"><code><span class="kd">public</span> <span class="kd">class</span> <span class="nc">NewMainEntryPoint</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">DuctMain</span><span class="o">.</span><span class="na">setProgramName</span><span class="o">(</span><span class="s">"new-plugin"</span><span class="o">);</span> <span class="c1">// optional, only has an effect on the usage notice</span>
+        <span class="n">DuctMain</span><span class="o">.</span><span class="na">execute</span><span class="o">(</span><span class="n">NewPluginBootstrap</span><span class="o">.</span><span class="na">class</span><span class="o">,</span> <span class="n">args</span><span class="o">);</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre>
+<p>Create a new main entry point and execute Pyplyn with your new bootstrap plugin.</p>
+
+<h2 id="creating-a-new-module">Creating a new module</h2>
+
+<blockquote>
+<p>1. Create a class file</p>
+</blockquote>
+<pre class="highlight plaintext"><code>public class SaveMetricMetadata implements Transform { }
+</code></pre>
+<blockquote>
+<p>2. Create a module</p>
+</blockquote>
+<pre class="highlight plaintext"><code>public class SaveMetricMetadataModule extends AbstractModule { }
+</code></pre>
+<blockquote>
+<p>3. Define the binding</p>
+</blockquote>
+<pre class="highlight plaintext"><code>public class SaveMetricMetadataModule extends AbstractModule {
+    @Override
+    protected void configure() {
+        MultibinderFactory.transformFunctions(binder()).addBinding().toInstance(SaveMetricMetadata.class);
+    }
+}
+
+</code></pre>
+<p>This example is based on the &ldquo;<a href="https://github.com/salesforce/pyplyn/tree/master/duct/src/main/java/com/salesforce/pyplyn/duct/etl/transform/savemetricmetadata">savemetricmetadata</a>&rdquo; plugin.</p>
+
+<ol>
+<li>Create the a class file (i.e.: <em>SaveMetricMetadata</em>)</li>
+<li>Create a module class, (i.e.: <em>SaveMetricMetadataModule</em>) </li>
+<li>Define the Guice binding for your class</li>
+<li>See the &ldquo;<a href="#add-your-modules">Add your modules</a>&rdquo; section on how to initialize your new module in the injector</li>
+</ol>

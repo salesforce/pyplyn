@@ -1,0 +1,38 @@
+[
+  {
+    "repeatIntervalMillis" : 60000,
+    "extract" : [
+      {
+        "format" : "Argus",
+        "endpoint" : "argus-connector-id",
+        "cacheMillis" : 120000,
+        "defaultValue" : 0.0,
+        "expression" : "SUM(-6m:-1m:scope:metric{tags}:avg:1m-max,#1m#)",
+        "name" : "argus-result-name"
+      }
+    ],
+    "transform" : [
+      {
+        "name" : "LastDatapoint"
+      },
+      {
+        "name" : "Threshold",
+        "criticalThreshold" : 500.0,
+        "warningThreshold" : 100.0,
+        "infoThreshold" : 100.0,
+        "type" : "GREATER_THAN",
+        "applyToMetricName" : "argus-result-name"
+      }
+    ],
+    "load" : [
+      {
+        "format" : "Refocus",
+        "endpoint" : "refocus-connector-id",
+        "subject" : "ArgusScope",
+        "aspect" : "VALUE",
+        "relatedLinks" : []
+      }
+    ],
+    "disabled" : false
+  }
+]

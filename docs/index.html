@@ -1,0 +1,798 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>Pyplyn API reference</title>
+
+    <style>
+      .highlight table td { padding: 5px; }
+.highlight table pre { margin: 0; }
+.highlight, .highlight .w {
+  color: #f8f8f2;
+  background-color: #272822;
+}
+.highlight .err {
+  color: #272822;
+  background-color: #f92672;
+}
+.highlight .c, .highlight .cd, .highlight .cm, .highlight .c1, .highlight .cs {
+  color: #75715e;
+}
+.highlight .cp {
+  color: #f4bf75;
+}
+.highlight .nt {
+  color: #f4bf75;
+}
+.highlight .o, .highlight .ow {
+  color: #f8f8f2;
+}
+.highlight .p, .highlight .pi {
+  color: #f8f8f2;
+}
+.highlight .gi {
+  color: #a6e22e;
+}
+.highlight .gd {
+  color: #f92672;
+}
+.highlight .gh {
+  color: #66d9ef;
+  background-color: #272822;
+  font-weight: bold;
+}
+.highlight .k, .highlight .kn, .highlight .kp, .highlight .kr, .highlight .kv {
+  color: #ae81ff;
+}
+.highlight .kc {
+  color: #fd971f;
+}
+.highlight .kt {
+  color: #fd971f;
+}
+.highlight .kd {
+  color: #fd971f;
+}
+.highlight .s, .highlight .sb, .highlight .sc, .highlight .sd, .highlight .s2, .highlight .sh, .highlight .sx, .highlight .s1 {
+  color: #a6e22e;
+}
+.highlight .sr {
+  color: #a1efe4;
+}
+.highlight .si {
+  color: #cc6633;
+}
+.highlight .se {
+  color: #cc6633;
+}
+.highlight .nn {
+  color: #f4bf75;
+}
+.highlight .nc {
+  color: #f4bf75;
+}
+.highlight .no {
+  color: #f4bf75;
+}
+.highlight .na {
+  color: #66d9ef;
+}
+.highlight .m, .highlight .mf, .highlight .mh, .highlight .mi, .highlight .il, .highlight .mo, .highlight .mb, .highlight .mx {
+  color: #a6e22e;
+}
+.highlight .ss {
+  color: #a6e22e;
+}
+    </style>
+    <link href="stylesheets/screen.css" rel="stylesheet" media="screen" />
+    <link href="stylesheets/print.css" rel="stylesheet" media="print" />
+      <script src="javascripts/all.js"></script>
+  </head>
+
+  <body class="index" data-languages="[]">
+    <a href="#" id="nav-button">
+      <span>
+        NAV
+        <img src="images/navbar.png" alt="Navbar" />
+      </span>
+    </a>
+    <div class="tocify-wrapper">
+      <div style="margin:0 0 0 36px;width:150px">
+        <img src="images/logo.png" width="150" title="Pyplyn logo" alt="Logo" />
+      </div>
+        <div class="search">
+          <input type="text" class="search" id="input-search" placeholder="Search">
+        </div>
+        <ul class="search-results"></ul>
+      <div id="toc">
+      </div>
+        <ul class="toc-footer">
+            <li><a href='https://github.com/salesforce/pyplyn'>Pyplyn repository on GitHub.com</a></li>
+            <li><a href='https://github.com/tripit/slate'>Documentation Powered by Slate</a></li>
+        </ul>
+    </div>
+    <div class="page-wrapper">
+      <div class="dark-box"></div>
+      <div class="content">
+        
+          <h1 id="introduction-to-pyplyn">Introduction to Pyplyn</h1>
+
+<p>Pyplyn (meaning <em><em>pipeline</em></em> in <a href="https://translate.google.com/#af/en/pyplyn">Afrikaans</a>) is an 
+ <a href="https://en.wikipedia.org/wiki/Extract,_transform,_load">ETL</a> tool that converts <a href="https://github.com/Salesforce/Argus">Argus</a>&rsquo;s 
+ historical time-series data into real-time red/yellow/green lights displayed in <a href="https://github.com/Salesforce/refocus">Refocus</a>.</p>
+
+<p>Pyplyn was written in an effort to allow teams within Salesforce to provide real-time system health dashboards, that can be used to answer questions such as</p>
+
+<p><big><strong>How is the X system doing today?</strong></big></p>
+
+<p>Below, you can see a high-level diagram of what <strong>Pyplyn</strong> does:</p>
+
+<p><img src="images/pyplyn-system-diagram.png" alt="Pyplyn System Diagram" /></p>
+
+<h1 id="what-does-pyplyn-solve">What does Pyplyn solve?</h1>
+
+<p>Historical time-series are ideal for understanding the evolution metrics over time, but they do not do so well when it comes to providing an explanation of what the data means &ldquo;right now.&rdquo;</p>
+
+<p>Take a look at the example below:</p>
+
+<p><img src="images/time-series-example.png" alt="Time series" /></p>
+
+<p>This chart shows two metrics and a threshold. By glancing through it, it is very hard to understand its current meaning instinctively.</p>
+
+<p>First of all, it&rsquo;s only normal that your attention will be drawn towards the two spikes. Second, you will most likely ask yourself what does the <em>threshold</em> apply to: </p>
+
+<ul>
+<li>Is it the <em>Average response time</em>?</li>
+<li>Is it the <em>Rate of errors per minute</em>?</li>
+<li>Is the <em>Average response time</em> under, at, or over the <em>Threshold</em>?</li>
+</ul>
+
+<p>Providing <em><strong>health</strong></em> information using line charts is pretty hard and requires a lot of graphs to be displayed, which in turn has its complications.  </p>
+
+<p>This is where <a href="https://medium.com/salesforce-open-source/take-a-moment-to-refocus-86b6546c90c#c169">Refocus steps in</a> and <strong>why Pyplyn exists today</strong>, to complement Refocus&rsquo; visualization capabilities by providing a solid pipeline that feeds dashboards with fresh data!</p>
+
+<h1 id="features">Features</h1>
+
+<p>Pyplyn&rsquo;s key features are:</p>
+
+<ul>
+<li>Easy, no-code, setup of ETL jobs with JSON-based configurations</li>
+<li>Reads data, from one or multiple sources, applies transformations and writes to one or multiple destinations</li>
+<li>Supports multiple endpoints of the same type (i.e.: publishing to two different Refocus endpoints)</li>
+<li>Developed with extensibility and modularity in mind (based on <a href="https://github.com/FasterXML/jackson">Jackson</a> polymorphic deserialization and dependency injection with <a href="https://github.com/google/guice">Guice</a>) </li>
+<li>Allows for easy <a href="#extending-pyplyn">extension</a> by other developers</li>
+<li>Comes with two clients (Argus/Refocus) written from scratch in <a href="https://square.github.io/retrofit/">Retrofit</a>, that you can use independently of the main project</li>
+</ul>
+
+<p>Pyplyn was built with <a href="https://en.wikipedia.org/wiki/High_availability">High availability</a> in mind:</p>
+
+<ul>
+<li>Reliable, always-on, multi-node processing based on <a href="https://hazelcast.org/">Hazelcast</a></li>
+<li>Configurable self-monitoring capabilities via runtime performance metrics that are publishable to external monitoring systems</li>
+<li>Allows updating configuration definitions without having to restart</li>
+</ul>
+
+          <h1 id="running-pyplyn-locally">Running Pyplyn locally</h1>
+
+<p>This section assumes that you have access to a configured Refocus instance. Access to an Argus instance is recommended, but not required.</p>
+
+<p>Whether you&rsquo;re using Refocus, Argus, or both, they should contain some data that you can query for this Pyplyn demo.</p>
+
+<p>If that&rsquo;s not the case, see the following guides:</p>
+
+<ul>
+<li><a href="https://github.com/Salesforce/Argus/wiki/Getting%20Started">Getting started with Argus</a></li>
+<li><a href="https://salesforce.github.io/refocus/docs/01-quickstart.html#getting-started-with-refocus">Getting started with Refocus</a></li>
+</ul>
+
+<p>Follow these next steps to get Pyplyn up-and-running on your local environment.</p>
+
+<h2 id="clone-the-repository">Clone the repository</h2>
+
+<blockquote>
+<p>1. Clone the repository</p>
+</blockquote>
+<pre class="highlight shell"><code>git clone https://github.com/salesforce/pyplyn
+</code></pre>
+<h2 id="create-configuration-files">Create configuration files</h2>
+
+<blockquote>
+<p>2. Copy pyplyn&rsquo;s configs files to a local dir and prepare an empty directory for your configurations</p>
+</blockquote>
+<pre class="highlight plaintext"><code># Make a copy of the config files
+mkdir ~/pyplyn-config
+cp duct/src/main/resources/app-config.example.json ~/pyplyn-config/app-config.example.json
+cp duct/src/main/resources/connectors.example.json ~/pyplyn-config/connectors.json
+
+# this dir will hold the ETL configurations that Pyplyn will process
+mkdir ~/pyplyn-config/configurations
+</code></pre>
+<p>Copy and rename <a href="https://github.com/salesforce/pyplyn/blob/master/duct/src/main/resources/app-config.example.json">app-config.example.json</a> and <a href="https://github.com/salesforce/pyplyn/blob/master/duct/src/main/resources/connectors.example.json">connectors.example.json</a> to a local file system directory.</p>
+
+<h2 id="connectors">Connectors</h2>
+
+<blockquote>
+<p>3. Configure <em>connectors.json</em></p>
+</blockquote>
+<pre class="highlight json"><code><span class="w">  </span><span class="p">[</span><span class="w">
+    </span><span class="p">{</span><span class="w">
+      </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"refocus-default"</span><span class="p">,</span><span class="w">
+      </span><span class="nt">"endpoint"</span><span class="p">:</span><span class="w"> </span><span class="s2">"https://url-to-your-refocus-instance/v1/"</span><span class="p">,</span><span class="w">
+      </span><span class="nt">"username"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">
+      </span><span class="nt">"password"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">
+      </span><span class="nt">"proxyHost"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">
+      </span><span class="nt">"proxyPort"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="p">{</span><span class="w">
+      </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"refocus-user-and-pass"</span><span class="p">,</span><span class="w">
+      </span><span class="nt">"endpoint"</span><span class="p">:</span><span class="w"> </span><span class="s2">"https://url-to-your-refocus-instance/v1/"</span><span class="p">,</span><span class="w">
+      </span><span class="nt">"username"</span><span class="p">:</span><span class="w"> </span><span class="s2">"username"</span><span class="p">,</span><span class="w">
+      </span><span class="nt">"password"</span><span class="p">:</span><span class="w"> </span><span class="s2">"base64(pass)"</span><span class="p">,</span><span class="w">
+      </span><span class="nt">"proxyHost"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">
+      </span><span class="nt">"proxyPort"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="p">{</span><span class="w">
+      </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"refocus-token"</span><span class="p">,</span><span class="w">
+      </span><span class="nt">"endpoint"</span><span class="p">:</span><span class="w"> </span><span class="s2">"https://url-to-your-refocus-instance/v1/"</span><span class="p">,</span><span class="w">
+      </span><span class="nt">"username"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">
+      </span><span class="nt">"password"</span><span class="p">:</span><span class="w"> </span><span class="s2">"base64(refocus-token)"</span><span class="p">,</span><span class="w">
+      </span><span class="nt">"proxyHost"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">
+      </span><span class="nt">"proxyPort"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="p">{</span><span class="w">
+      </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"argus"</span><span class="p">,</span><span class="w">
+      </span><span class="nt">"endpoint"</span><span class="p">:</span><span class="w"> </span><span class="s2">"https://url-to-your-argus-instance/argusws/"</span><span class="p">,</span><span class="w">
+      </span><span class="nt">"username"</span><span class="p">:</span><span class="w"> </span><span class="s2">"username"</span><span class="p">,</span><span class="w">
+      </span><span class="nt">"password"</span><span class="p">:</span><span class="w"> </span><span class="s2">"base64(pass)"</span><span class="p">,</span><span class="w">
+      </span><span class="nt">"proxyHost"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">
+      </span><span class="nt">"proxyPort"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+  </span><span class="p">]</span><span class="w">
+</span></code></pre>
+<p>Connectors define the endpoints that Pyplyn configurations should be processed against.</p>
+
+<p>Define them in the <em>connectors.json</em> file. Each connector should specify the following parameters:</p>
+
+<table><thead>
+<tr>
+<th>Parameter</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead><tbody>
+<tr>
+<td>id</td>
+<td>required</td>
+<td>this id is used to identify the connector in the (Extract)[#extract] and (Load)[#load] sections of your configurations; it should be unique for all connectors loaded into Pyplyn</td>
+</tr>
+<tr>
+<td>endpoint</td>
+<td>required</td>
+<td>the URL of the service represented by this connector</td>
+</tr>
+<tr>
+<td>username</td>
+<td>optional</td>
+<td>username used for authentication, or null if not required</td>
+</tr>
+<tr>
+<td>password</td>
+<td>optional</td>
+<td>password required for authenticating to this endpoint, or null if not required; this string should always be BASE64-encoded when specified in the <em>connectors.json</em> file</td>
+</tr>
+<tr>
+<td>proxyHost</td>
+<td>optional</td>
+<td>a hostname pointing to an HTTP proxy, or null if not used</td>
+</tr>
+<tr>
+<td>proxyPort</td>
+<td>optional</td>
+<td>the port the proxy listens on, or null if not used</td>
+</tr>
+</tbody></table>
+
+<aside class="notice">You don&rsquo;t need to define all four connectors from our example.  If you want to write a configuration that extracts data from Refocus, transforms it and then pushes it back, only need to define a single Refocus connector section, depending on the method you are using for authenticating.
+</aside>
+
+<p>Read more about <a href="https://salesforce.github.io/refocus/docs/10-security.html">Refocus&rsquo; security options</a> and choose either user/password or token-based authentication. If you&rsquo;re using the token-based auth, the correct way to specify it in <em>connectors.json</em> is to pass <em>username</em> as <strong><em>null</em></strong> and <em>password</em> as the <a href="https://www.base64encode.org/">BASE64 encoded</a> value of the token string obtained from the <em>&hellip;/tokens/new</em> endpoint of Refocus.</p>
+
+<h2 id="configure-the-app">Configure the app</h2>
+
+<p>The <a href="https://github.com/salesforce/pyplyn/blob/master/duct/src/main/java/com/salesforce/pyplyn/duct/appconfig/AppConfig.java">AppConfig</a> represents the primary configuration object used by Pyplyn to define system settings, connectors, configurations, alerting thresholds (for monitoring itself), and the multi-node/clustering set-up.</p>
+
+<p><br /></p>
+
+<p>Edit <em>app-config.json</em> and update:</p>
+
+<ul>
+<li><em>configurationsPath</em> to point to the <em>~/pyplyn-config/configurations</em> directory created at step (2) above</li>
+<li><em>connectorsPath</em> to point to your <em>connectors.json</em> file specified at step (3) above: <em>~/pyplyn-config/connectors.json</em></li>
+</ul>
+
+<blockquote>
+<p>4. Update <em>app-config.json</em> and set the required paths</p>
+</blockquote>
+<pre class="highlight json"><code><span class="p">{</span><span class="w">
+  </span><span class="nt">"configurationsPath"</span><span class="p">:</span><span class="w"> </span><span class="s2">"/absolute/path/to/pyplyn-config/configurations"</span><span class="p">,</span><span class="w">
+  </span><span class="nt">"connectorsPath"</span><span class="p">:</span><span class="w"> </span><span class="s2">"/absolute/path/to/pyplyn-config/connectors.json"</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre>
+<h2 id="build-pyplyn">Build Pyplyn</h2>
+
+<blockquote>
+<p>5. Package and run the project</p>
+</blockquote>
+<pre class="highlight shell"><code><span class="c"># Update the path to where you cloned Pyplyn</span>
+<span class="nb">cd</span> /path/to/pyplyn
+
+<span class="c"># Run all tests and build</span>
+mvn clean package
+
+<span class="c"># Execute Pyplyn (will be packaged as a shaded JAR)</span>
+
+<span class="sb">```</span>shell
+<span class="nb">export </span><span class="nv">PYPLYN_VERSION</span><span class="o">=</span><span class="sb">`</span>cat target/version.txt<span class="sb">`</span>
+java -jar target/pyplyn-<span class="nv">$PYPLYN_VERSION</span>.jar --config ~/pyplyn-config/app-config.json
+</code></pre>
+<blockquote>
+<p>This should output something similar to the following:</p>
+</blockquote>
+<pre class="highlight plaintext"><code>2017-01-20 15:04:21,141 [ INFO] main  DuctExecutorWrapper:schedule:52   -&gt; Starting main execution in 5s
+2017-01-20 15:04:21,287 [ INFO] pool-1-thread-1 SinglePartitionConfigurationProvider:mergeConfigurations:123   -&gt; Updated configuration set; 0 possibly updated configs, 0 new configs
+</code></pre>
+<blockquote>
+<p>If you see any Java exceptions, re-check your paths and correctness of your configuration files; the exceptions should have enough information to point you to the actual problem.</p>
+</blockquote>
+
+<p>Pyplyn is using Maven to manage its build lifecycle. </p>
+
+<p>You can build it by running <code class="prettyprint">mvn package</code> which will produce a <a href="https://maven.apache.org/plugins/maven-shade-plugin/">shaded JAR</a>.</p>
+
+<p>You can then execute Pyplyn by running <code class="prettyprint">java -jar pyplyn-[VERSION].jar</code>; where <em>VERSION</em> is the version you have built.</p>
+
+          <h1 id="configurations">Configurations</h1>
+
+<blockquote>
+<p>Configuration example: retrieves a time-series from Argus, filters out all but the last data point, buckets the value using specified thresholds, and finally loads the results into Refocus, by posting a sample <b>root.child.leaf.subject|PYPLYN_DEMO=[0-3]</b></p>
+</blockquote>
+<pre class="highlight json"><code><span class="p">[</span><span class="w">
+  </span><span class="p">{</span><span class="w">
+    </span><span class="nt">"repeatIntervalMillis"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">60000</span><span class="p">,</span><span class="w">
+    </span><span class="nt">"extract"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+      </span><span class="p">{</span><span class="w">
+        </span><span class="nt">"format"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"Argus"</span><span class="p">,</span><span class="w">
+        </span><span class="nt">"endpoint"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"argus"</span><span class="p">,</span><span class="w">
+        </span><span class="nt">"cacheMillis"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">120000</span><span class="p">,</span><span class="w">
+        </span><span class="nt">"defaultValue"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span><span class="w">
+        </span><span class="nt">"expression"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"SUM(-6m:-1m:scope:metric{tags}:avg:1m-max,#1m#)"</span><span class="p">,</span><span class="w">
+        </span><span class="nt">"name"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"argus-result-name"</span><span class="w">
+      </span><span class="p">}</span><span class="w">
+    </span><span class="p">],</span><span class="w">
+    </span><span class="nt">"transform"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+      </span><span class="p">{</span><span class="w">
+        </span><span class="nt">"name"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"LastDatapoint"</span><span class="w">
+      </span><span class="p">},</span><span class="w">
+      </span><span class="p">{</span><span class="w">
+        </span><span class="nt">"name"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"Threshold"</span><span class="p">,</span><span class="w">
+        </span><span class="nt">"criticalThreshold"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">500.0</span><span class="p">,</span><span class="w">
+        </span><span class="nt">"warningThreshold"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">100.0</span><span class="p">,</span><span class="w">
+        </span><span class="nt">"infoThreshold"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">100.0</span><span class="p">,</span><span class="w">
+        </span><span class="nt">"type"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"GREATER_THAN"</span><span class="p">,</span><span class="w">
+        </span><span class="nt">"applyToMetricName"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"argus-result-name"</span><span class="w">
+      </span><span class="p">}</span><span class="w">
+    </span><span class="p">],</span><span class="w">
+    </span><span class="nt">"load"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+      </span><span class="p">{</span><span class="w">
+        </span><span class="nt">"format"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"Refocus"</span><span class="p">,</span><span class="w">
+        </span><span class="nt">"endpoint"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"refocus-default"</span><span class="p">,</span><span class="w">
+        </span><span class="nt">"subject"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"root.child.leaf.subject"</span><span class="p">,</span><span class="w">
+        </span><span class="nt">"aspect"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"PYPLYN_DEMO"</span><span class="p">,</span><span class="w">
+        </span><span class="nt">"relatedLinks"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">[]</span><span class="w">
+      </span><span class="p">}</span><span class="w">
+    </span><span class="p">],</span><span class="w">
+    </span><span class="nt">"disabled"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="w">
+  </span><span class="p">}</span><span class="w">
+</span><span class="p">]</span><span class="w">
+</span></code></pre>
+<p>Now that you have Pyplyn up-and-running, you are ready to write your first configuration.</p>
+
+<p>In Pyplyn terminology, a configuration is a JSON object, which specifies where the data is extracted from,
+whether data should be combined from multiple sources, how it should be processed (transformed), and finally to what destination(s) it should be published (loaded onto).</p>
+
+<p><br /></p>
+
+<p>At this time, Pyplyn only supports two formats:</p>
+
+<ul>
+<li>Argus</li>
+<li>Refocus</li>
+</ul>
+
+<p>However, the tool was built with extension in mind, and as such it is very simple to add new formats by writing minimal Java code; see the <a href="#extending-pyplyn">extending Pyplyn</a> section for more details.</p>
+
+<p><br /></p>
+
+<p>Each <em>configuration</em> file in the <em>app-config.json:configurationsPath</em> directory is a JSON array, which can hold one or multiple configurations that will be processed by Pyplyn.</p>
+
+<h2 id="etl-models">ETL models</h2>
+
+<p>Before we go any further, we want to explain some basic Pyplyn concepts regarding how configurations are composed and processed.</p>
+
+<p>A <a href="https://github.com/salesforce/pyplyn/blob/master/plugin-api/src/main/java/com/salesforce/pyplyn/configuration/Configuration.java">Configuration</a> is a model that apart from defining the ETL stages, also specifies how often it should be processed (<em>repeatIntervalMillis</em>=long) and its enabled/disabled status (<em>disabled</em>=boolean).</p>
+
+<p>Its ETL sections are model objects, which can be deserialized with Jackson, which extend one of the following interfaces:</p>
+
+<ul>
+<li><p><a href="https://github.com/salesforce/pyplyn/blob/master/plugin-api/src/main/java/com/salesforce/pyplyn/model/Extract.java">Extract</a>.</p></li>
+<li><p><a href="https://github.com/salesforce/pyplyn/blob/master/plugin-api/src/main/java/com/salesforce/pyplyn/model/Transform.java">Transform</a></p></li>
+<li><p><a href="https://github.com/salesforce/pyplyn/blob/master/plugin-api/src/main/java/com/salesforce/pyplyn/model/Load.java">Load</a></p></li>
+</ul>
+
+<p><br/></p>
+
+<p>All configuration files specified in the <em>app-config.json:configurationsPath</em> directory are read by <a href="https://github.com/salesforce/pyplyn/blob/master/duct/src/main/java/com/salesforce/pyplyn/duct/etl/configuration/ConfigurationIntake.java">ConfigurationIntake</a>, which returns a Set&lt;Configuration&gt; object that is processed in stages (E/T/L) by <a href="https://github.com/salesforce/pyplyn/blob/master/duct/src/main/java/com/salesforce/pyplyn/duct/app/MetricDuct.java">MetricDuct</a>.</p>
+
+<h2 id="extract-sources">Extract sources</h2>
+
+<blockquote>
+<p>Refocus extract object (model)</p>
+</blockquote>
+<pre class="highlight json"><code><span class="p">{</span><span class="w">
+  </span><span class="nt">"format"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"Refocus"</span><span class="p">,</span><span class="w">
+  </span><span class="nt">"endpoint"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"argus"</span><span class="p">,</span><span class="w">
+  </span><span class="nt">"cacheMillis"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w">
+  </span><span class="nt">"subject"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"any.subject.path"</span><span class="p">,</span><span class="w">
+  </span><span class="nt">"aspect"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"SOURCE_ASPECT"</span><span class="p">,</span><span class="w">
+  </span><span class="nt">"defaultValue"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">0.0</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre>
+<h3 id="refocus-extract">Refocus extract</h3>
+
+<p>This is an example of a <strong>Refocus extract</strong> configurations. Each extract format defines different parameters. You can read more details in the source code&rsquo;s documentation or by generating Javadocs with <code class="prettyprint">mvn package</code>.</p>
+
+<table><thead>
+<tr>
+<th>Parameter</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead><tbody>
+<tr>
+<td>format</td>
+<td>required</td>
+<td>the name of the model class that this object should be deserialized into (i.e.: <a href="https://github.com/salesforce/pyplyn/blob/master/duct/src/main/java/com/salesforce/pyplyn/duct/etl/extract/refocus/Refocus.java">Refocus</a>)</td>
+</tr>
+<tr>
+<td>endpoint</td>
+<td>required</td>
+<td>identifies the connector to use, by matching against the (connectorId)[#connectors] parameter</td>
+</tr>
+<tr>
+<td>cacheMillis</td>
+<td>0</td>
+<td>how long should this result be cached for (not reloaded from endpoint if processed by Pyplyn before the timeout expires); passing &ldquo;0&rdquo; means not caching it</td>
+</tr>
+<tr>
+<td>subject</td>
+<td>required</td>
+<td>the subject to load from Refocus; _subject</td>
+</tr>
+<tr>
+<td>aspect</td>
+<td>required</td>
+<td>the aspect to load from Refocus; _subject</td>
+</tr>
+<tr>
+<td>defaultValue</td>
+<td>optional</td>
+<td>if a sample for the specified subject and aspect was not found on the Refocus endpoint, return this (double) value</td>
+</tr>
+</tbody></table>
+
+<h3 id="argus-extract">Argus extract</h3>
+
+<p>Most parameters of an <em>Argus extract</em> section are the same, except:</p>
+
+<table><thead>
+<tr>
+<th>Parameter</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead><tbody>
+<tr>
+<td>expression</td>
+<td>required</td>
+<td>the <a href="https://github.com/salesforce/Argus/wiki/Metrics">Argus metric</a> expression to execute against the specified endpoint</td>
+</tr>
+<tr>
+<td>name</td>
+<td>required</td>
+<td>used to identify this series in the <a href="https://github.com/salesforce/pyplyn/blob/master/client/argus-client/src/main/java/com/salesforce/argus/model/MetricResponse.java">MetricResponse</a> object returned by the Argus API</td>
+</tr>
+</tbody></table>
+
+<h2 id="transform-functions">Transform functions</h2>
+
+<blockquote>
+<p>Retrieving only the <strong>last data point</strong> of a series</p>
+</blockquote>
+<pre class="highlight json"><code><span class="p">{</span><span class="w">
+  </span><span class="nt">"name"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"LastDatapoint"</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre>
+<blockquote>
+<p>Refocus example <strong>aspect</strong> definition</p>
+</blockquote>
+<pre class="highlight json"><code><span class="p">{</span><span class="w">
+  </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"PYPLYN_DEMO"</span><span class="p">,</span><span class="w">
+  </span><span class="nt">"criticalRange"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">],</span><span class="w">
+  </span><span class="nt">"warningRange"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">],</span><span class="w">
+  </span><span class="nt">"infoRange"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">],</span><span class="w">
+  </span><span class="nt">"okRange"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">]</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre>
+<blockquote>
+<p>Bucketing value according to specified <strong>thresholds</strong></p>
+</blockquote>
+<pre class="highlight json"><code><span class="p">{</span><span class="w">
+  </span><span class="nt">"name"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"Threshold"</span><span class="p">,</span><span class="w">
+  </span><span class="nt">"criticalThreshold"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">500.0</span><span class="p">,</span><span class="w">
+  </span><span class="nt">"warningThreshold"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">100.0</span><span class="p">,</span><span class="w">
+  </span><span class="nt">"infoThreshold"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">100.0</span><span class="p">,</span><span class="w">
+  </span><span class="nt">"type"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"GREATER_THAN"</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre>
+<p>After all the extract sources of a configuration have been processed, transformations are applied.</p>
+
+<aside class="notice">
+The Pyplyn project was written to process time-series and visualize them as <i>OK/WARN/ERR</i> statuses onto a Refocus dashboard. As such, you will find that all our examples are in that domain. However, the tool is not limited to that use-case and allows a significant degree of flexibility by writing new transformations.
+</aside>
+
+<p>Read the <a href="#extending-pyplyn">Extending Pyplyn</a> section for more details.</p>
+
+<h3 id="the-lastdatapoint-transform">The <em>LastDatapoint</em> transform</h3>
+
+<p>If the data source you are loading data from returns more than one point per &ldquo;Extract&rdquo; (which is usually the case when dealing with time-series data), you can use the <em>LastDatapoint</em> function to return only the most recent value. This is usually applied to Argus results.</p>
+
+<h3 id="the-threshold-transform">The <em>Threshold</em> transform</h3>
+
+<p>In our experience, it&rsquo;s easier to use Pyplyn configurations for defining thresholds, rather than relying directly on Refocus&rsquo; aspects, as they can only define one set of intervals which do not take into the consideration where the source data is originating from.</p>
+
+<p>This works well if your data always has the same thresholds, but not so much if some of the data points you are tracking against the same ASPECT have different meanings of OK/INFO/WARN/ERR.</p>
+
+<p>The Threshold function buckets the four statuses as integers ranging from 0 to 3, which correctly map to aspects we define in Refocus.</p>
+
+<table><thead>
+<tr>
+<th>Parameter</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead><tbody>
+<tr>
+<td>name</td>
+<td>required</td>
+<td>the name of the model class that this object should be deserialized into (i.e.: <a href="https://github.com/salesforce/pyplyn/blob/master/duct/src/main/java/com/salesforce/pyplyn/duct/etl/transform/threshold/Threshold.java">Threshold</a>)</td>
+</tr>
+<tr>
+<td>type</td>
+<td>enumeration</td>
+<td>GREATER_THAN, LESS_THAN; defines how values are compared against the specified thresholds</td>
+</tr>
+<tr>
+<td>criticalThreshold</td>
+<td>optional</td>
+<td>determines where the CRIT interval starts; leave null to skip</td>
+</tr>
+<tr>
+<td>warningThreshold</td>
+<td>optional</td>
+<td>determines where the WARN interval starts; leave null to skip</td>
+</tr>
+<tr>
+<td>infoThreshold</td>
+<td>optional</td>
+<td>determines where the INFO interval starts; leave null to skip</td>
+</tr>
+<tr>
+<td>okThreshold</td>
+<td>optional</td>
+<td>determines where the OK interval starts</td>
+</tr>
+<tr>
+<td>applyToMetricName</td>
+<td>optional</td>
+<td>If specified, the current transform will only be applied to <a href="https://github.com/salesforce/pyplyn/blob/master/plugin-api/src/main/java/com/salesforce/pyplyn/model/TransformationResult.java">TransformationResult</a>s that have the same name</td>
+</tr>
+</tbody></table>
+
+<aside class="notice">Thresholds are evaluated from most critical to least critical. The first one that matches is returned. If one of the series you are processing with Pyplyn does not have one of the four statuses, you can skip its definition (i.e.: setting <i>criticalThreshold=null</i>, the most you will get is a <i>WARN</i>.</aside>
+
+<h2 id="load-destinations">Load destinations</h2>
+
+<blockquote>
+<p>Publishing the results as a sample under the specified subject path and aspect <b>root.child.leaf.subject|PYPLYN_DEMO=[0-3]</b></p>
+</blockquote>
+<pre class="highlight json"><code><span class="p">{</span><span class="w">
+  </span><span class="nt">"format"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"Refocus"</span><span class="p">,</span><span class="w">
+  </span><span class="nt">"endpoint"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"refocus-default"</span><span class="p">,</span><span class="w">
+  </span><span class="nt">"subject"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"root.child.leaf.subject"</span><span class="p">,</span><span class="w">
+  </span><span class="nt">"aspect"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"PYPLYN_DEMO"</span><span class="p">,</span><span class="w">
+  </span><span class="nt">"relatedLinks"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">[]</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre>
+<p>Finally, after transformations have been applied, the results will be pushed to one (or more) Load destinations.</p>
+
+<table><thead>
+<tr>
+<th>Parameter</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead><tbody>
+<tr>
+<td>format</td>
+<td>required</td>
+<td>the name of the model class that this object should be deserialized into (i.e.: <a href="https://github.com/salesforce/pyplyn/blob/master/duct/src/main/java/com/salesforce/pyplyn/duct/etl/load/refocus/Refocus.java">Refocus</a>)</td>
+</tr>
+<tr>
+<td>endpoint</td>
+<td>required</td>
+<td>identifies the connector to use, by matching against the (connectorId)[#connectors] parameter</td>
+</tr>
+<tr>
+<td>subject</td>
+<td>required</td>
+<td>the Refocus subject to publish to; _subject</td>
+</tr>
+<tr>
+<td>aspect</td>
+<td>required</td>
+<td>the Refocus aspect to publish to; _subject</td>
+</tr>
+<tr>
+<td>relatedLinks</td>
+<td>optional</td>
+<td>a list of links that will be associated with the published Sample; should specify two parameters, <em>name</em> and <em>URL</em></td>
+</tr>
+</tbody></table>
+
+          <h1 id="extending-pyplyn">Extending Pyplyn</h1>
+
+<p>Pyplyn can be easily extended by other developers when the default functionality is not enough.</p>
+
+<p>While you can easily fork the project and modify its source code, we do not recommend this approach.</p>
+
+<p>It is much cleaner to add a static dependency on the project and add your new features as pyplyn modules.
+This ensures you can keep updating to the latest pyplyn version, without having to go through the hassle of integrating your changes every time.</p>
+
+<p>It is also the easiest way to develop new features, without having to navigate through all of Pyplyn&rsquo;s existing code and modules. Don&rsquo;t worry; you can still <a href="CONTRIBUTE.md">contribute</a> your changes back into the project after they&rsquo;re sufficiently tested!</p>
+
+<p>The modular nature of Pyplyn is supported by Guice&rsquo;s <a href="https://github.com/google/guice/wiki/Multibindings">Multibindings</a> extension.</p>
+
+<p>You can take a look at the <a href="https://github.com/salesforce/pyplyn/blob/master/plugin-api/src/main/java/com/salesforce/pyplyn/util/MultibinderFactory.java">MultibinderFactory</a> class in pyplyn, to see what&rsquo;s supported. You can also check out the list below:</p>
+
+<ul>
+<li>Add more AppConfig parameters</li>
+<li>Different Connector mechanism</li>
+<li>Support new Extract datasources</li>
+<li>Define Transform functions</li>
+<li>Push to other Load destinations</li>
+<li>Send monitoring data to other systems and APIs</li>
+</ul>
+
+<h2 id="importing-the-pyplyn-maven-dependency">Importing the Pyplyn Maven dependency</h2>
+<pre class="highlight xml"><code>  <span class="nt">&lt;dependencies&gt;</span>
+    ...
+    <span class="nt">&lt;dependency&gt;</span>
+      <span class="nt">&lt;groupId&gt;</span>com.salesforce.pyplyn<span class="nt">&lt;/groupId&gt;</span>
+      <span class="nt">&lt;artifactId&gt;</span>duct<span class="nt">&lt;/artifactId&gt;</span>
+      <span class="nt">&lt;version&gt;</span>LATEST<span class="nt">&lt;/version&gt;</span>
+    <span class="nt">&lt;/dependency&gt;</span>
+    ...
+<span class="nt">&lt;/dependencies&gt;</span>
+</code></pre>
+<p>Define <a href="https://github.com/salesforce/pyplyn">Pyplyn</a> as a <a href="https://maven.apache.org/guides/introduction/introduction-to-dependency-mechanism.html">Maven dependency</a> in your project&rsquo;s <em>pom.xml</em> file</p>
+
+<h2 id="write-new-functionality">Write new functionality</h2>
+
+<p>Check out some of the existing <a href="https://github.com/salesforce/pyplyn/tree/master/duct/src/main/java/com/salesforce/pyplyn/duct/etl/extract">Extract</a>, <a href="https://github.com/salesforce/pyplyn/tree/master/duct/src/main/java/com/salesforce/pyplyn/duct/etl/transform">Transform</a>, or <a href="https://github.com/salesforce/pyplyn/tree/master/duct/src/main/java/com/salesforce/pyplyn/duct/etl/load">Load</a> modules for inspiration.</p>
+
+<h2 id="replace-the-application-bootstrap-object">Replace the application bootstrap object</h2>
+<pre class="highlight java"><code><span class="kd">public</span> <span class="kd">class</span> <span class="nc">NewPluginBootstrap</span> <span class="kd">extends</span> <span class="n">AppBootstrap</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="nf">NewPluginBootstrap</span><span class="o">(</span><span class="n">String</span> <span class="n">configFile</span><span class="o">)</span> <span class="o">{</span>
+        <span class="kd">super</span><span class="o">(</span><span class="n">configFile</span><span class="o">);</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre>
+<p>Extend the <a href="https://github.com/salesforce/pyplyn/blob/master/duct/src/main/java/com/salesforce/pyplyn/duct/app/AppBootstrap.java">AppBootstrap</a> class</p>
+
+<h2 id="add-your-modules">Add your modules</h2>
+<pre class="highlight java"><code><span class="kd">public</span> <span class="kd">class</span> <span class="nc">NewPluginBootstrap</span> <span class="kd">extends</span> <span class="n">AppBootstrap</span> <span class="o">{</span>
+    <span class="o">...</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">Module</span><span class="o">&gt;</span> <span class="nf">modules</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">Collections</span><span class="o">.</span><span class="na">unmodifiableList</span><span class="o">(</span><span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span><span class="cm">/* your modules here */</span><span class="o">));</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre>
+<p>Return a list of modules by overriding <em>AppBootstrap.modules()</em>. These will be passed to the Guice injector before it is constructed, making them available for injection.</p>
+
+<h2 id="define-the-main-entry-point">Define the main entry point</h2>
+<pre class="highlight java"><code><span class="kd">public</span> <span class="kd">class</span> <span class="nc">NewMainEntryPoint</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">DuctMain</span><span class="o">.</span><span class="na">setProgramName</span><span class="o">(</span><span class="s">"new-plugin"</span><span class="o">);</span> <span class="c1">// optional, only has an effect on the usage notice</span>
+        <span class="n">DuctMain</span><span class="o">.</span><span class="na">execute</span><span class="o">(</span><span class="n">NewPluginBootstrap</span><span class="o">.</span><span class="na">class</span><span class="o">,</span> <span class="n">args</span><span class="o">);</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre>
+<p>Create a new main entry point and execute Pyplyn with your new bootstrap plugin.</p>
+
+<h2 id="creating-a-new-module">Creating a new module</h2>
+
+<blockquote>
+<p>1. Create a class file</p>
+</blockquote>
+<pre class="highlight plaintext"><code>public class SaveMetricMetadata implements Transform { }
+</code></pre>
+<blockquote>
+<p>2. Create a module</p>
+</blockquote>
+<pre class="highlight plaintext"><code>public class SaveMetricMetadataModule extends AbstractModule { }
+</code></pre>
+<blockquote>
+<p>3. Define the binding</p>
+</blockquote>
+<pre class="highlight plaintext"><code>public class SaveMetricMetadataModule extends AbstractModule {
+    @Override
+    protected void configure() {
+        MultibinderFactory.transformFunctions(binder()).addBinding().toInstance(SaveMetricMetadata.class);
+    }
+}
+
+</code></pre>
+<p>This example is based on the &ldquo;<a href="https://github.com/salesforce/pyplyn/tree/master/duct/src/main/java/com/salesforce/pyplyn/duct/etl/transform/savemetricmetadata">savemetricmetadata</a>&rdquo; plugin.</p>
+
+<ol>
+<li>Create the a class file (i.e.: <em>SaveMetricMetadata</em>)</li>
+<li>Create a module class, (i.e.: <em>SaveMetricMetadataModule</em>) </li>
+<li>Define the Guice binding for your class</li>
+<li>See the &ldquo;<a href="#add-your-modules">Add your modules</a>&rdquo; section on how to initialize your new module in the injector</li>
+</ol>
+
+          <h1 id="contributing-to-pyplyn">Contributing to Pyplyn</h1>
+
+<h3 id="we-encourage-contributions-from-the-development-community">We encourage contributions from the development community!</h3>
+
+<p>We are open to any contributions (code, artwork, documentation, etc.) as long as it respects our <a href="#licensing-requirements">licensing requirements</a>.</p>
+
+<p><strong>All contributors are required to sign the Salesforce Contributor&rsquo;s License Agreement.</strong> 
+Please <a href="docs/SFDC_CLA.pdf">print this file</a>, sign and scan it, and send it to <a href="mailto:osscore@salesforce.com">osscore@salesforce.com</a>.</p>
+
+<p>Please see the <a href="https://github.com/salesforce/pyplyn/blob/master/CONTRIBUTE.md">CONTRIBUTE.MD</a> page, which explains the contribution process in detail.</p>
+
+<p>We look forward to collaborating with you!</p>
+
+<h3 id="licensing-requirements">Licensing requirements</h3>
+
+<p>We can only accept the following license types, and so, if you&rsquo;re adding new libraries in the project, please make sure to check that they conform to the following list:</p>
+
+<ul>
+<li>BSD</li>
+<li>Apache 2.0</li>
+<li>MIT</li>
+<li>ISC</li>
+<li>MPL</li>
+</ul>
+
+      </div>
+      <div class="dark-box">
+      </div>
+    </div>
+  </body>
+</html>

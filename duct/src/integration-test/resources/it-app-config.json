@@ -1,0 +1,39 @@
+{
+  "global": {
+    "configurationsPath": null,
+    "connectorsPath": "/connectors.example.json",
+    "minRepeatIntervalMillis": 60000,
+    "updateConfigurationIntervalMillis": 300000
+  },
+
+  "hazelcast": {
+    "enabled": false,
+    "config": "/hazelcast.xml"
+  },
+
+  "alert": {
+    "enabled": true,
+    "checkIntervalMillis": 10000,
+    "thresholds": {
+      "RefocusExtractSuccessWARN": 0.2,
+      "RefocusExtractSuccessERR": 0.1,
+      "RefocusExtractFailureWARN": 5,
+      "RefocusExtractFailureERR": 10,
+      "RefocusExtractNoDataReturnedWARN": 30,
+      "RefocusExtractNoDataReturnedERR": 50,
+      "RefocusAuthenticationFailureWARN": 1,
+      "RefocusAuthenticationFailureERR": 2,
+      "ArgusExtractSuccessWARN": 0.2,
+      "ArgusExtractSuccessERR": 0.1,
+      "ArgusExtractFailureWARN": 5,
+      "ArgusExtractFailureERR": 10,
+      "ArgusExtractNoDataReturnedWARN": 30,
+      "ArgusExtractNoDataReturnedERR": 50,
+      "ArgusAuthenticationFailureWARN": 1,
+      "ArgusAuthenticationFailureERR": 2,
+      "RefocusLoadFailureWARN": 5,
+      "RefocusLoadFailureERR": 10,
+      "ConfigurationUpdateFailureERR": 1
+    }
+  }
+}
