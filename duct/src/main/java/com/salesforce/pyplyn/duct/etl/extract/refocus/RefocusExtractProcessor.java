@@ -8,6 +8,7 @@
 
 package com.salesforce.pyplyn.duct.etl.extract.refocus;
 
+import com.codahale.metrics.Timer;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.salesforce.pyplyn.cache.Cache;
@@ -106,8 +107,10 @@ public class RefocusExtractProcessor extends AbstractMeteredExtractProcessor<Ref
                                             return null;
                                         }
 
-                                        // load from Refocus endpoint
-                                        sample = client.getSample(refocus.name(), null);
+                                        // load Sample from Refocus endpoint
+                                        try (Timer.Context context = systemStatus.timer(meterName(), "get-sample." + endpointId).time()) {
+                                            sample = client.getSample(refocus.name(), null);
+                                        }
 
                                         // if a null response was returned, but we have a default value, create a sample from it
                                         if (isNull(sample) && nonNull(refocus.defaultValue())) {

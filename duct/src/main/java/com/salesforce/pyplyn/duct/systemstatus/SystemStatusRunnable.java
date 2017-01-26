@@ -8,15 +8,18 @@
 
 package com.salesforce.pyplyn.duct.systemstatus;
 
-import com.codahale.metrics.Meter;
-import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.*;
+import com.codahale.metrics.Timer;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.salesforce.pyplyn.duct.appconfig.AppConfig;
 import com.salesforce.pyplyn.status.*;
+import com.salesforce.pyplyn.util.FormatUtils;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
+import static com.codahale.metrics.MetricRegistry.name;
 import static com.salesforce.pyplyn.status.AlertType.GREATER_THAN;
 import static com.salesforce.pyplyn.status.AlertType.LESS_THAN;
 
@@ -29,9 +32,14 @@ import static com.salesforce.pyplyn.status.AlertType.LESS_THAN;
  */
 @Singleton
 public class SystemStatusRunnable implements SystemStatus {
+    private static final String MESSAGE_NAME_OK = "All services";
+    private static final String METER_TEMPLATE = "%s %s=%s/s";
+    private static final String TIMER_TEMPLATE = "p95(%s)=%s";
+
     private final Map<String, Double> thresholds;
     private final MetricRegistry registry = new MetricRegistry();
     private final List<SystemStatusConsumer> consumers = new ArrayList<>();
+
 
     /**
      * Class constructor
@@ -51,10 +59,21 @@ public class SystemStatusRunnable implements SystemStatus {
     /**
      * @param name Metered name
      * @param type Type of meter
-     * @return returns the specified meter
+     * @return an initialized {@link Meter}
      */
+    @Override
     public Meter meter(String name, MeterType type) {
         return registry.meter(buildMeterName(name, type));
+    }
+
+    /**
+     * @param name the name of the timer
+     * @param method the method being timed
+     * @return an initialized {@link Timer}
+     */
+    @Override
+    public Timer timer(String name, String method) {
+        return registry.timer(name(name, method));
     }
 
     /**
@@ -76,8 +95,8 @@ public class SystemStatusRunnable implements SystemStatus {
 
         // iterate through all registered meters
         for (Map.Entry<String, Meter> entry : registry.getMeters().entrySet()) {
-            final String meterName = entry.getKey();
-            final double fiveMinuteRate = entry.getValue().getFiveMinuteRate();
+            String meterName = entry.getKey();
+            double fiveMinuteRate = entry.getValue().getFiveMinuteRate();
 
             // define optionals for checking ERR/WARN
             Optional<StatusMessage> errMessage = checkRateOfMeter(meterName, AlertLevel.ERR, fiveMinuteRate);
@@ -93,13 +112,21 @@ public class SystemStatusRunnable implements SystemStatus {
 
         // if no messages have been logged, report status OK
         if (messages.isEmpty()) {
-            messages.add(new StatusMessage.Ok());
+            messages.add(new StatusMessage(AlertLevel.OK, MESSAGE_NAME_OK + " " + AlertLevel.OK.name()));
+        }
+
+        // iterate through all registered timers
+        for (Map.Entry<String, Timer> entry : registry.getTimers().entrySet()) {
+            String timerName = entry.getKey();
+            long percentileMillis = TimeUnit.NANOSECONDS.toMillis((long)entry.getValue().getSnapshot().get95thPercentile());
+
+            // report 95th percentile
+            messages.add(createTimerStatusMessage(timerName, percentileMillis));
         }
 
         // send status to all consumers
         consumers.parallelStream().forEach(consumer -> consumer.accept(messages));
     }
-
 
     /**
      * Creates a meter name by combining the meter's name and type
@@ -132,16 +159,30 @@ public class SystemStatusRunnable implements SystemStatus {
 
         // check greater-than threshhold; the alert is fired when threshold is hit (inclusive)
         if (type.alertType() == GREATER_THAN && fiveMinuteRate >= threshold) {
-            return Optional.of(new StatusMessage(level, meterName, fiveMinuteRate));
+            return Optional.of(createMetricStatusMessage(meterName, level, fiveMinuteRate));
 
         // check less-than threshhold; the alert is fired when rate goes below threshold (exclusive)
         } else if (type.alertType() == LESS_THAN && fiveMinuteRate <= threshold) {
-            return Optional.of(new StatusMessage(level, meterName, fiveMinuteRate));
+            return Optional.of(createMetricStatusMessage(meterName, level, fiveMinuteRate));
         }
 
         return Optional.empty();
     }
 
+    /**
+     * @return a {@link StatusMessage} that reports system status based on {@link Metric} values
+     *         using thresholds specified in {@link AppConfig.Alert}
+     */
+    private static StatusMessage createMetricStatusMessage(String meterName, AlertLevel level, double fiveMinuteRate) {
+        return new StatusMessage(level, String.format(METER_TEMPLATE, level.name(), meterName, fiveMinuteRate));
+    }
+
+    /**
+     * @return a {@link StatusMessage} that reports {@link Timer} values
+     */
+    private static StatusMessage createTimerStatusMessage(String timerName, long percentileMillis) {
+        return new StatusMessage(AlertLevel.OK, String.format(TIMER_TEMPLATE, timerName, FormatUtils.formatMillisOrSeconds(percentileMillis)));
+    }
 
     /**
      * Find the type of the specified meter

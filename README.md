@@ -20,7 +20,7 @@ This is where [Refocus steps in](https://medium.com/salesforce-open-source/take-
 
 - Easy, no-code, setup of ETL jobs with JSON-based configurations
 - Reads data, from one or multiple sources, applies transformations and writes to one or multiple destinations
-- Developed with [extensibility](https://github.com/pages/salesforce/pyplyn/#extending-pyplyn) and modularity in mind 
+- Developed with [extensibility](https://salesforce.github.io/pyplyn/#extending-pyplyn) and modularity in mind 
   (based on [Jackson](https://github.com/FasterXML/jackson) polymorphic deserialization and 
   dependency injection with [Guice](https://github.com/google/guice)) 
 - Comes with two clients (Argus/Refocus) written from scratch in [Retrofit](https://square.github.io/retrofit/), 
@@ -46,12 +46,12 @@ export PYPLYN_VERSION=`cat target/version.txt`
 java -jar target/pyplyn-$PYPLYN_VERSION.jar --config /path/to/app-config.json
 ```
 
-However, before running *Pyplyn*, consider reading the [full local setup guide](https://github.com/pages/salesforce/pyplyn/#running-pyplyn-locally).
+However, before running *Pyplyn*, consider reading the [full local setup guide](https://salesforce.github.io/pyplyn/#running-pyplyn-locally).
 
 
 # Next steps?
 
-See the [Pyplyn API reference](https://github.com/pages/salesforce/pyplyn/) for an in-depth explanation of Pyplyn's features. 
+See the [Pyplyn API reference](https://salesforce.github.io/pyplyn/) for an in-depth explanation of Pyplyn's features. 
 
 Generate *Javadocs* with Maven's: `mvn package`.
 

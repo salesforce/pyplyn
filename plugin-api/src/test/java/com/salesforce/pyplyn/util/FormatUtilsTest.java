@@ -155,6 +155,54 @@ public class FormatUtilsTest {
     }
 
     @Test
+    public void testFormatMillis() throws Exception {
+        // ARRANGE
+        Double input = 500.00d;
+
+        // ACT
+        String output = FormatUtils.formatMillisOrSeconds(input);
+
+        // ASSERT
+        assertThat(output, equalTo("500ms"));
+    }
+
+    @Test
+    public void testFormatMillisWithDecimal() throws Exception {
+        // ARRANGE
+        Double input = 500.1d;
+
+        // ACT
+        String output = FormatUtils.formatMillisOrSeconds(input);
+
+        // ASSERT
+        assertThat(output, equalTo("500.1ms"));
+    }
+
+    @Test
+    public void testFormatSeconds() throws Exception {
+        // ARRANGE
+        Double input = 1500.1d;
+
+        // ACT
+        String output = FormatUtils.formatMillisOrSeconds(input);
+
+        // ASSERT
+        assertThat(output, equalTo("1.5s"));
+    }
+
+    @Test
+    public void testFormatSecondsDoubleDigits() throws Exception {
+        // ARRANGE
+        Double input = 12345.67d;
+
+        // ACT
+        String output = FormatUtils.formatMillisOrSeconds(input);
+
+        // ASSERT
+        assertThat(output, equalTo("12.35s"));
+    }
+
+    @Test
     public void testGenerateDefaultValueMessage() throws Exception {
         // ACT
         String defaultMessage = FormatUtils.generateDefaultValueMessage("metric", 1234);

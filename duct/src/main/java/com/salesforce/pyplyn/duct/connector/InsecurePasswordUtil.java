@@ -57,8 +57,8 @@ class InsecurePasswordUtil {
             if (thisConnector.isPresent()) {
                 InsecureConnector insecureConnector = thisConnector.get();
 
-                // we are not concerned about this being null, since password is marked as required in InsecureConnector
                 try {
+                    // retrieve password from connector definition, or return null
                     return nullableArrayCopy(insecureConnector.password);
 
                 } finally {
@@ -72,8 +72,8 @@ class InsecurePasswordUtil {
 
         }
 
-        // return empty byte array, if searched connector not found, or IOException during deserialization
-        return new byte[0];
+        // return null if connector was not found, or IOException during deserialization
+        return null;
     }
 
 

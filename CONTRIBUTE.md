@@ -125,7 +125,7 @@ We can only accept the following license types, and so, if you're adding new lib
 
 Note that all Pull Requests will be reviewed for any new dependencies and will be rejected if they do not fall into
  the above categories. If you must use a dependency with a different licensing model, an alternative is to
- extend Pyplyn, as explained in the [API reference](https://github.com/pages/salesforce/pyplyn/#extending-pyplyn).
+ extend Pyplyn, as explained in the [API reference](https://salesforce.github.io/pyplyn/#extending-pyplyn).
  
 If you don't know how to check for licenses, have a look at Pivotal's [LicenseFinder](https://github.com/pivotal/LicenseFinder),
  which automatically scans all the project's files and compiles a list of all its dependencies and their corresponding

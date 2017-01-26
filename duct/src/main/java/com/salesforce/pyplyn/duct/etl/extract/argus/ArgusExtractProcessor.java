@@ -8,6 +8,8 @@
 
 package com.salesforce.pyplyn.duct.etl.extract.argus;
 
+import com.codahale.metrics.*;
+import com.codahale.metrics.Timer;
 import com.google.common.collect.Iterables;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -24,8 +26,6 @@ import com.salesforce.pyplyn.duct.providers.client.RemoteClientFactory;
 import com.salesforce.pyplyn.model.TransformationResult;
 import com.salesforce.pyplyn.model.builder.TransformationResultBuilder;
 import com.salesforce.pyplyn.processor.AbstractMeteredExtractProcessor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.text.ParseException;
 import java.time.Instant;
@@ -126,8 +126,11 @@ public class ArgusExtractProcessor extends AbstractMeteredExtractProcessor<Argus
                                 return null;
                             }
 
-                            // first attempt; this should work most of the time
-                            List<MetricResponse> metricResponses = client.getMetrics(expressions);
+                            // retrieve metrics from Argus endpoint
+                            List<MetricResponse> metricResponses;
+                            try (Timer.Context context = systemStatus.timer(meterName(), "get-metrics." + endpointId).time()) {
+                                metricResponses = client.getMetrics(expressions);
+                            }
                             succeeded();
 
 

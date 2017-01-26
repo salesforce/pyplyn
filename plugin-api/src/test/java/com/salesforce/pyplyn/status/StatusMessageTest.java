@@ -24,7 +24,7 @@ public class StatusMessageTest {
     @Test
     public void testCreateStatusMessage() throws Exception {
         // ARRANGE
-        StatusMessage message = new StatusMessage(AlertLevel.ERR, "error", 1.23d);
+        StatusMessage message = new StatusMessage(AlertLevel.ERR, "error 1.23");
 
         // ACT
         AlertLevel level = message.level();
@@ -32,20 +32,6 @@ public class StatusMessageTest {
 
         // ASSERT
         assertThat(level, equalTo(AlertLevel.ERR));
-        assertThat(messageBody, allOf(containsString("error"), containsString("rate=1.23")));
-    }
-
-    @Test
-    public void testStatusOk() throws Exception {
-        // ARRANGE
-        StatusMessage.Ok message = new StatusMessage.Ok();
-
-        // ACT
-        AlertLevel level = message.level();
-        String messageBody = message.toString();
-
-        // ASSERT
-        assertThat(level, equalTo(AlertLevel.OK));
-        assertThat(messageBody, containsString(StatusMessage.MESSAGE_NAME_OK));
+        assertThat(messageBody, allOf(containsString("error"), containsString("1.23")));
     }
 }

@@ -297,6 +297,8 @@ mkdir ~/pyplyn-config/configurations
 <aside class="notice">You don&rsquo;t need to define all four connectors from our example.  If you want to write a configuration that extracts data from Refocus, transforms it and then pushes it back, only need to define a single Refocus connector section, depending on the method you are using for authenticating.
 </aside>
 
+<aside class="warn">You need to use the MIME base64-variant when encoding your passwords (padding character &rsquo;=&rsquo;) !</aside>
+
 <p>Read more about <a href="https://salesforce.github.io/refocus/docs/10-security.html">Refocus&rsquo; security options</a> and choose either user/password or token-based authentication. If you&rsquo;re using the token-based auth, the correct way to specify it in <em>connectors.json</em> is to pass <em>username</em> as <strong><em>null</em></strong> and <em>password</em> as the <a href="https://www.base64encode.org/">BASE64 encoded</a> value of the token string obtained from the <em>&hellip;/tokens/new</em> endpoint of Refocus.</p>
 
 <h2 id="configure-the-app">Configure the app</h2>
@@ -670,7 +672,7 @@ The Pyplyn project was written to process time-series and visualize them as <i>O
 <p>It is much cleaner to add a static dependency on the project and add your new features as pyplyn modules.
 This ensures you can keep updating to the latest pyplyn version, without having to go through the hassle of integrating your changes every time.</p>
 
-<p>It is also the easiest way to develop new features, without having to navigate through all of Pyplyn&rsquo;s existing code and modules. Don&rsquo;t worry; you can still <a href="CONTRIBUTE.md">contribute</a> your changes back into the project after they&rsquo;re sufficiently tested!</p>
+<p>It is also the easiest way to develop new features, without having to navigate through all of Pyplyn&rsquo;s existing code and modules. Don&rsquo;t worry; you can still <a href="#contributing-to-pyplyn">contribute</a> your changes back into the project after they&rsquo;re sufficiently tested!</p>
 
 <p>The modular nature of Pyplyn is supported by Guice&rsquo;s <a href="https://github.com/google/guice/wiki/Multibindings">Multibindings</a> extension.</p>
 
@@ -772,7 +774,7 @@ This ensures you can keep updating to the latest pyplyn version, without having 
 <p>We are open to any contributions (code, artwork, documentation, etc.) as long as it respects our <a href="#licensing-requirements">licensing requirements</a>.</p>
 
 <p><strong>All contributors are required to sign the Salesforce Contributor&rsquo;s License Agreement.</strong> 
-Please <a href="docs/SFDC_CLA.pdf">print this file</a>, sign and scan it, and send it to <a href="mailto:osscore@salesforce.com">osscore@salesforce.com</a>.</p>
+Please <a href="SFDC_CLA.pdf">print this file</a>, sign and scan it, and send it to <a href="mailto:osscore@salesforce.com">osscore@salesforce.com</a>.</p>
 
 <p>Please see the <a href="https://github.com/salesforce/pyplyn/blob/master/CONTRIBUTE.md">CONTRIBUTE.MD</a> page, which explains the contribution process in detail.</p>
 
@@ -789,6 +791,10 @@ Please <a href="docs/SFDC_CLA.pdf">print this file</a>, sign and scan it, and se
 <li>ISC</li>
 <li>MPL</li>
 </ul>
+
+<p><br/>
+<br/>
+<br/></p>
 
       </div>
       <div class="dark-box">

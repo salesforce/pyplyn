@@ -9,6 +9,7 @@
 package com.salesforce.pyplyn.status;
 
 import com.codahale.metrics.Meter;
+import com.codahale.metrics.Timer;
 
 /**
  * System status interface
@@ -21,8 +22,13 @@ import com.codahale.metrics.Meter;
 public interface SystemStatus extends Runnable {
 
     /**
-     * Implement this method and return the actual {@link Meter} object used to handle the passed
+     * Implement this method and return a {@link Meter} object used to handle the passed
      *   combination of <b>name</b> and <b>type</b> parameters
      */
     Meter meter(String name, MeterType type);
+
+    /**
+     * Implement this method and return a {@link Timer} object used to measure the performance of your app
+     */
+    Timer timer(String name, String method);
 }

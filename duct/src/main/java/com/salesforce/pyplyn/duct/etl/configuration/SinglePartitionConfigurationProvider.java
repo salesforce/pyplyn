@@ -37,7 +37,7 @@ import static java.util.Objects.isNull;
  */
 @Singleton
 public class SinglePartitionConfigurationProvider implements UpdatableConfigurationSetProvider<ConfigurationWrapper> {
-    private static final Logger logger = LoggerFactory.getLogger(SinglePartitionConfigurationProvider.class);
+    protected static final Logger logger = LoggerFactory.getLogger(SinglePartitionConfigurationProvider.class);
     private static final String PROCESS_NAME = "ConfigurationProvider";
     private final Lock updateLock = new ReentrantLock();
     protected final ConfigurationProvider provider;

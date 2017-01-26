@@ -8,6 +8,7 @@
 
 package com.salesforce.pyplyn.duct.app;
 
+import com.codahale.metrics.Timer;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.salesforce.pyplyn.configuration.UpdatableConfigurationSetProvider;
@@ -19,6 +20,7 @@ import com.salesforce.pyplyn.model.Transform;
 import com.salesforce.pyplyn.model.TransformationResult;
 import com.salesforce.pyplyn.processor.ExtractProcessor;
 import com.salesforce.pyplyn.processor.LoadProcessor;
+import com.salesforce.pyplyn.status.SystemStatus;
 import com.salesforce.pyplyn.util.FormatUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,6 +62,7 @@ public class MetricDuct implements Runnable {
      */
     private UpdatableConfigurationSetProvider<ConfigurationWrapper> configurationProvider;
 
+    private final SystemStatus systemStatus;
     /**
      * All defined extract processors
      */
@@ -77,12 +80,13 @@ public class MetricDuct implements Runnable {
      */
     @Inject
     public MetricDuct(AppConfig appConfig,
-                               ShutdownHook shutdownHook,
-                               Set<ExtractProcessor<? extends Extract>> extractProcessors,
-                               Set<LoadProcessor<? extends Load>> loadProcessors
-                               ) {
+                       ShutdownHook shutdownHook,
+                       SystemStatus systemStatus,
+                       Set<ExtractProcessor<? extends Extract>> extractProcessors,
+                       Set<LoadProcessor<? extends Load>> loadProcessors) {
         this.appConfig = appConfig;
         this.shutdownHook = shutdownHook;
+        this.systemStatus = systemStatus;
         this.extractProcessors = extractProcessors;
         this.loadProcessors = loadProcessors;
     }
@@ -102,8 +106,6 @@ public class MetricDuct implements Runnable {
      */
     @Override
     public void run() {
-        final ConfigurationWrapper.NextRunComparator nextRunProcessAt = new ConfigurationWrapper.NextRunComparator();
-
         while(!shutdownHook.isShutdown()) {
             // note parameters at start time
             final long time0 = System.currentTimeMillis();
@@ -112,60 +114,65 @@ public class MetricDuct implements Runnable {
             final AtomicLong loadCounter = new AtomicLong(0L);
 
             try {
-                // process all isEnabled configurationProvider
-                Optional<ConfigurationWrapper> nextConfiguration = configurationProvider.get().parallelStream()
-                        .filter(configuration -> !shutdownHook.isShutdown())    // do not initialize stream if app is shutdown
-                        .filter(ConfigurationWrapper::isEnabled)           // only process isEnabled configurationProvider
-                        .filter(this::shouldRun)                    // only process configurationProvider that are scheduled
+                Optional<Long> nextRunTime;
 
-                        // EXTRACT
-                        .map(wrapper -> {
-                            List<List<TransformationResult>> data = extractProcessors.parallelStream()
-                                    .map(processor -> processor.execute(wrapper.configuration().extract()))
-                                    .flatMap(Collection::stream)
-                                    .collect(Collectors.toList());
+                // time how long it takes to process the ETL cycle
+                try (Timer.Context context = systemStatus.timer(this.getClass().getSimpleName(), "etl-cycle").time()) {
+                    // process all isEnabled configurationProvider
+                    nextRunTime = configurationProvider.get().parallelStream()
+                            .filter(configuration -> !shutdownHook.isShutdown()) // do not initialize stream if app is shutdown
+                            .filter(ConfigurationWrapper::isEnabled)             // only process enabled configurations
+                            .filter(ConfigurationWrapper::shouldRun)             // only process configurations that are scheduled
 
-                            extractCounter.incrementAndGet();
-                            return new Stage(data, wrapper);
-                        })
+                            // EXTRACT
+                            .map(wrapper -> {
+                                List<List<TransformationResult>> data = extractProcessors.parallelStream()
+                                        .map(processor -> processor.execute(wrapper.configuration().extract()))
+                                        .flatMap(Collection::stream)
+                                        .collect(Collectors.toList());
 
-                        // TRANSFORM
-                        .map(stage -> {
-                            Transform[] transforms = stage.wrapper().configuration().transform();
+                                extractCounter.incrementAndGet();
+                                return new Stage(data, wrapper);
+                            })
 
-                            List<List<TransformationResult>> data = stage.data();
-                            for (Transform transform : transforms) {
+                            // TRANSFORM
+                            .map(stage -> {
+                                Transform[] transforms = stage.wrapper().configuration().transform();
 
-                                // apply transformations
-                                data = transform.apply(data);
-                            }
+                                List<List<TransformationResult>> data = stage.data();
+                                for (Transform transform : transforms) {
 
-                            transformCounter.incrementAndGet();
-                            return new Stage(data, stage.wrapper());
-                        })
+                                    // apply transformations
+                                    data = transform.apply(data);
+                                }
 
-                        // LOAD
-                        .map(stage -> {
-                            Load[] destinations = stage.wrapper().configuration().load();
+                                transformCounter.incrementAndGet();
+                                return new Stage(data, stage.wrapper());
+                            })
 
-                            // send all transformation results to all known load processors
-                            List<List<TransformationResult>> transformationResults = stage.data();
-                            for (List<TransformationResult> result : transformationResults) {
-                                loadProcessors.parallelStream()
-                                        .forEach(processor -> processor.execute(result, destinations));
-                            }
+                            // LOAD
+                            .map(stage -> {
+                                Load[] destinations = stage.wrapper().configuration().load();
 
-                            // mark configuration as having run and return it
-                            loadCounter.incrementAndGet();
+                                // send all transformation results to all known load processors
+                                List<List<TransformationResult>> transformationResults = stage.data();
+                                for (List<TransformationResult> result : transformationResults) {
+                                    loadProcessors.parallelStream()
+                                            .forEach(processor -> processor.execute(result, destinations));
+                                }
 
-                            //TODO: this doesn't work in Hazelcast and neither in the other stuff
-                            return stage.wrapper().ran();
-                        })
+                                loadCounter.incrementAndGet();
 
-                        .min(nextRunProcessAt);
+                                // mark configuration as having run
+                                //   compute next run, offset by how long it took to process this configuration
+                                return stage.wrapper().ran().nextRun(System.currentTimeMillis() - time0);
+                            })
+
+                            .min(Long::compareTo);
+                }
 
                 // get approximate time of next run
-                long nextRun = getNextRun(nextConfiguration);
+                long nextRun = getNextRun(nextRunTime);
 
                 // print benchmarking data
                 String duration = formatNumber((System.currentTimeMillis() - time0) / 1000);
@@ -192,12 +199,12 @@ public class MetricDuct implements Runnable {
      * <p/>
      * <b>Note: if {@link AppConfig} specifies <i>minRepeatIntervalMillis <= 0</i>, it processes configurations only once, then exits</b>
      */
-    long getNextRun(Optional<ConfigurationWrapper> nextConfiguration) throws InterruptedException {
+    long getNextRun(Optional<Long> nearestNextRun) throws InterruptedException {
         // determine time at which the cycle should be started again and sleep until then
-        long nextRunInterval = appConfig.global().minRepeatIntervalMillis();
+        long nextAppRunInterval = appConfig.global().minRepeatIntervalMillis();
 
         // if run interval is zero, signal we need to stop (run-once)
-        if (nextRunInterval <= 0) {
+        if (nextAppRunInterval <= 0) {
             shutdownHook.shutdown();
 
             // throw an Exception to exit the main loop
@@ -205,21 +212,11 @@ public class MetricDuct implements Runnable {
         }
 
         // determine next run if a configuration is present
-        if (nextConfiguration.isPresent()) {
-            nextRunInterval = nextConfiguration.get().nextRunInMilliseconds();
+        if (nearestNextRun.isPresent()) {
+            //   if the the next run point in time has already passed, return 0 to run straight away
+            nextAppRunInterval = Math.max(nearestNextRun.get() - System.currentTimeMillis(), 0);
         }
 
-        // or return the default interval
-        return nextRunInterval;
-    }
-
-    /**
-     * Determines if a configuration can be run, allowing some to be processed up to 10s faster
-     * <p/>
-     * <p/>Note: this is currently required since the ETL stages are synchronized; this should no longer be required
-     *   when we change the sync'ed stage behavior to use async events.
-     */
-    private boolean shouldRun(ConfigurationWrapper config) {
-        return config.shouldRun(10000);
+        return nextAppRunInterval;
     }
 }

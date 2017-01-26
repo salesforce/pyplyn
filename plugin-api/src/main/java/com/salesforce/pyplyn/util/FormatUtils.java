@@ -38,12 +38,21 @@ public final class FormatUtils {
     private static ThreadLocal<DecimalFormat> decimalFormatDefault = ThreadLocal.withInitial(() -> new DecimalFormat("0.00##"));
 
     /**
-     * Used to format shorted numbers, in case the output has space constraints
+     * Used to format short numbers, in case the output has space constraints
      */
     private static ThreadLocal<DecimalFormat> decimalFormatShort = ThreadLocal.withInitial(() -> {
         DecimalFormat formatter = new DecimalFormat("0.#");
         formatter.setMaximumIntegerDigits(3);
         formatter.setMaximumFractionDigits(1);
+        return formatter;
+    });
+
+    /**
+     * Used to format decimals with 2 fraction digits
+     */
+    private static ThreadLocal<DecimalFormat> decimalFormatSeconds = ThreadLocal.withInitial(() -> {
+        DecimalFormat formatter = new DecimalFormat("0.##");
+        formatter.setMaximumFractionDigits(2);
         return formatter;
     });
 
@@ -123,6 +132,20 @@ public final class FormatUtils {
         }
 
         return result.toString();
+    }
+
+    /**
+     * Formats numbers to either seconds or milliseconds, appending the appropriate suffix
+     */
+    public static String formatMillisOrSeconds(Number value) {
+        // if value represents millis
+        if (value.doubleValue() < 1000) {
+            return decimalFormatSeconds.get().format(value) + "ms";
+
+        // otherwise divide by 1000 and return seconds
+        } else {
+            return decimalFormatSeconds.get().format(value.doubleValue()/1000) + "s";
+        }
     }
 
     /**

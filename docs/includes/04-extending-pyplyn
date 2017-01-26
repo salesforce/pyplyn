@@ -7,7 +7,7 @@
 <p>It is much cleaner to add a static dependency on the project and add your new features as pyplyn modules.
 This ensures you can keep updating to the latest pyplyn version, without having to go through the hassle of integrating your changes every time.</p>
 
-<p>It is also the easiest way to develop new features, without having to navigate through all of Pyplyn&rsquo;s existing code and modules. Don&rsquo;t worry; you can still <a href="CONTRIBUTE.md">contribute</a> your changes back into the project after they&rsquo;re sufficiently tested!</p>
+<p>It is also the easiest way to develop new features, without having to navigate through all of Pyplyn&rsquo;s existing code and modules. Don&rsquo;t worry; you can still <a href="#contributing-to-pyplyn">contribute</a> your changes back into the project after they&rsquo;re sufficiently tested!</p>
 
 <p>The modular nature of Pyplyn is supported by Guice&rsquo;s <a href="https://github.com/google/guice/wiki/Multibindings">Multibindings</a> extension.</p>
 

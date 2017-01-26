@@ -66,34 +66,26 @@ public class ConfigurationWrapper implements Serializable {
     /**
      * Determine if configuration should be run
      *
-     * @param offsetMillis If specified (larger than zero), it will allow configurations to be processed
-     *                     earlier, and will decrease the chance they are delayed until the full list is processed
-     *                     If left equal to 0, it might cause configurations to be picked up after a full list is
-     *                     finished.
      * @return true if configuration should be processed in the current cycle
      */
-    public boolean shouldRun(long offsetMillis) {
-        // negative offsets are not supported and hence not considered
-        if (offsetMillis < 0) {
-            return nextRun() <= System.currentTimeMillis();
-
-            // determine if the config should run
-        } else {
-            return nextRun() - offsetMillis <= System.currentTimeMillis();
-        }
+    public boolean shouldRun() {
+        return nextRun(0) <= System.currentTimeMillis();
     }
 
     /**
+     * @param offsetMillis If specified, will influence the {@link Configuration}'s next run time;
+     *                     we need to use this mechanism to offset the processing delay
+     *                     (how long it takes to run ETL on the current configuration)
      * @return the timestamp in milliseconds at which this configuration should be run
      */
-    public long nextRun() {
+    public long nextRun(long offsetMillis) {
         // if this configuration was never run, execute it straight away
         if (isNull(lastRun)) {
             return System.currentTimeMillis();
         }
 
         // run after the interval has passed
-        return lastRun + configuration.repeatIntervalMillis();
+        return lastRun + configuration.repeatIntervalMillis() - offsetMillis;
     }
 
     /**
@@ -118,13 +110,6 @@ public class ConfigurationWrapper implements Serializable {
     }
 
     /**
-     * @return the number of milliseconds this configuration should be run after; if negative, returns 0 (run right now)
-     */
-    public long nextRunInMilliseconds() {
-        return Math.max(nextRun() - System.currentTimeMillis(), 0);
-    }
-
-    /**
      * Delegates equality to {@link Configuration#equals(Object)}
      */
     @Override
@@ -144,15 +129,5 @@ public class ConfigurationWrapper implements Serializable {
     @Override
     public int hashCode() {
         return configuration.hashCode();
-    }
-
-    /**
-     * Allows sorting configurations in their next run proximity order
-     */
-    public static class NextRunComparator implements Comparator<ConfigurationWrapper>, Serializable {
-        @Override
-        public int compare(ConfigurationWrapper o1, ConfigurationWrapper o2) {
-            return Long.compare(o1.nextRun(), o2.nextRun());
-        }
     }
 }

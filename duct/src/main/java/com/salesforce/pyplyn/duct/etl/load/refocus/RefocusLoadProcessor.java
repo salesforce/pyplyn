@@ -8,6 +8,7 @@
 
 package com.salesforce.pyplyn.duct.etl.load.refocus;
 
+import com.codahale.metrics.Timer;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.salesforce.pyplyn.client.AuthenticatedEndpointProvider;
@@ -135,7 +136,7 @@ public class RefocusLoadProcessor extends AbstractMeteredLoadProcessor<Refocus> 
                     }
 
                     // send expressions to Refocus endpoint
-                    try {
+                    try (Timer.Context context = systemStatus.timer(meterName(), "upsert-samples-bulk." + endpointId).time()) {
                         return client.upsertSamplesBulk(allSamplesForEndpoint);
 
                     // return failure

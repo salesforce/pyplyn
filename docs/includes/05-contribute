@@ -5,7 +5,7 @@
 <p>We are open to any contributions (code, artwork, documentation, etc.) as long as it respects our <a href="#licensing-requirements">licensing requirements</a>.</p>
 
 <p><strong>All contributors are required to sign the Salesforce Contributor&rsquo;s License Agreement.</strong> 
-Please <a href="docs/SFDC_CLA.pdf">print this file</a>, sign and scan it, and send it to <a href="mailto:osscore@salesforce.com">osscore@salesforce.com</a>.</p>
+Please <a href="SFDC_CLA.pdf">print this file</a>, sign and scan it, and send it to <a href="mailto:osscore@salesforce.com">osscore@salesforce.com</a>.</p>
 
 <p>Please see the <a href="https://github.com/salesforce/pyplyn/blob/master/CONTRIBUTE.md">CONTRIBUTE.MD</a> page, which explains the contribution process in detail.</p>
 
@@ -22,3 +22,7 @@ Please <a href="docs/SFDC_CLA.pdf">print this file</a>, sign and scan it, and se
 <li>ISC</li>
 <li>MPL</li>
 </ul>
+
+<p><br/>
+<br/>
+<br/></p>

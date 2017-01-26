@@ -121,6 +121,8 @@ mkdir ~/pyplyn-config/configurations
 <aside class="notice">You don&rsquo;t need to define all four connectors from our example.  If you want to write a configuration that extracts data from Refocus, transforms it and then pushes it back, only need to define a single Refocus connector section, depending on the method you are using for authenticating.
 </aside>
 
+<aside class="warn">You need to use the MIME base64-variant when encoding your passwords (padding character &rsquo;=&rsquo;) !</aside>
+
 <p>Read more about <a href="https://salesforce.github.io/refocus/docs/10-security.html">Refocus&rsquo; security options</a> and choose either user/password or token-based authentication. If you&rsquo;re using the token-based auth, the correct way to specify it in <em>connectors.json</em> is to pass <em>username</em> as <strong><em>null</em></strong> and <em>password</em> as the <a href="https://www.base64encode.org/">BASE64 encoded</a> value of the token string obtained from the <em>&hellip;/tokens/new</em> endpoint of Refocus.</p>
 
 <h2 id="configure-the-app">Configure the app</h2>

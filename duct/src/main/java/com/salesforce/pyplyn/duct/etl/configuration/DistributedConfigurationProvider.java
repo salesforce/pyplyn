@@ -46,6 +46,8 @@ public class DistributedConfigurationProvider extends SinglePartitionConfigurati
     public void run() {
         if (cluster.isMaster()) {
             updateConfigurations();
+        } else {
+            logger.info("Skipping configuration update on this node (not master)");
         }
     }
 
