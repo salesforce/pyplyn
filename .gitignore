@@ -27,3 +27,6 @@ target/
 test-output/
 node_modules/
 .orig
+
+# Maven
+release.properties

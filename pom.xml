@@ -127,6 +127,7 @@
                     <localCheckout>true</localCheckout>
                     <pushChanges>false</pushChanges>
                     <tagNameFormat>v@{project.version}</tagNameFormat>
+                    <waitBeforeTagging>5</waitBeforeTagging>
                     <arguments>-B</arguments>
                 </configuration>
             </plugin>
@@ -419,4 +420,16 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
+
+    <!-- Maven release settings: create a profile in settings.xml to provide the required values -->
+    <scm>
+        <developerConnection>${release.developerConnection}</developerConnection>
+        <tag>HEAD</tag>
+    </scm>    
+    <distributionManagement>
+        <repository>
+            <id>${release.repo.id}</id>
+            <url>${release.repo.url}</url>
+        </repository>
+    </distributionManagement>
 </project>
