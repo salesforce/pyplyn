@@ -36,7 +36,8 @@ public class AuthRequest {
      * @param password
      */
     @JsonCreator
-    public AuthRequest(String username, byte[] password) {
+    public AuthRequest(@JsonProperty("username") String username,
+                       @JsonProperty("password") byte[] password) {
         this.username = username;
         this.password = CollectionUtils.nullableArrayCopy(password);
     }

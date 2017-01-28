@@ -35,7 +35,8 @@ public class AuthRequest {
      * <p/>The password is kept as a byte array to make it harder to extract from a heap dump (byte arrays can be nulled-out)
      */
     @JsonCreator
-    public AuthRequest(String username, byte[] password) {
+    public AuthRequest(@JsonProperty("username") String username,
+                       @JsonProperty("password") byte[] password) {
         this.username = username;
         this.password = nullableArrayCopy(password);
     }
