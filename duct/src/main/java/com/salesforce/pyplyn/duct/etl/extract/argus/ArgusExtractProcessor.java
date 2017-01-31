@@ -131,8 +131,15 @@ public class ArgusExtractProcessor extends AbstractMeteredExtractProcessor<Argus
                             try (Timer.Context context = systemStatus.timer(meterName(), "get-metrics." + endpointId).time()) {
                                 metricResponses = client.getMetrics(expressions);
                             }
-                            succeeded();
 
+                            // determine if the retrieval failed; stop here if that's the case
+                            if (isNull(metricResponses)) {
+                                failed();
+                                return null;
+                            }
+
+                            // mark succesful operation and continue processing
+                            succeeded();
 
                             // cache expressions that should be cached, based on their cacheMillis() settings mapped in canCache
                             metricResponses.stream()

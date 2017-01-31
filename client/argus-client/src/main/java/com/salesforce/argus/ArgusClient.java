@@ -87,13 +87,13 @@ public class ArgusClient extends AbstractRemoteClient<ArgusService> {
     /**
      * Retrieve metrics for a list of expressions
      *
-     * @param expressions The list of expressions to retrieve
+     * @param expressions the list of expressions to retrieve
      * @throws IllegalArgumentException if null expressions were passed
-     * @return The list of metric responses or an empty list if errors occurred.
+     * @return the list of metric responses or null if an error during the API call occurred
      */
     public List<MetricResponse> getMetrics(List<String> expressions) throws UnauthorizedException {
         Preconditions.checkNotNull(expressions, "Expressions should not be null");
-        return executeAndRetrieveBody(svc().getMetrics(cookie, expressions), Collections.emptyList());
+        return executeAndRetrieveBody(svc().getMetrics(cookie, expressions), null);
     }
 
     /**
