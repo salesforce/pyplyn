@@ -39,11 +39,9 @@ import static java.util.Objects.nonNull;
  */
 @Singleton
 public class RemoteClientFactory<T extends Cacheable> implements ClientFactory<T> {
-    private static final long CACHE_CLIENT_OBJECT_MS = 3600000; // 1h
-
     private AppConnector appConnector;
     private final Class<T> clientClass;
-    private final Cache<T> initializedClients = new ConcurrentCacheMap<>();
+    private final Map<String, T> initializedClients = new ConcurrentHashMap<>();
 
     /**
      * This map is used to provide per-endpoint locks, to ensure only one client object is constructed per endpointId
@@ -72,21 +70,20 @@ public class RemoteClientFactory<T extends Cacheable> implements ClientFactory<T
      */
     private T getClientCacheHolder(String endpointId) {
         // check if we already have a client
-        T client = initializedClients.isCached(endpointId);
+        T client = initializedClients.get(endpointId);
 
         if (isNull(client)) {
             // do not allow multiple threads to initialize the same client for the same endpointId
-            ReentrantLock lock;
-            lock = getLock(endpointId);
+            ReentrantLock lock = getLock(endpointId);
             lock.lock();
 
             try {
                 // after the lock is obtained, try loading the client again
                 //   as another locking thread might have already initialized it
-                client = initializedClients.isCached(endpointId);
+                client = initializedClients.get(endpointId);
 
                 // initialize the client, if required
-                if (isNull(client )) {
+                if (isNull(client)) {
                     client = initializeClient(endpointId);
                 }
             } finally {
@@ -132,7 +129,7 @@ public class RemoteClientFactory<T extends Cacheable> implements ClientFactory<T
             T client = constructor.newInstance(appConnector.get(endpointId));
 
             // caches the object if successful
-            initializedClients.cache(client, CACHE_CLIENT_OBJECT_MS);
+            initializedClients.put(client.cacheKey(), client);
 
             return client;
 
