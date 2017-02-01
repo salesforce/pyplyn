@@ -75,7 +75,7 @@ git config --global rebase.autoStash true  # optional
 We require your commits to be signed (for security purposes).
 
 
-1. [Generate a new GPG key](https://help.github.com/articles/generating-a-new-gpg-key/)
+1\. [Generate a new GPG key](https://help.github.com/articles/generating-a-new-gpg-key/)
 
 **Note:** you might need to install gpg if you're using Mac OS:
 
@@ -84,10 +84,10 @@ brew install gpg
 ```
 
 
-2. [Add the generated GPG key](https://help.github.com/articles/adding-a-new-gpg-key-to-your-github-account/) to your GitHub account
+2\. [Add the generated GPG key](https://help.github.com/articles/adding-a-new-gpg-key-to-your-github-account/) to your GitHub account
 
 
-3. Configure the git client on your machine
+3\. Configure the git client on your machine
 
 ```
 # Obtain the secret key's identifier 
@@ -100,12 +100,18 @@ git config --global user.signingkey GPG_USER_KEY
 git config --global commit.gpgSign true
 ```
 
-4. After you've configured GPG signing and made your first commit, you can check that your commit was signed, with:
+4\. After you've configured GPG signing and made your first commit, you can check that your commit was signed, with:
 
 ```
 git show HEAD --show-signature
 # or
 git log --show-signature
+```
+
+**Note**: If you find that you can't sign & commit, add the following to your *.profile* or *.bashrc* files
+
+```
+export GPG_TTY=$(tty)
 ```
 
 
