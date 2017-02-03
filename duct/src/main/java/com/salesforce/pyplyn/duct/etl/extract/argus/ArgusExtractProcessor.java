@@ -8,7 +8,6 @@
 
 package com.salesforce.pyplyn.duct.etl.extract.argus;
 
-import com.codahale.metrics.*;
 import com.codahale.metrics.Timer;
 import com.google.common.collect.Iterables;
 import com.google.inject.Inject;

@@ -8,7 +8,6 @@
 
 package com.salesforce.pyplyn.duct.etl.transform.infostatus;
 
-import com.salesforce.pyplyn.duct.etl.transform.savemetricmetadata.SaveMetricMetadata;
 import com.salesforce.pyplyn.model.Transform;
 import com.salesforce.pyplyn.model.TransformationResult;
 import com.salesforce.pyplyn.model.builder.TransformationResultBuilder;
