@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -56,11 +57,13 @@ public class ConfigurationIntake {
             return Collections.emptyList();
         }
 
-        return StreamSupport.stream(Files.newDirectoryStream(Paths.get(dir)).spliterator(), true)
-                .filter(ConfigurationIntake::isJsonFile)
-                .map(Path::toAbsolutePath)
-                .map(Path::toString)
-                .collect(Collectors.toList());
+        try (DirectoryStream<Path> configurationsDirectory = Files.newDirectoryStream(Paths.get(dir))) {
+            return StreamSupport.stream(configurationsDirectory.spliterator(),true)
+                    .filter(ConfigurationIntake::isJsonFile)
+                    .map(Path::toAbsolutePath)
+                    .map(Path::toString)
+                    .collect(Collectors.toList());
+        }
     }
 
     /**

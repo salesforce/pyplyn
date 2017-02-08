@@ -135,7 +135,7 @@ public class RemoteClientFactory<T extends Cacheable> implements ClientFactory<T
 
         } catch (NoSuchMethodException | IllegalAccessException | InstantiationException | InvocationTargetException e) {
             // any of these exceptions will cause an unrecoverable exception, which is why we're wrapping it as uncaught
-            throw new ClientFactoryException("Unexpected error constructing a client", e);
+            throw new ClientFactoryException("Unexpected error constructing a client for " + endpointId, e);
         }
     }
 }

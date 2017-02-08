@@ -13,6 +13,8 @@ import com.google.inject.Provider;
 import com.salesforce.pyplyn.configuration.AbstractConnector;
 import com.salesforce.pyplyn.duct.appconfig.AppConfig;
 import com.salesforce.pyplyn.util.SerializationHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -29,6 +31,7 @@ import static java.util.Objects.isNull;
  * @since 3.0
  */
 public class SimpleConnectorProvider implements Provider<List<AbstractConnector>> {
+    private static final Logger logger = LoggerFactory.getLogger(SimpleConnectorProvider.class);
     private final List<AbstractConnector> connectors;
 
     @Inject
@@ -36,6 +39,7 @@ public class SimpleConnectorProvider implements Provider<List<AbstractConnector>
         // if the connectors path is undefined, stop here
         String connectorPath = appConfig.global().connectorsPath();
         if (isNull(connectorPath)) {
+            logger.warn("Ensure AppConfig.global.connectorsPath is specified! Pyplyn will not work without connectors...");
             this.connectors = Collections.emptyList();
             return;
         }
