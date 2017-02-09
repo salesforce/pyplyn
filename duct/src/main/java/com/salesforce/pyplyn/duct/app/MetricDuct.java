@@ -21,7 +21,6 @@ import com.salesforce.pyplyn.model.TransformationResult;
 import com.salesforce.pyplyn.processor.ExtractProcessor;
 import com.salesforce.pyplyn.processor.LoadProcessor;
 import com.salesforce.pyplyn.status.SystemStatus;
-import com.salesforce.pyplyn.util.FormatUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,7 +28,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
@@ -60,7 +58,7 @@ public class MetricDuct implements Runnable {
     /**
      * Configuration set provider, that implements the logic for running configurations to their specified params
      */
-    private UpdatableConfigurationSetProvider<ConfigurationWrapper> configurationProvider;
+    private UpdatableConfigurationSetProvider<ConfigurationWrapper> configurationSetProvider;
 
     private final SystemStatus systemStatus;
     /**
@@ -97,7 +95,7 @@ public class MetricDuct implements Runnable {
      * @return this object (fluent interface implementation)
      */
     MetricDuct setConfigurationProvider(UpdatableConfigurationSetProvider<ConfigurationWrapper> configurationProvider) {
-        this.configurationProvider = configurationProvider;
+        this.configurationSetProvider = configurationProvider;
         return this;
     }
 
@@ -118,8 +116,8 @@ public class MetricDuct implements Runnable {
 
                 // time how long it takes to process the ETL cycle
                 try (Timer.Context context = systemStatus.timer(this.getClass().getSimpleName(), "etl-cycle").time()) {
-                    // process all isEnabled configurationProvider
-                    nextRunTime = configurationProvider.get().parallelStream()
+                    // process all enabled configurations
+                    nextRunTime = configurationSetProvider.get().parallelStream()
                             .filter(configuration -> !shutdownHook.isShutdown()) // do not initialize stream if app is shutdown
                             .filter(ConfigurationWrapper::isEnabled)             // only process enabled configurations
                             .filter(ConfigurationWrapper::shouldRun)             // only process configurations that are scheduled
