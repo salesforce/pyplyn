@@ -8,20 +8,27 @@
 
 package com.salesforce.argus;
 
-import com.google.common.base.Preconditions;
-import com.salesforce.argus.model.*;
-import com.salesforce.pyplyn.client.AbstractRemoteClient;
-import com.salesforce.pyplyn.client.UnauthorizedException;
-import com.salesforce.pyplyn.configuration.AbstractConnector;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
-import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Preconditions;
+import com.salesforce.argus.model.AlertObject;
+import com.salesforce.argus.model.AuthRequest;
+import com.salesforce.argus.model.DashboardObject;
+import com.salesforce.argus.model.MetricResponse;
+import com.salesforce.argus.model.NotificationObject;
+import com.salesforce.argus.model.TriggerObject;
+import com.salesforce.pyplyn.client.AbstractRemoteClient;
+import com.salesforce.pyplyn.client.UnauthorizedException;
+import com.salesforce.pyplyn.configuration.AbstractConnector;
 
 /**
  * Argus client implementation
@@ -123,7 +130,11 @@ public class ArgusClient extends AbstractRemoteClient<ArgusService> {
      */
     public List<AlertObject> loadAlertsByOwner(String ownerName) throws UnauthorizedException {
         Preconditions.checkNotNull(ownerName, "Owner name should not be null");
-        return executeAndRetrieveBody(svc().getAlertsByOwner(cookie, ownerName), Collections.emptyList());
+
+        // The Argus API does not currently respect just the ownername filter and returns all visible alerts so as
+        // a workaround filter it here.
+        return executeAndRetrieveBody(svc().getAlertsByOwner(cookie, ownerName), Collections.emptyList())
+                        .stream().filter(a -> ownerName.equals(a.ownerName())).collect(Collectors.toList());
     }
 
     /**
