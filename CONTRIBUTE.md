@@ -108,7 +108,19 @@ git show HEAD --show-signature
 git log --show-signature
 ```
 
-**Note**: If you find that you can't sign & commit, add the following to your *.profile* or *.bashrc* files
+**NOTE:** On *MacOS*, you might see the following error when trying to sign commits and tags with GPG:
+
+```
+You need a passphrase to unlock the secret key for
+user: "Mihai Bojin"
+2048-bit RSA key, ID ..., created ...
+
+error: gpg failed to sign the data
+fatal: failed to write commit object
+```
+
+To make it work you need to export the *$GPG_TTY* environment variable; you can add this to your *~/.profile* or *~/.bashrc* files
+ to avoid repeating this process for every new terminal window.
 
 ```
 export GPG_TTY=$(tty)
