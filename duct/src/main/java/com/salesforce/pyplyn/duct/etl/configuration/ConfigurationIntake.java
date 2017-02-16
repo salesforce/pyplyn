@@ -50,7 +50,7 @@ public class ConfigurationIntake {
      * @return List of all configuration files
      * @throws IOException on any errors when deserializing {@link Configuration}s
      */
-    List<String> listOfConfigurations(String dir) throws IOException {
+    public List<String> listOfConfigurations(String dir) throws IOException {
         // nothing to do if configuration not passed
         if (isNull(dir)) {
             logger.warn("Null configuration dir passed, returning empty configuration list");
@@ -83,7 +83,7 @@ public class ConfigurationIntake {
      * @param configurations List of configuration files
      * @return
      */
-    Set<Configuration> parseAll(List<String> configurations) {
+    public Set<Configuration> parseAll(List<String> configurations) {
         return configurations.stream().map(this::parseConfigurationFile).flatMap(Collection::stream).collect(Collectors.toSet());
     }
 
@@ -108,7 +108,7 @@ public class ConfigurationIntake {
     /**
      * Make note of any errors, as we require them later for debugging purposes
      */
-    void addError(Throwable cause) {
+    private void addError(Throwable cause) {
         errors.add(cause);
     }
 
@@ -116,7 +116,7 @@ public class ConfigurationIntake {
      * Create a new {@link BootstrapException} object, referencing any exceptions
      * @throws BootstrapException if any errors were logged during deserialization
      */
-    void throwRuntimeExceptionOnErrors() {
+    public void throwRuntimeExceptionOnErrors() {
         // if we have errors
         if (!errors.isEmpty()) {
             // get first cause
