@@ -43,28 +43,28 @@ public class Argus implements Extract, Serializable {
     /**
      * Endpoint where the expression should be executed on
      */
-    String endpoint() {
+    public String endpoint() {
         return endpoint;
     }
 
     /**
      * Expression to load metrics for
      */
-    String expression() {
+    public String expression() {
         return expression;
     }
 
     /**
      * Name of expression
      */
-    String name() {
+    public String name() {
         return name;
     }
 
     /**
      * How long to cache this expression's results
      */
-    int cacheMillis() {
+    public int cacheMillis() {
         return Optional.ofNullable(cacheMillis).orElse(0);
     }
 
@@ -73,7 +73,7 @@ public class Argus implements Extract, Serializable {
      *   having this parameter specified causes the processor to generate one datapoint
      *   with this value and the current time (at the time of execution)
      */
-    Double defaultValue() {
+    public Double defaultValue() {
         return defaultValue;
     }
 
@@ -82,7 +82,7 @@ public class Argus implements Extract, Serializable {
      *
      * @return
      */
-    final String cacheKey() {
+    public final String cacheKey() {
         return cacheKeyFor(endpoint(), name());
     }
 

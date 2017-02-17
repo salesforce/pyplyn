@@ -98,6 +98,7 @@ public class ArgusExtractProcessor extends AbstractMeteredExtractProcessor<Argus
 
                         // stop here if we cannot initialize an endpoint for this client
                         if (isNull(client)) {
+                            failed();
                             return null;
                         }
 

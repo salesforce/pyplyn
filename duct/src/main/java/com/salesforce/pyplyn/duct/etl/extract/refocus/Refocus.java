@@ -42,28 +42,28 @@ public class Refocus implements Extract, Serializable {
     /**
      * Endpoint where the expression should be executed on
      */
-    String endpoint() {
+    public String endpoint() {
         return endpoint;
     }
 
     /**
      * Subject to load data for
      */
-    String subject() {
+    public String subject() {
         return subject;
     }
 
     /**
      * Aspect to load
      */
-    String aspect() {
+    public String aspect() {
         return aspect;
     }
 
     /**
      * How long to cache this expression's results
      */
-    int cacheMillis() {
+    public int cacheMillis() {
         return Optional.ofNullable(cacheMillis).orElse(0);
     }
 
@@ -72,7 +72,7 @@ public class Refocus implements Extract, Serializable {
      *   having this parameter specified causes the processor to generate one datapoint
      *   with this value and the current time (at the time of execution)
      */
-    Double defaultValue() {
+    public Double defaultValue() {
         return defaultValue;
     }
 
@@ -87,7 +87,7 @@ public class Refocus implements Extract, Serializable {
     /**
      * @return the cache key for this object
      */
-    final String cacheKey() {
+    public final String cacheKey() {
         return cacheKeyFor(endpoint(), name());
     }
 

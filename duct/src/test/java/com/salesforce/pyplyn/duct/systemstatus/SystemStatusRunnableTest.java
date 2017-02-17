@@ -22,7 +22,6 @@ import org.testng.annotations.Test;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.salesforce.pyplyn.duct.app.AppBootstrapFixtures.LOAD_PROCESSOR_TIMER_NAME;
 import static org.hamcrest.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.atLeastOnce;
@@ -32,7 +31,7 @@ import static org.mockito.Mockito.verify;
  * Test class
  *
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
- * @since ${project.version}
+ * @since 5.0
  */
 public class SystemStatusRunnableTest {
     AppBootstrapFixtures fixtures;
@@ -52,27 +51,26 @@ public class SystemStatusRunnableTest {
     @Test
     public void testRun() throws Exception {
         // ARRANGE
-        // config params
+        // app-config params
         fixtures.appConfigMocks()
                 .enableAlerts()
                 .runOnce()
 
-                // we don't want the LoadSuccess meter to fail, since the rate would be too low for only one invocation
-                .checkMeter(LOAD_PROCESSOR_TIMER_NAME + "LoadSuccessWARN", -1.0)
-                .checkMeter(LOAD_PROCESSOR_TIMER_NAME + "LoadSuccessERR", -1.0);
+                // we don't want the LoadFailure meter to fail in this test
+                .checkMeter("RefocusLoadFailureWARN", 999.0)
+                .checkMeter("RefocusLoadFailureERR", 999.0);
 
         // bootstrap
-        fixtures
-                .realSystemStatus()
-                .oneConfiguration()
-                .allProcessorsReturnAnExtractResult()
+        fixtures.realSystemStatus()
+                .oneArgusToRefocusConfiguration()
+                .returnMockedTransformationResultFromAllExtractProcessors()
                 .simulateLoadProcessingTime(100)
                 .freeze();
-
 
         // init app and schedule system status thread
         SystemStatusConsumer systemStatusConsumer = fixtures.statusConsumer();
         MetricDuct app = fixtures.app();
+
 
         // ACT
         app.run();
@@ -80,13 +78,14 @@ public class SystemStatusRunnableTest {
         // process system status checks
         fixtures.systemStatus().run();
 
+
         // ASSERT
         @SuppressWarnings("unchecked")
         ArgumentCaptor<List<StatusMessage>> argumentCaptor = ArgumentCaptor.forClass(List.class);
 
         // check that meters and timers are initialized
-        verify(fixtures.systemStatus(), atLeastOnce()).meter(LOAD_PROCESSOR_TIMER_NAME, MeterType.LoadSuccess);
-        verify(fixtures.systemStatus(), atLeastOnce()).timer(LOAD_PROCESSOR_TIMER_NAME, LOAD_PROCESSOR_TIMER_NAME);
+        verify(fixtures.systemStatus(), atLeastOnce()).meter("Refocus", MeterType.LoadFailure);
+        verify(fixtures.systemStatus(), atLeastOnce()).timer("Refocus", "upsert-samples-bulk." + AppBootstrapFixtures.MOCK_CONNECTOR_NAME);
 
         // check that system status was reported to the consumers
         verify(systemStatusConsumer, atLeastOnce()).accept(argumentCaptor.capture());
@@ -99,7 +98,7 @@ public class SystemStatusRunnableTest {
         List<String> messageStrings = messages.stream().map(Object::toString).collect(Collectors.toList());
         assertThat("MetricDuct should report timing data",
                 messageStrings, hasItem(containsString(MetricDuct.class.getSimpleName())));
-        assertThat("AppBootstrapFixtures should report timing data for its mocked Load processor",
-                messageStrings, hasItem(containsString(LOAD_PROCESSOR_TIMER_NAME)));
+        assertThat("AppBootstrapFixtures should report timing data for the Refocus Load processor",
+                messageStrings, hasItem(containsString("Refocus.upsert-samples-bulk." + AppBootstrapFixtures.MOCK_CONNECTOR_NAME)));
     }
 }

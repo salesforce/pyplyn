@@ -46,12 +46,12 @@ public class ShutdownHook extends Thread {
     private final Set<Runnable> operations = new HashSet<>();
 
     /**
-     * Sets the shutdown flag to true, allowing processes that are aware of this hook to stop gracefully
+     * Calls the shutdown method and logs the event
      */
     @Override
     public void run() {
         logger.warn("Shutting down...");
-        isShutdown.set(true);
+        shutdown();
     }
 
     /**
@@ -63,6 +63,9 @@ public class ShutdownHook extends Thread {
 
         // run shutdown ops
         operations.forEach(Runnable::run);
+
+        // sets the shutdown flag to true, to allow processes to stop gracefully
+        isShutdown.set(true);
     }
 
     /**
@@ -78,7 +81,7 @@ public class ShutdownHook extends Thread {
      * Registers a thread to be run when the system is shutting down
      * <p/>
      * Caution: these should be small operations that signal a shutdown; avoid doing large amounts of work,
-     *  as they might delay the app's shut down; also, there is no guarantee that these will actually finish executing
+     *  as they might delay the app's shut down; also, there are no guarantees that these will actually finish executing
      */
     public void registerOperation(Runnable runnable) {
         operations.add(runnable);
@@ -93,17 +96,5 @@ public class ShutdownHook extends Thread {
      */
     public boolean isShutdown() {
         return isShutdown.get();
-    }
-
-    /**
-     * This implementation always responds with app is running
-     * <p/>
-     * <p/>It is a default implementation to avoid having to check for nulls in classes that expect a ShutdownHook object
-     */
-    public static class NoOp extends ShutdownHook {
-        @Override
-        public boolean isShutdown() {
-            return false;
-        }
     }
 }

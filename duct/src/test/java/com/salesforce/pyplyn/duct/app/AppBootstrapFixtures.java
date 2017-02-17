@@ -8,6 +8,7 @@
 
 package com.salesforce.pyplyn.duct.app;
 
+import com.codahale.metrics.Meter;
 import com.codahale.metrics.Timer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.AbstractModule;
@@ -15,6 +16,9 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.TypeLiteral;
 import com.salesforce.argus.ArgusClient;
+import com.salesforce.argus.model.MetricResponse;
+import com.salesforce.pyplyn.cache.CacheFactory;
+import com.salesforce.pyplyn.cache.ConcurrentCacheMap;
 import com.salesforce.pyplyn.configuration.AbstractConnector;
 import com.salesforce.pyplyn.configuration.Configuration;
 import com.salesforce.pyplyn.configuration.UpdatableConfigurationSetProvider;
@@ -38,15 +42,16 @@ import com.salesforce.pyplyn.duct.providers.client.RemoteClientFactory;
 import com.salesforce.pyplyn.duct.providers.jackson.ObjectMapperProvider;
 import com.salesforce.pyplyn.duct.systemstatus.ConsoleOutputConsumer;
 import com.salesforce.pyplyn.duct.systemstatus.SystemStatusRunnable;
+import com.salesforce.pyplyn.model.ETLMetadata;
 import com.salesforce.pyplyn.model.Transform;
 import com.salesforce.pyplyn.model.TransformationResult;
-import com.salesforce.pyplyn.status.MeterType;
 import com.salesforce.pyplyn.status.SystemStatus;
 import com.salesforce.pyplyn.status.SystemStatusConsumer;
 import com.salesforce.pyplyn.util.MultibinderFactory;
 import com.salesforce.pyplyn.util.ObjectMapperWrapper;
 import com.salesforce.pyplyn.util.SerializationHelper;
 import com.salesforce.refocus.RefocusClient;
+import com.salesforce.refocus.model.Sample;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.slf4j.Logger;
@@ -67,7 +72,7 @@ import static org.mockito.Mockito.*;
  */
 public class AppBootstrapFixtures {
     private static final Logger logger = LoggerFactory.getLogger(AppBootstrapFixtures.class);
-    public static final String LOAD_PROCESSOR_TIMER_NAME = "LoadProcessor";
+    public static final String MOCK_CONNECTOR_NAME = "mock-connector";
 
     AppConfigMocks appConfigMocks;
 
@@ -80,10 +85,22 @@ public class AppBootstrapFixtures {
     SystemStatusRunnable systemStatus;
 
     @Mock
+    Meter systemStatusMeter;
+
+    @Mock
+    Timer systemStatusTimer;
+
+    @Mock
     RemoteClientFactory<ArgusClient> argusClientFactory;
 
     @Mock
+    ArgusClient argusClient;
+
+    @Mock
     RemoteClientFactory<RefocusClient> refocusClientFactory;
+
+    @Mock
+    RefocusClient refocusClient;
 
     @Mock
     SystemStatusConsumer statusConsumer;
@@ -95,7 +112,19 @@ public class AppBootstrapFixtures {
     RefocusExtractProcessor refocusExtractProcessor;
 
     @Mock
+    CacheFactory cacheFactory;
+
+    @Mock
+    ConcurrentCacheMap<MetricResponse> metricResponseCache;
+
+    @Mock
+    ConcurrentCacheMap<Sample> sampleCache;
+
+    @Mock
     TransformationResult transformationResult;
+
+    @Mock
+    ETLMetadata transformationResultMetadata;
 
     @Mock
     RefocusLoadProcessor refocusLoadProcessor;
@@ -104,17 +133,39 @@ public class AppBootstrapFixtures {
     ConfigurationProvider configurationProvider;
 
     @Mock
+    ShutdownHook shutdownHook;
+
+    @Mock
     private UpdatableConfigurationSetProvider<ConfigurationWrapper> configurationSetProvider;
 
     private Injector injector;
     private MetricDuct app;
 
 
+    /**
+     * Initializes the fixtures and default
+     */
     public AppBootstrapFixtures() {
         MockitoAnnotations.initMocks(this);
 
         // init other mocks and fixtures
         appConfigMocks = new AppConfigMocks();
+
+        // System status delegates
+        doReturn(systemStatusMeter).when(systemStatus).meter(any(), any());
+        doReturn(systemStatusTimer).when(systemStatus).timer(any(), any());
+
+        // Remote clients
+        doReturn(refocusClient).when(refocusClientFactory).getClient(any());
+        doReturn(argusClient).when(argusClientFactory).getClient(any());
+
+        // Transformation results
+        doReturn(transformationResultMetadata).when(transformationResult).metadata();
+        doReturn(1L).when(transformationResult).value();
+
+        // Cache
+        doReturn(metricResponseCache).when(cacheFactory).newCache();
+        doReturn(sampleCache).when(cacheFactory).newCache();
     }
 
 
@@ -123,8 +174,16 @@ public class AppBootstrapFixtures {
      * <p/> From this point forward, any call to any of the fixture's methods will have no effect, unless freeze is called again
      */
     public AppBootstrapFixtures freeze() {
+        // init latches
+        AppBootstrapLatches.init();
+
+        // creates the injector and the MetricDuct app object
         injector = Guice.createInjector(new MockedDependenciesModule());
-        app = injector.getInstance(MetricDuct.class).setConfigurationProvider(configurationSetProvider);
+        app = spy(injector.getInstance(MetricDuct.class).setConfigurationProvider(configurationSetProvider));
+
+        // initializes MetricDuct latches and other fixtures
+        initAppFixtures();
+
         return this;
     }
 
@@ -132,14 +191,21 @@ public class AppBootstrapFixtures {
     /**
      *  Mock logic
      */
-    public AppBootstrapFixtures oneConfiguration() {
-        doReturn(new HashSet<>(Collections.singleton(new ConfigurationMocks().getWrapper(null))))
+    public AppBootstrapFixtures oneArgusToRefocusConfiguration() {
+        doReturn(new HashSet<>(Collections.singleton(new ConfigurationMocks().argusExtract().buildWrapper(null))))
                 .when(configurationSetProvider)
                 .get();
         return this;
     }
 
-    public AppBootstrapFixtures allProcessorsReturnAnExtractResult() {
+    public AppBootstrapFixtures oneRefocusToRefocusConfiguration() {
+        doReturn(new HashSet<>(Collections.singleton(new ConfigurationMocks().refocusExtract().buildWrapper(null))))
+                .when(configurationSetProvider)
+                .get();
+        return this;
+    }
+
+    public AppBootstrapFixtures returnMockedTransformationResultFromAllExtractProcessors() {
         doReturn(Collections.singletonList(Collections.singletonList(transformationResult))).when(argusExtractProcessor).process(any());
         doAnswer(invocation -> filter(invocation.getArguments(), Argus.class)).when(argusExtractProcessor).filter(any());
         doCallRealMethod().when(argusExtractProcessor).execute(any());
@@ -151,22 +217,62 @@ public class AppBootstrapFixtures {
         return this;
     }
 
-    public AppBootstrapFixtures simulateLoadProcessingTime(final long duration) {
-        doAnswer(invocation -> filter(invocation.getArguments(), com.salesforce.pyplyn.duct.etl.load.refocus.Refocus.class)).when(refocusLoadProcessor).filter(any());
-        doAnswer(invocation -> {
-            try (Timer.Context timer = systemStatus.timer(LOAD_PROCESSOR_TIMER_NAME, LOAD_PROCESSOR_TIMER_NAME).time()) {
-                logger.info("Sleeping for {}ms before exiting LoadProcessor.process", duration);
-                sleepForMs(duration);
-                systemStatus.meter(LOAD_PROCESSOR_TIMER_NAME, MeterType.LoadSuccess).mark();
-            }
-            return Collections.singletonList(Boolean.TRUE);
+    public AppBootstrapFixtures callRealArgusExtractProcessor() {
+        // we need to reinitialize the object to provide access to the real failed/succeeded (protected) methods
+        argusExtractProcessor = spy(new ArgusExtractProcessor(argusClientFactory, cacheFactory, shutdownHook));
 
-        }).when(refocusLoadProcessor).process(any(), any());
-        doCallRealMethod().when(refocusLoadProcessor).execute(any(), any());
+        // we are replacing the default filtering logic, since the passed object will be a mock
+        doAnswer(invocation -> {
+            AppBootstrapLatches.beforeExtractProcessorStarts().countDown();
+            return filter(invocation.getArguments(), Argus.class);
+        }).when(argusExtractProcessor).filter(any());
 
         return this;
     }
 
+    public AppBootstrapFixtures callRealRefocusExtractProcessor() {
+        // we need to reinitialize the object to provide access to the real failed/succeeded (protected) methods
+        refocusExtractProcessor = spy(new RefocusExtractProcessor(refocusClientFactory, cacheFactory, shutdownHook));
+
+        // we are replacing the default filtering logic, since the passed object will be a mock
+        doAnswer(invocation -> {
+            AppBootstrapLatches.beforeExtractProcessorStarts().countDown();
+            return filter(invocation.getArguments(), Refocus.class);
+        }).when(refocusExtractProcessor).filter(any());
+
+        return this;
+    }
+
+    public AppBootstrapFixtures simulateLoadProcessingTime(final long duration) {
+        // we need to reinitialize the object to provide access to the real failed/succeeded (protected) methods
+        refocusLoadProcessor = spy(new RefocusLoadProcessor(refocusClientFactory, shutdownHook));
+
+        // we are replacing the default filtering logic, since the passed object will be a mock
+        doAnswer(invocation -> filter(invocation.getArguments(), com.salesforce.pyplyn.duct.etl.load.refocus.Refocus.class)).when(refocusLoadProcessor).filter(any());
+
+        doAnswer(invocation -> {
+            AppBootstrapLatches.beforeLoadProcessorStarts().countDown();
+            sleepForMs(duration);
+            return invocation.callRealMethod();
+
+        }).when(refocusLoadProcessor).process(any(), any());
+
+        return this;
+    }
+
+    /**
+     * Initializes any fixtures that need to be applied on the {@link MetricDuct} app spy
+      */
+    private void initAppFixtures() {
+        /**
+         * Counts down the app shutdown latch after {@link MetricDuct#run()} finishes executing
+         */
+        doAnswer(invocation -> {
+            invocation.callRealMethod();
+            AppBootstrapLatches.appHasShutdown().countDown();
+            return null;
+        }).when(app).run();
+    }
 
 
     /**
@@ -184,6 +290,11 @@ public class AppBootstrapFixtures {
 
     public AppBootstrapFixtures realSystemStatus() {
         systemStatus = spy(new SystemStatusRunnable(appConfigMocks.get()));
+        return this;
+    }
+
+    public AppBootstrapFixtures realShutdownHook() {
+        shutdownHook = spy(new ShutdownHook());
         return this;
     }
 
@@ -213,9 +324,15 @@ public class AppBootstrapFixtures {
         return statusConsumer;
     }
 
-    /**
-     * Utility methods
-     */
+    public ShutdownHook shutdownHook() {
+        return shutdownHook;
+    }
+
+
+
+    //
+    // Utility methods
+    //
 
     /**
      * Sleeps for the specified duration and ignores any interrupts, guaranteeing the specified time has passed
@@ -242,6 +359,9 @@ public class AppBootstrapFixtures {
      *   since we are mocking the models, which then will then in turn not match the "obj instanceof ModelClass" test
      */
     private <T, S> List<T> filter(S[] objects, final Class<T> cls) {
+        // signal that we are extracting
+        AppBootstrapLatches.isProcessingExtractDatasources().countDown();
+
         return Arrays.stream(objects)
                 .filter(cls::isInstance)
                 .map(cls::cast)
@@ -271,6 +391,9 @@ public class AppBootstrapFixtures {
             bind(SystemStatus.class).toInstance(systemStatus);
             MultibinderFactory.statusConsumers(binder()).addBinding().toInstance(new ConsoleOutputConsumer());
             MultibinderFactory.statusConsumers(binder()).addBinding().toInstance(statusConsumer);
+
+            // Shutdown Hook
+            bind(ShutdownHook.class).toInstance(shutdownHook);
 
             // ArgusClient
             bind(new TypeLiteral<Class<ArgusClient>>() {}).toInstance(ArgusClient.class);
@@ -305,6 +428,9 @@ public class AppBootstrapFixtures {
     }
 
 
+    /**
+     * Mocks general behavior defined by AppConfig
+     */
     public class AppConfigMocks {
         @Mock AppConfig appConfig;
 
@@ -319,7 +445,7 @@ public class AppBootstrapFixtures {
 
         Map<String, Double> thresholds = new HashMap<>();
 
-        public AppConfigMocks() {
+        AppConfigMocks() {
             MockitoAnnotations.initMocks(this);
             doReturn(global).when(appConfig).global();
             doReturn(alert).when(appConfig).alert();
@@ -357,6 +483,9 @@ public class AppBootstrapFixtures {
     }
 
 
+    /**
+     * Mocks {@link Configuration} related behavior; allows running the ETL cycle with pre-defined configurations
+     */
     public class ConfigurationMocks {
         @Mock
         Configuration configuration;
@@ -370,15 +499,13 @@ public class AppBootstrapFixtures {
         @Mock
         com.salesforce.pyplyn.duct.etl.load.refocus.Refocus refocusLoad;
 
-        public ConfigurationMocks() {
+        ConfigurationMocks() {
             MockitoAnnotations.initMocks(this);
 
             // configure defaults
-            this
-                    .enabledConfiguration()
-                    .argusExtract()
-                    .lastDatapoint()
-                    .refocusLoad();
+            this.enabledConfiguration()
+                .lastDatapoint()
+                .refocusLoad();
         }
 
         public ConfigurationMocks enabledConfiguration() {
@@ -388,16 +515,19 @@ public class AppBootstrapFixtures {
 
         public ConfigurationMocks argusExtract() {
             doReturn(new Argus[]{argusExtract}).when(configuration).extract();
+            doReturn(MOCK_CONNECTOR_NAME).when(argusExtract).endpoint();
             return this;
         }
 
         public ConfigurationMocks refocusExtract() {
             doReturn(new Refocus[]{refocusExtract}).when(configuration).extract();
+            doReturn(MOCK_CONNECTOR_NAME).when(refocusExtract).endpoint();
             return this;
         }
 
         public ConfigurationMocks refocusLoad() {
             doReturn(new com.salesforce.pyplyn.duct.etl.load.refocus.Refocus[]{refocusLoad}).when(configuration).load();
+            doReturn(MOCK_CONNECTOR_NAME).when(refocusLoad).endpoint();
             return this;
         }
 
@@ -406,12 +536,14 @@ public class AppBootstrapFixtures {
             return this;
         }
 
-
         public Configuration get() {
             return configuration;
         }
 
-        public ConfigurationWrapper getWrapper(Long lastRun) {
+        /**
+         * Builds a {@link ConfigurationWrapper} based on the configuration fixture defined with this class' methods
+         */
+        public ConfigurationWrapper buildWrapper(Long lastRun) {
             return spy(new ConfigurationWrapper(configuration, lastRun));
         }
     }

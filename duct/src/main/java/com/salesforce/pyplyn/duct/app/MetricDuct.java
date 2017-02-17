@@ -60,7 +60,11 @@ public class MetricDuct implements Runnable {
      */
     private UpdatableConfigurationSetProvider<ConfigurationWrapper> configurationSetProvider;
 
+    /**
+     * The system status implementation used to track and report service health
+     */
     private final SystemStatus systemStatus;
+
     /**
      * All defined extract processors
      */
@@ -70,7 +74,6 @@ public class MetricDuct implements Runnable {
      * All defined load processors
      */
     private final Set<LoadProcessor<? extends Load>> loadProcessors;
-
 
     /**
      * Class constructor
@@ -111,9 +114,8 @@ public class MetricDuct implements Runnable {
             final AtomicLong transformCounter = new AtomicLong(0L);
             final AtomicLong loadCounter = new AtomicLong(0L);
 
+            Optional<Long> nextRunTime = Optional.empty();
             try {
-                Optional<Long> nextRunTime;
-
                 // time how long it takes to process the ETL cycle
                 try (Timer.Context context = systemStatus.timer(this.getClass().getSimpleName(), "etl-cycle").time()) {
                     // process all enabled configurations
@@ -167,6 +169,9 @@ public class MetricDuct implements Runnable {
                             })
 
                             .min(Long::compareTo);
+
+                } catch (RuntimeException e) {
+                    logger.error("Unexpected runtime exception", e);
                 }
 
                 // get approximate time of next run
@@ -184,9 +189,6 @@ public class MetricDuct implements Runnable {
             } catch (InterruptedException e) {
                 // exit loop if shutting down
                 break;
-
-            } catch (RuntimeException e) {
-                logger.error("Unexpected runtime exception", e);
             }
         }
     }

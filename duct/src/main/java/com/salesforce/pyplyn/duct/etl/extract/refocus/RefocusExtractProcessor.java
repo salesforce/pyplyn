@@ -88,6 +88,7 @@ public class RefocusExtractProcessor extends AbstractMeteredExtractProcessor<Ref
 
                     // stop here if we cannot find an endpoint
                     if (isNull(client)) {
+                        failed();
                         return null;
                     }
 
