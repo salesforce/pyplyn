@@ -61,7 +61,7 @@ public class AlertObjectBuilder {
 
 
     /**
-     * Builds a new AlertObject from the updated field list
+     * Builds a new {@link AlertObject} from the updated field list
      */
     public AlertObject build() {
         return new AlertObject(id, createdById, createdDate, modifiedById, modifiedDate, name, expression, cronEntry,

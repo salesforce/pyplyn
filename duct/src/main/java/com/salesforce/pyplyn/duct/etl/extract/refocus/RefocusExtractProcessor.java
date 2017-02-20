@@ -25,8 +25,6 @@ import com.salesforce.pyplyn.processor.AbstractMeteredExtractProcessor;
 import com.salesforce.refocus.RefocusClient;
 import com.salesforce.refocus.model.Sample;
 import com.salesforce.refocus.model.builder.SampleBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.text.ParseException;
 import java.time.Instant;

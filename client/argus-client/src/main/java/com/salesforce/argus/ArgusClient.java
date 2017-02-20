@@ -8,27 +8,21 @@
 
 package com.salesforce.argus;
 
-import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
+import com.google.common.base.Preconditions;
+import com.salesforce.argus.model.*;
+import com.salesforce.pyplyn.client.AbstractRemoteClient;
+import com.salesforce.pyplyn.client.UnauthorizedException;
+import com.salesforce.pyplyn.configuration.AbstractConnector;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.common.base.Preconditions;
-import com.salesforce.argus.model.AlertObject;
-import com.salesforce.argus.model.AuthRequest;
-import com.salesforce.argus.model.DashboardObject;
-import com.salesforce.argus.model.MetricResponse;
-import com.salesforce.argus.model.NotificationObject;
-import com.salesforce.argus.model.TriggerObject;
-import com.salesforce.pyplyn.client.AbstractRemoteClient;
-import com.salesforce.pyplyn.client.UnauthorizedException;
-import com.salesforce.pyplyn.configuration.AbstractConnector;
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 /**
  * Argus client implementation

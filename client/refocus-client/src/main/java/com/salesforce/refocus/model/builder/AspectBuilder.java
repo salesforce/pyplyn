@@ -13,9 +13,7 @@ import com.salesforce.refocus.model.Link;
 
 import java.util.List;
 
-import static com.salesforce.pyplyn.util.CollectionUtils.immutableListOrNull;
-import static com.salesforce.pyplyn.util.CollectionUtils.mutableListCopyOrNull;
-import static com.salesforce.pyplyn.util.CollectionUtils.nullableArrayCopy;
+import static com.salesforce.pyplyn.util.CollectionUtils.*;
 
 /**
  * Builder class for Refocus Aspect objects

@@ -15,7 +15,6 @@ import com.salesforce.pyplyn.configuration.Configuration;
 import com.salesforce.pyplyn.configuration.UpdatableConfigurationSetProvider;
 import com.salesforce.pyplyn.duct.appconfig.AppConfig;
 import com.salesforce.pyplyn.duct.appconfig.AppConfigModule;
-import com.salesforce.pyplyn.duct.cluster.Cluster;
 import com.salesforce.pyplyn.duct.connector.AppConnectorModule;
 import com.salesforce.pyplyn.duct.etl.configuration.ConfigurationModule;
 import com.salesforce.pyplyn.duct.etl.configuration.ConfigurationWrapper;

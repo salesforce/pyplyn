@@ -43,17 +43,21 @@ public class AuthRequest {
         this.password = nullableArrayCopy(password);
     }
 
-    /**
-     * Package-private test-only method, used to check the username is correctly initialized
-     */
-    boolean isSameUsername(String username) {
-        return this.username.equals(username);
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        AuthRequest that = (AuthRequest) o;
+
+        if (username != null ? !username.equals(that.username) : that.username != null) return false;
+        return Arrays.equals(password, that.password);
     }
 
-    /**
-     * Package-private test-only method, used to check the password is correctly initialized
-     */
-    boolean isSamePassword(byte[] password) {
-        return Arrays.equals(this.password, password);
+    @Override
+    public int hashCode() {
+        int result = username != null ? username.hashCode() : 0;
+        result = 31 * result + Arrays.hashCode(password);
+        return result;
     }
 }

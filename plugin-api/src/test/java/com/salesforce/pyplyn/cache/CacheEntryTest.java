@@ -11,8 +11,9 @@ package com.salesforce.pyplyn.cache;
 import org.testng.annotations.Test;
 
 import static com.salesforce.pyplyn.testutil.TimeUtil.await;
-import static org.hamcrest.MatcherAssert.*;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 
 /**
  * Test class

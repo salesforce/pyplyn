@@ -8,10 +8,14 @@
 
 package com.salesforce.refocus.model;
 
-import org.testng.annotations.*;
+import org.testng.annotations.Test;
 
-import static org.hamcrest.MatcherAssert.*;
-import static org.hamcrest.Matchers.*;
+import java.util.HashMap;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.not;
 
 /**
  * Test class
@@ -26,7 +30,18 @@ public class AuthRequestTest {
         AuthRequest request = new AuthRequest("username", "password".getBytes());
 
         // ACT/ASSERT
-        assertThat(request.isSameUsername("username"), equalTo(true));
-        assertThat(request.isSamePassword("password".getBytes()), equalTo(true));
+        assertThat(request, equalTo(new AuthRequest("username", "password".getBytes())));
+        assertThat(request, not(equalTo(new AuthRequest("username", "passwordx".getBytes()))));
+        assertThat(request, not(equalTo(new AuthRequest("usernamex", "password".getBytes()))));
+    }
+
+    @Test
+    public void testHashcode() throws Exception {
+        // ARRANGE
+        AuthRequest request = new AuthRequest("username", "password".getBytes());
+        AuthRequest request2 = new AuthRequest("username", "password".getBytes());
+
+        // ACT/ASSERT
+        assertThat(request.hashCode(), equalTo(request2.hashCode()));
     }
 }

@@ -23,7 +23,7 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.util.Collections;
 
-import static org.hamcrest.MatcherAssert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.*;
 import static org.testng.Assert.fail;

@@ -9,17 +9,19 @@
 package com.salesforce.pyplyn.duct.app;
 
 import com.salesforce.pyplyn.status.MeterType;
-import org.testng.annotations.*;
-
 import org.mockito.MockitoAnnotations;
-
-import static org.mockito.Mockito.*;
-
-import static org.hamcrest.MatcherAssert.*;
-import static org.hamcrest.Matchers.*;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 
 /**

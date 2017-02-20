@@ -25,7 +25,7 @@ import retrofit2.Response;
 import java.util.Collections;
 import java.util.List;
 
-import static org.hamcrest.MatcherAssert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.any;
@@ -38,6 +38,8 @@ import static org.mockito.Mockito.*;
  * @since 3.0
  */
 public class ArgusClientTest {
+	private static final long LONG_ID = 1L;
+
     @Mock
 	private ArgusService svc;
 
@@ -45,7 +47,7 @@ public class ArgusClientTest {
     private AbstractConnector connector;
 
     ArgusClient argus;
-    private static final long LONG_ID = 1L;
+
 
     @BeforeMethod
     public void setUp() throws Exception {
@@ -73,8 +75,30 @@ public class ArgusClientTest {
         argus.auth();
 
         // ASSERT
+		assertThat(argus.isAuthenticated(), equalTo(true));
         verify(argus).storeAuthenticationCookie("expected;");
     }
+
+	@Test
+	public void failedAuth() throws Exception {
+		// ARRANGE
+		ResponseBody fail = ResponseBody.create(MediaType.parse(""), "FAIL");
+		Response<String> failedResponse = Response.error(400, fail);
+
+		@SuppressWarnings("unchecked")
+		Call<ResponseBody> responseCall = (Call<ResponseBody>)mock(Call.class);
+		doReturn(failedResponse).when(responseCall).execute();
+		doReturn(responseCall).when(svc).auth(any());
+
+		// ACT
+		boolean authenticationResult = argus.auth();
+
+		// ASSERT
+		assertThat(authenticationResult, equalTo(false));
+		assertThat(argus.isAuthenticated(), equalTo(false));
+		verify(svc, times(1)).auth(any());
+		verify(argus, times(0)).storeAuthenticationCookie(any());
+	}
 
     @Test
     public void getMetrics() throws Exception {

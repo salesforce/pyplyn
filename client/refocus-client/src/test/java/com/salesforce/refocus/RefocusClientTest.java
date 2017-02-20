@@ -10,13 +10,11 @@ package com.salesforce.refocus;
 
 import com.salesforce.pyplyn.client.UnauthorizedException;
 import com.salesforce.pyplyn.configuration.AbstractConnector;
-import com.salesforce.refocus.model.Aspect;
-import com.salesforce.refocus.model.Link;
-import com.salesforce.refocus.model.Sample;
-import com.salesforce.refocus.model.Subject;
+import com.salesforce.refocus.model.*;
 import com.salesforce.refocus.model.builder.AspectBuilder;
 import com.salesforce.refocus.model.builder.SampleBuilder;
 import com.salesforce.refocus.model.builder.SubjectBuilder;
+import okhttp3.Headers;
 import okhttp3.MediaType;
 import okhttp3.ResponseBody;
 import org.mockito.Mock;
@@ -27,12 +25,13 @@ import retrofit2.Call;
 import retrofit2.Response;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static org.hamcrest.MatcherAssert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -81,6 +80,67 @@ public class RefocusClientTest {
                 .build();
 
         sample = new SampleBuilder().withId("id").withName("name").withValue("value").build();
+    }
+
+    @Test
+    public void authWithToken() throws Exception {
+        // ARRANGE
+        doReturn("password".getBytes()).when(connector).password();
+
+        // ACT
+        refocus.auth();
+
+        // ASSERT
+        assertThat(refocus.isAuthenticated(), equalTo(true));
+        verify(refocus).generateAuthorizationHeader(new String("password".getBytes(), Charset.defaultCharset()));
+    }
+
+    @Test
+    public void authWithCredentials() throws Exception {
+        // ARRANGE
+        AuthResponse authResponse = mock(AuthResponse.class);
+        doReturn("token").when(authResponse).token();
+        Response<AuthResponse> response = Response.success(authResponse);
+
+        @SuppressWarnings("unchecked")
+        Call<AuthResponse> responseCall = (Call<AuthResponse>)mock(Call.class);
+        doReturn(response).when(responseCall).execute();
+        doReturn(responseCall).when(svc).authenticate(any());
+
+        doReturn("username").when(connector).username();
+        doReturn("password".getBytes()).when(connector).password();
+
+        // ACT
+        refocus.auth();
+
+        // ASSERT
+        assertThat(refocus.isAuthenticated(), equalTo(true));
+        verify(svc).authenticate(new AuthRequest("username", "password".getBytes()));
+        verify(refocus).generateAuthorizationHeader(new String("token".getBytes(), Charset.defaultCharset()));
+    }
+
+    @Test
+    public void failedAuth() throws Exception {
+        // ARRANGE
+        ResponseBody fail = ResponseBody.create(MediaType.parse(""), "FAIL");
+        Response<AuthResponse> failedResponse = Response.error(400, fail);
+
+        @SuppressWarnings("unchecked")
+        Call<ResponseBody> responseCall = (Call<ResponseBody>)mock(Call.class);
+        doReturn(failedResponse).when(responseCall).execute();
+        doReturn(responseCall).when(svc).authenticate(any());
+
+        doReturn("username").when(connector).username();
+        doReturn("password".getBytes()).when(connector).password();
+
+        // ACT
+        boolean authenticationResult = refocus.auth();
+
+        // ASSERT
+        assertThat(authenticationResult, equalTo(false));
+        assertThat(refocus.isAuthenticated(), equalTo(false));
+        verify(svc, times(1)).authenticate(any());
+        verify(refocus, times(0)).generateAuthorizationHeader(any());
     }
 
     @Test

@@ -16,8 +16,9 @@ import org.testng.annotations.Test;
 
 import java.util.Collections;
 
-import static org.hamcrest.MatcherAssert.*;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.not;
 
 /**
  * Test class
@@ -40,20 +41,7 @@ public class AspectBuilderTest {
     @BeforeMethod
     public void setUp() throws Exception {
         // ARRANGE
-        builder = new AspectBuilder()
-                .withId("id")
-                .withName("name")
-                .withDescription("description")
-                .withHelpEmail("helpEmail")
-                .withPublished(true)
-                .withCriticalRange(CRIT_RANGE)
-                .withWarningRange(WARN_RANGE)
-                .withInfoRange(INFO_RANGE)
-                .withOkRange(OK_RANGE)
-                .withTimeout("timeout")
-                .withValueType("valueType")
-                .withTags(Collections.singletonList("tags"))
-                .withRelatedLinks(Collections.singletonList(LINK));
+        builder = defaultAspectBuilder();
     }
 
     @Test
@@ -109,5 +97,26 @@ public class AspectBuilderTest {
         assertThat(aspect.valueType(), not(equalTo("valueType")));
         assertThat(aspect.tags(), not(equalTo(Collections.singletonList("tags"))));
         assertThat(aspect.relatedLinks(), not(equalTo(Collections.singletonList(LINK))));
+    }
+
+    /**
+     * Initializes a default aspect builder
+     * @return
+     */
+    public static AspectBuilder defaultAspectBuilder() {
+        return new AspectBuilder()
+                .withId("id")
+                .withName("name")
+                .withDescription("description")
+                .withHelpEmail("helpEmail")
+                .withPublished(true)
+                .withCriticalRange(CRIT_RANGE)
+                .withWarningRange(WARN_RANGE)
+                .withInfoRange(INFO_RANGE)
+                .withOkRange(OK_RANGE)
+                .withTimeout("timeout")
+                .withValueType("valueType")
+                .withTags(Collections.singletonList("tags"))
+                .withRelatedLinks(Collections.singletonList(LINK));
     }
 }

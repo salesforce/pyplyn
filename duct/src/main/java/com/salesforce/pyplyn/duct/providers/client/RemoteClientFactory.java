@@ -10,9 +10,7 @@ package com.salesforce.pyplyn.duct.providers.client;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.salesforce.pyplyn.cache.Cache;
 import com.salesforce.pyplyn.cache.Cacheable;
-import com.salesforce.pyplyn.cache.ConcurrentCacheMap;
 import com.salesforce.pyplyn.client.ClientFactory;
 import com.salesforce.pyplyn.client.ClientFactoryException;
 import com.salesforce.pyplyn.configuration.AbstractConnector;

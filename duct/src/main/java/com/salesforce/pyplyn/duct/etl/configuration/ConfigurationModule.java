@@ -9,10 +9,8 @@
 package com.salesforce.pyplyn.duct.etl.configuration;
 
 import com.google.inject.AbstractModule;
-import com.google.inject.Scopes;
 import com.google.inject.TypeLiteral;
 import com.salesforce.pyplyn.configuration.Configuration;
-import com.salesforce.pyplyn.configuration.UpdatableConfigurationSetProvider;
 
 import java.util.Set;
 

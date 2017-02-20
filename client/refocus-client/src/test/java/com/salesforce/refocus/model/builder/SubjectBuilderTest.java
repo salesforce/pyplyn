@@ -16,7 +16,7 @@ import org.testng.annotations.Test;
 import java.util.Collections;
 
 import static com.salesforce.refocus.model.builder.AspectBuilderTest.LINK;
-import static org.hamcrest.MatcherAssert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
 /**
@@ -57,7 +57,6 @@ public class SubjectBuilderTest {
         assertThat(sample.tags(), equalTo(Collections.singletonList("tags")));
         assertThat(sample.samples(), equalTo(Collections.singletonList(SAMPLE)));
         assertThat(sample.relatedLinks(), equalTo(Collections.singletonList(LINK)));
-        assertThat(sample.relatedLinks(), containsString(""));
     }
 
     @Test

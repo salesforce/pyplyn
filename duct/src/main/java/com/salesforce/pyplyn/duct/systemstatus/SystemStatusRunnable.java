@@ -8,7 +8,9 @@
 
 package com.salesforce.pyplyn.duct.systemstatus;
 
-import com.codahale.metrics.*;
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.Metric;
+import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;

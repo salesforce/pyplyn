@@ -104,7 +104,7 @@ public class RefocusClient extends AbstractRemoteClient<RefocusService> {
      *
      * @return empty string, if a null token was passed
      */
-    private String generateAuthorizationHeader(String token) {
+    String generateAuthorizationHeader(String token) {
         return Optional.ofNullable(token).map(t -> HEADER_PREFIX + t).orElse("");
     }
 

@@ -16,7 +16,7 @@ import com.salesforce.pyplyn.util.SerializationHelper;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import static org.hamcrest.MatcherAssert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsNull.notNullValue;
 /**
  * Integration test for testing that configs can be deserialized
