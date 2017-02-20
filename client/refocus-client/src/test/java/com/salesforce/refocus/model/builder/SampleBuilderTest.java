@@ -9,7 +9,6 @@
 package com.salesforce.refocus.model.builder;
 
 import com.salesforce.refocus.model.Sample;
-import org.mockito.MockitoAnnotations;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -33,8 +32,6 @@ public class SampleBuilderTest {
 
     @BeforeMethod
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
-
         // ARRANGE
         builder = defaultSampleBuilder();
     }

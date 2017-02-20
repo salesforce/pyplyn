@@ -11,14 +11,10 @@ package com.salesforce.refocus.model.builder;
 import com.salesforce.refocus.model.Aspect;
 import com.salesforce.refocus.model.Link;
 import com.salesforce.refocus.model.LinkTest;
-import org.testng.annotations.*;
-
-import org.mockito.ArgumentCaptor;
-import org.mockito.MockitoAnnotations;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 import java.util.Collections;
-
-import static org.mockito.Mockito.*;
 
 import static org.hamcrest.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
@@ -39,12 +35,10 @@ public class AspectBuilderTest {
     public static final double[] OTHER_RANGE = new double[]{9d, 9d};
     public static final Link LINK = LinkTest.defaultLink();
 
-    AspectBuilder builder;
+    private AspectBuilder builder;
 
     @BeforeMethod
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
-
         // ARRANGE
         builder = new AspectBuilder()
                 .withId("id")

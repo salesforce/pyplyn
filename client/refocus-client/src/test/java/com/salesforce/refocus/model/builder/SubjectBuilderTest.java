@@ -10,7 +10,6 @@ package com.salesforce.refocus.model.builder;
 
 import com.salesforce.refocus.model.Sample;
 import com.salesforce.refocus.model.Subject;
-import org.mockito.MockitoAnnotations;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -29,14 +28,13 @@ import static org.hamcrest.Matchers.*;
  * @since 5.0
  */
 public class SubjectBuilderTest {
-    private SubjectBuilder builder;
     public static final Sample SAMPLE = SampleBuilderTest.defaultSampleBuilder().build();
     public static final Subject LEAF_SUBJECT = defaultSubjectBuilder().build();
 
+    private SubjectBuilder builder;
+
     @BeforeMethod
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
-
         // ARRANGE
         builder = defaultSubjectBuilder()
             .withChildren(Collections.singletonList(LEAF_SUBJECT));
@@ -59,6 +57,7 @@ public class SubjectBuilderTest {
         assertThat(sample.tags(), equalTo(Collections.singletonList("tags")));
         assertThat(sample.samples(), equalTo(Collections.singletonList(SAMPLE)));
         assertThat(sample.relatedLinks(), equalTo(Collections.singletonList(LINK)));
+        assertThat(sample.relatedLinks(), containsString(""));
     }
 
     @Test
