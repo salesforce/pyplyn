@@ -9,12 +9,12 @@
 package com.salesforce.refocus.model;
 
 
-import com.salesforce.refocus.model.builder.SampleBuilder;
 import org.testng.annotations.Test;
 
 import java.util.Collection;
 import java.util.Collections;
 
+import static com.salesforce.refocus.model.builder.SampleBuilderTest.defaultSampleBuilder;
 import static org.hamcrest.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
 
@@ -28,12 +28,7 @@ public class SampleTest {
     @Test
     public void shouldStoreAllParameters() throws Exception {
         // ARRANGE
-        Sample sample = new SampleBuilder()
-                .withId("id")
-                .withName("name")
-                .withValue("value")
-                .withRelatedLinks(Collections.singletonList(new Link("link", "url")))
-                .build();
+        Sample sample = defaultSampleBuilder().build();
 
         // ASSERT
         assertThat(sample.name(), equalTo("name"));
@@ -45,10 +40,7 @@ public class SampleTest {
     @Test
     public void shouldHaveEmptyListAsRelatedLinks() throws Exception {
         // ARRANGE
-        Sample sample = new SampleBuilder()
-                .withId("id")
-                .withName("name")
-                .withValue("value")
+        Sample sample = defaultSampleBuilder()
                 .withRelatedLinks(Collections.emptyList())
                 .build();
 
@@ -56,6 +48,18 @@ public class SampleTest {
         assertThat(sample.name(), equalTo("name"));
         assertThat(sample.value(), equalTo("value"));
         assertThat(sample.relatedLinks(), is(instanceOf(Collection.class)));
-        assertThat(sample.relatedLinks().size(), equalTo(0)); // Findbugs: PRMC_POSSIBLY_REDUNDANT_METHOD_CALLS - IGNORE
+        assertThat(sample.relatedLinks().size(), equalTo(0));
+    }
+
+    @Test
+    public void testCacheKeyIsName() throws Exception {
+        // ARRANGE
+        Sample sample = defaultSampleBuilder().build();
+
+        // ACT
+        String cacheKey = sample.cacheKey();
+
+        // ASSERT
+        assertThat(cacheKey, equalTo(sample.name()));
     }
 }

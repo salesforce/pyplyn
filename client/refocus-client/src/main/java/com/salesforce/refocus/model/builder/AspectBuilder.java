@@ -13,6 +13,7 @@ import com.salesforce.refocus.model.Link;
 
 import java.util.List;
 
+import static com.salesforce.pyplyn.util.CollectionUtils.immutableListOrNull;
 import static com.salesforce.pyplyn.util.CollectionUtils.mutableListCopyOrNull;
 import static com.salesforce.pyplyn.util.CollectionUtils.nullableArrayCopy;
 
@@ -129,11 +130,13 @@ public class AspectBuilder {
         return this;
     }
 
-    public void withTags(List<String> tags) {
-        this.tags = tags;
+    public AspectBuilder withTags(List<String> tags) {
+        this.tags = immutableListOrNull(tags);
+        return this;
     }
 
-    public void withRelatedLinks(List<Link> relatedLinks) {
-        this.relatedLinks = relatedLinks;
+    public AspectBuilder withRelatedLinks(List<Link> relatedLinks) {
+        this.relatedLinks = immutableListOrNull(relatedLinks);
+        return this;
     }
 }

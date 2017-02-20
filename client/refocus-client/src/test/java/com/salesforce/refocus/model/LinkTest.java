@@ -29,7 +29,7 @@ public class LinkTest {
     @Test
     public void toStringShouldExposeBothNameAndUrl() throws Exception {
         // ARRANGE
-        Link link = new Link("name", "url");
+        Link link = defaultLink();
 
         // ACT
         String linkString = link.toString();
@@ -42,7 +42,7 @@ public class LinkTest {
     @Test
     public void testEqualsInCollections() throws Exception {
         // ARRANGE
-        Link link = new Link("name", "url");
+        Link link = defaultLink();
         List<Link> links = Collections.singletonList(link);
         Map<Link, Integer> linkMap = new HashMap<>();
         linkMap.put(link, 1);
@@ -50,5 +50,12 @@ public class LinkTest {
         // ASSERT
         assertThat(links, contains(link));
         assertThat(linkMap.get(link), is(not(nullValue())));
+    }
+
+    /**
+     * Initializes a default link
+     */
+    public static Link defaultLink() {
+        return new Link("name", "url");
     }
 }

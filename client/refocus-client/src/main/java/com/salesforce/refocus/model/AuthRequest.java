@@ -13,6 +13,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.salesforce.pyplyn.util.SensitiveByteArraySerializer;
 
+import java.util.Arrays;
+
 import static com.salesforce.pyplyn.util.CollectionUtils.nullableArrayCopy;
 
 /**
@@ -23,11 +25,11 @@ import static com.salesforce.pyplyn.util.CollectionUtils.nullableArrayCopy;
  */
 public class AuthRequest {
     @JsonProperty
-    private final String username;//NOPMD
+    private final String username;
 
     @JsonProperty
     @JsonSerialize(using=SensitiveByteArraySerializer.class)
-    private final byte[] password;//NOPMD
+    private final byte[] password;
 
     /**
      * Constructs an Auth Request
@@ -39,5 +41,19 @@ public class AuthRequest {
                        @JsonProperty("password") byte[] password) {
         this.username = username;
         this.password = nullableArrayCopy(password);
+    }
+
+    /**
+     * Package-private test-only method, used to check the username is correctly initialized
+     */
+    boolean isSameUsername(String username) {
+        return this.username.equals(username);
+    }
+
+    /**
+     * Package-private test-only method, used to check the password is correctly initialized
+     */
+    boolean isSamePassword(byte[] password) {
+        return Arrays.equals(this.password, password);
     }
 }
