@@ -1,0 +1,10 @@
+[
+  {
+    "id": "id",
+    "endpoint": "endpoint",
+    "username": "username",
+    "password": "password",
+    "proxyHost": "proxyHost",
+    "proxyPort": 1
+  }
+]

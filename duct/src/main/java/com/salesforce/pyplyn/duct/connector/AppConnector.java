@@ -9,6 +9,7 @@
 package com.salesforce.pyplyn.duct.connector;
 
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import com.salesforce.pyplyn.configuration.AbstractConnector;
 import com.salesforce.pyplyn.duct.app.BootstrapException;
 
@@ -29,7 +30,9 @@ import static java.util.Objects.nonNull;
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
  * @since 3.0
  */
+@Singleton
 public class AppConnector {
+    public static final String DUPLICATE_CONNECTOR_ERROR = "Duplicate connector object (%s) not allowed, with id=\"%s\"!";
     private final Map<String, AbstractConnector> connectors;
 
     /**
@@ -46,7 +49,7 @@ public class AppConnector {
             for (AbstractConnector connector : connectors) {
                 // ensure uniqueness and throw exception if a duplicate connector is found
                 if (nonNull(this.connectors.putIfAbsent(connector.connectorId(), connector))) {
-                    throw new BootstrapException(String.format("Duplicate connector %s{endpointId=\"%s\"} is not allowed!",
+                    throw new BootstrapException(String.format(DUPLICATE_CONNECTOR_ERROR,
                             connector.getClass().getSimpleName(), connector.connectorId()));
                 }
             }

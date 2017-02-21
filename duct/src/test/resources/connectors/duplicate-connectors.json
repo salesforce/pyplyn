@@ -1,0 +1,18 @@
+[
+  {
+    "id": "id",
+    "endpoint": "endpoint",
+    "username": "username",
+    "password": "cGFzc3dvcmQ=",
+    "proxyHost": "proxyHost",
+    "proxyPort": 1
+  },
+  {
+    "id": "id",
+    "endpoint": "endpointx",
+    "username": "usernamex",
+    "password": "cGFzc3dvcmR4",
+    "proxyHost": "proxyHostx",
+    "proxyPort": 2
+  }
+]

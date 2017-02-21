@@ -477,6 +477,11 @@ public class AppBootstrapFixtures {
             return this;
         }
 
+        public AppConfigMocks connectorsPath(String path) {
+            doReturn(path).when(global).connectorsPath();
+            return this;
+        }
+
         public AppConfig get() {
             return appConfig;
         }

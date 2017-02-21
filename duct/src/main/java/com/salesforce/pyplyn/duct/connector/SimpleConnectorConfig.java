@@ -65,7 +65,7 @@ public class SimpleConnectorConfig extends AbstractConnector {
 
     @Override
     public byte[] password() {
-        return InsecurePasswordUtil.readPasswordBytes(connectorPath, connectorId());
+        return InsecurePasswordUtil.readPasswordBytes(connectorFilePath(), connectorId());
     }
 
     @Override
@@ -87,5 +87,15 @@ public class SimpleConnectorConfig extends AbstractConnector {
      */
     void setConnectorFilePath(String file) {
         this.connectorPath = file;
+    }
+
+    /**
+     * Retrieves the path to the file that holds this connector's definition
+     * <p/>
+     * <p/>Declared as package-private in order to be used in testing to ensure the password is read every time
+     *  from disk and not cached!
+     */
+    String connectorFilePath() {
+        return this.connectorPath;
     }
 }
