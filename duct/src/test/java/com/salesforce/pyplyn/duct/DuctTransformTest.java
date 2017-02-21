@@ -30,7 +30,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 
-public class DuctTransform {
+public class DuctTransformTest {
 
 	private TransformationResult result;
 	private static final String ACTUAL_NAME = "TransformationName";

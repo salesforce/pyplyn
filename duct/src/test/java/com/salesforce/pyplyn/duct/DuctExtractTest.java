@@ -35,7 +35,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 
-public class DuctExtract {
+public class DuctExtractTest {
 
 	private TransformationResult result;
 	private static final String ACTUAL_NAME = "TransformationName";

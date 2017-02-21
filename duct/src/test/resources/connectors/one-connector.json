@@ -3,7 +3,7 @@
     "id": "id",
     "endpoint": "endpoint",
     "username": "username",
-    "password": "password",
+    "password": "cGFzc3dvcmQ=",
     "proxyHost": "proxyHost",
     "proxyPort": 1
   }
