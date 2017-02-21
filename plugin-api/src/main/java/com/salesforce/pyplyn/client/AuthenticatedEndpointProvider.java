@@ -88,6 +88,11 @@ public interface AuthenticatedEndpointProvider<T extends AbstractRemoteClient> {
     default <R extends Cacheable, C> Cache<R> getOrInitializeCacheFor(ConcurrentHashMap<C, ConcurrentCacheMap<R>> cacheMap,
                                                                       C client,
                                                                       CacheFactory cacheFactory) {
+        // stop here if an invalid client was specified
+        if (isNull(client)) {
+            return null;
+        }
+
         // retrieve cache object
         ConcurrentCacheMap<R> cache = cacheMap.get(client);
 

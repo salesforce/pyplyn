@@ -9,7 +9,6 @@
 package com.salesforce.pyplyn.duct.app;
 
 import com.salesforce.pyplyn.status.MeterType;
-import org.mockito.MockitoAnnotations;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -17,9 +16,8 @@ import org.testng.annotations.Test;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.MatcherAssert.*;
+import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -36,8 +34,6 @@ public class ShutdownHookTest {
 
     @BeforeMethod
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
-
         // ARRANGE
         fixtures = new AppBootstrapFixtures();
         executor = ExecutorTestHelper.initSingleThreadExecutor();
@@ -54,7 +50,7 @@ public class ShutdownHookTest {
         fixtures.realShutdownHook()
                 .oneArgusToRefocusConfiguration()
                 .returnMockedTransformationResultFromAllExtractProcessors()
-                .simulateLoadProcessingTime(100)
+                .simulateRefocusLoadProcessingDelay(100)
                 .freeze();
 
         // init app and register executor for shutdown

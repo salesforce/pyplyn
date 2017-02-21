@@ -64,7 +64,7 @@ public class SystemStatusRunnableTest {
         fixtures.realSystemStatus()
                 .oneArgusToRefocusConfiguration()
                 .returnMockedTransformationResultFromAllExtractProcessors()
-                .simulateLoadProcessingTime(100)
+                .simulateRefocusLoadProcessingDelay(100)
                 .freeze();
 
         // init app and schedule system status thread

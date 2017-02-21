@@ -24,10 +24,7 @@ import com.salesforce.pyplyn.status.SystemStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
@@ -168,6 +165,7 @@ public class MetricDuct implements Runnable {
                                 return stage.wrapper().ran().nextRun(System.currentTimeMillis() - time0);
                             })
 
+                            .filter(Objects::nonNull)
                             .min(Long::compareTo);
 
                 } catch (RuntimeException e) {

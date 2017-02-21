@@ -19,6 +19,8 @@ import com.salesforce.argus.ArgusClient;
 import com.salesforce.argus.model.MetricResponse;
 import com.salesforce.pyplyn.cache.CacheFactory;
 import com.salesforce.pyplyn.cache.ConcurrentCacheMap;
+import com.salesforce.pyplyn.client.ClientFactoryException;
+import com.salesforce.pyplyn.client.UnauthorizedException;
 import com.salesforce.pyplyn.configuration.AbstractConnector;
 import com.salesforce.pyplyn.configuration.Configuration;
 import com.salesforce.pyplyn.configuration.UpdatableConfigurationSetProvider;
@@ -230,6 +232,12 @@ public class AppBootstrapFixtures {
         return this;
     }
 
+    public AppBootstrapFixtures argusClientCanNotAuth() throws UnauthorizedException {
+        doReturn(false).when(argusClient).isAuthenticated();
+        doThrow(UnauthorizedException.class).when(argusClient).auth();
+        return this;
+    }
+
     public AppBootstrapFixtures callRealRefocusExtractProcessor() {
         // we need to reinitialize the object to provide access to the real failed/succeeded (protected) methods
         refocusExtractProcessor = spy(new RefocusExtractProcessor(refocusClientFactory, cacheFactory, shutdownHook));
@@ -243,7 +251,27 @@ public class AppBootstrapFixtures {
         return this;
     }
 
-    public AppBootstrapFixtures simulateLoadProcessingTime(final long duration) {
+    public AppBootstrapFixtures refocusClientCanNotAuth() throws UnauthorizedException {
+        doReturn(false).when(refocusClient).isAuthenticated();
+        doThrow(UnauthorizedException.class).when(refocusClient).auth();
+        return this;
+    }
+
+    public AppBootstrapFixtures callRealRefocusLoadProcessor() {
+        // we need to reinitialize the object to provide access to the real failed/succeeded (protected) methods
+        refocusLoadProcessor = spy(new RefocusLoadProcessor(refocusClientFactory, shutdownHook));
+
+        // we are replacing the default filtering logic, since the passed object will be a mock
+        doAnswer(invocation -> {
+            AppBootstrapLatches.beforeLoadProcessorStarts().countDown();
+            return filter(invocation.getArguments(), com.salesforce.pyplyn.duct.etl.load.refocus.Refocus.class);
+        }).when(refocusLoadProcessor).filter(any());
+
+        return this;
+    }
+
+
+    public AppBootstrapFixtures simulateRefocusLoadProcessingDelay(final long duration) {
         // we need to reinitialize the object to provide access to the real failed/succeeded (protected) methods
         refocusLoadProcessor = spy(new RefocusLoadProcessor(refocusClientFactory, shutdownHook));
 
@@ -327,7 +355,6 @@ public class AppBootstrapFixtures {
     public ShutdownHook shutdownHook() {
         return shutdownHook;
     }
-
 
 
     //
