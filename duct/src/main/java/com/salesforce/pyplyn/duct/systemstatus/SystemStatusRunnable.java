@@ -127,11 +127,20 @@ public class SystemStatusRunnable implements SystemStatus {
             long percentileMillis = TimeUnit.NANOSECONDS.toMillis((long)entry.getValue().getSnapshot().get95thPercentile());
 
             // log each timer's 95th percentile
-            logger.info(createTimerStatusMessage(timerName, percentileMillis).toString());
+            logStatusMessage(createTimerStatusMessage(timerName, percentileMillis));
         }
 
         // send status to all consumers
         consumers.parallelStream().forEach(consumer -> consumer.accept(messages));
+    }
+
+
+    /**
+     * Logs {@link StatusMessage}s via the slf4j logger
+     * <p/>Implemented as a separate method for testing purposes
+     */
+    void logStatusMessage(StatusMessage statusMessage) {
+        logger.info(statusMessage.toString());
     }
 
     /**
@@ -173,7 +182,7 @@ public class SystemStatusRunnable implements SystemStatus {
         }
 
         // log each metric's rate
-        logger.info(createMetricStatusMessage(meterName, AlertLevel.OK, fiveMinuteRate).toString());
+        logStatusMessage(createMetricStatusMessage(meterName, AlertLevel.OK, fiveMinuteRate));
 
         return Optional.empty();
     }

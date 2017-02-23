@@ -38,8 +38,6 @@ public class SystemStatusRunnableTest {
 
     @BeforeMethod
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
-
         // ARRANGE
         fixtures = new AppBootstrapFixtures();
     }
@@ -92,13 +90,17 @@ public class SystemStatusRunnableTest {
         List<StatusMessage> messages = argumentCaptor.getValue();
 
         // check expected output
-        assertThat("Expecting three messages, status=OK and the timing message", messages, hasSize(3));
+        assertThat("Expecting one message, status=OK", messages, hasSize(1));
         assertThat("The status should be OK", messages.get(0).level(), is(AlertLevel.OK));
 
-        List<String> messageStrings = messages.stream().map(Object::toString).collect(Collectors.toList());
+        // check that timer messages are being logged
+        ArgumentCaptor<StatusMessage> timerMessageCaptor = ArgumentCaptor.forClass(StatusMessage.class);
+        verify(fixtures.systemStatus(), atLeastOnce()).logStatusMessage(timerMessageCaptor.capture());
+        List<String> timerMessages = timerMessageCaptor.getAllValues().stream().map(Object::toString).collect(Collectors.toList());
+
         assertThat("MetricDuct should report timing data",
-                messageStrings, hasItem(containsString(MetricDuct.class.getSimpleName())));
+                timerMessages, hasItem(containsString(MetricDuct.class.getSimpleName())));
         assertThat("AppBootstrapFixtures should report timing data for the Refocus Load processor",
-                messageStrings, hasItem(containsString("Refocus.upsert-samples-bulk." + AppBootstrapFixtures.MOCK_CONNECTOR_NAME)));
+                timerMessages, hasItem(containsString("Refocus.upsert-samples-bulk." + AppBootstrapFixtures.MOCK_CONNECTOR_NAME)));
     }
 }
