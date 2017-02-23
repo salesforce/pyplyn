@@ -17,6 +17,8 @@ import com.google.inject.Singleton;
 import com.salesforce.pyplyn.duct.appconfig.AppConfig;
 import com.salesforce.pyplyn.status.*;
 import com.salesforce.pyplyn.util.FormatUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -34,7 +36,9 @@ import static com.salesforce.pyplyn.status.AlertType.LESS_THAN;
  */
 @Singleton
 public class SystemStatusRunnable implements SystemStatus {
-    private static final String MESSAGE_NAME_OK = "All services";
+    private static final Logger logger = LoggerFactory.getLogger(SystemStatusRunnable.class);
+
+    private static final String SYSTEM_STATUS = "System status";
     private static final String METER_TEMPLATE = "%s %s=%s/s";
     private static final String TIMER_TEMPLATE = "p95(%s)=%s";
 
@@ -114,7 +118,7 @@ public class SystemStatusRunnable implements SystemStatus {
 
         // if no messages have been logged, report status OK
         if (messages.isEmpty()) {
-            messages.add(new StatusMessage(AlertLevel.OK, MESSAGE_NAME_OK + " " + AlertLevel.OK.name()));
+            messages.add(new StatusMessage(AlertLevel.OK, SYSTEM_STATUS + " " + AlertLevel.OK.name()));
         }
 
         // iterate through all registered timers
@@ -122,8 +126,8 @@ public class SystemStatusRunnable implements SystemStatus {
             String timerName = entry.getKey();
             long percentileMillis = TimeUnit.NANOSECONDS.toMillis((long)entry.getValue().getSnapshot().get95thPercentile());
 
-            // report 95th percentile
-            messages.add(createTimerStatusMessage(timerName, percentileMillis));
+            // log each timer's 95th percentile
+            logger.info(createTimerStatusMessage(timerName, percentileMillis).toString());
         }
 
         // send status to all consumers
@@ -167,6 +171,9 @@ public class SystemStatusRunnable implements SystemStatus {
         } else if (type.alertType() == LESS_THAN && fiveMinuteRate <= threshold) {
             return Optional.of(createMetricStatusMessage(meterName, level, fiveMinuteRate));
         }
+
+        // log each metric's rate
+        logger.info(createMetricStatusMessage(meterName, AlertLevel.OK, fiveMinuteRate).toString());
 
         return Optional.empty();
     }

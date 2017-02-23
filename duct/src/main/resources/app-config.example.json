@@ -13,9 +13,9 @@
 
   "alert": {
     "enabled": true,
-    "checkIntervalMillis": 10000,
+    "checkIntervalMillis": 60000,
     "thresholds": {
-      "RefocusExtractSuccessWARN": 0.2,
+      "RefocusExtractSuccessWARN": 0.5,
       "RefocusExtractSuccessERR": 0.1,
       "RefocusExtractFailureWARN": 5,
       "RefocusExtractFailureERR": 10,
@@ -23,8 +23,8 @@
       "RefocusExtractNoDataReturnedERR": 50,
       "RefocusAuthenticationFailureWARN": 1,
       "RefocusAuthenticationFailureERR": 2,
-      "ArgusExtractSuccessWARN": 0.2,
-      "ArgusExtractSuccessERR": 0.1,
+      "ArgusExtractSuccessWARN": 14,
+      "ArgusExtractSuccessERR": 3,
       "ArgusExtractFailureWARN": 5,
       "ArgusExtractFailureERR": 10,
       "ArgusExtractNoDataReturnedWARN": 30,

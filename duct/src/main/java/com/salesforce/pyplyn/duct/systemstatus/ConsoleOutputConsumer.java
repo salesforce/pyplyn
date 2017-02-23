@@ -26,10 +26,10 @@ public class ConsoleOutputConsumer implements SystemStatusConsumer {
     private static final Logger logger = LoggerFactory.getLogger(ConsoleOutputConsumer.class);
 
     /**
-     * Accepts the passed {@link StatusMessage}s and prints them to {@link System#out}
+     * Accepts the passed {@link StatusMessage}s and prints via the slf4j {@link Logger}
      */
     @Override
     public void accept(List<StatusMessage> messages) {
-        System.out.println(Arrays.toString(messages.toArray()));
+        logger.info("System status: " + Arrays.toString(messages.toArray()));
     }
 }
