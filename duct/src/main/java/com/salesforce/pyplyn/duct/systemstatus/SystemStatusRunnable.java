@@ -9,7 +9,6 @@
 package com.salesforce.pyplyn.duct.systemstatus;
 
 import com.codahale.metrics.Meter;
-import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.inject.Inject;
@@ -102,11 +101,14 @@ public class SystemStatusRunnable implements SystemStatus {
         // iterate through all registered meters
         for (Map.Entry<String, Meter> entry : registry.getMeters().entrySet()) {
             String meterName = entry.getKey();
-            double fiveMinuteRate = entry.getValue().getFiveMinuteRate();
+            double meterValue = entry.getValue().getCount();
+
+            // removes the current meter, so that it is re-initialized
+            registry.remove(meterName);
 
             // define optionals for checking ERR/WARN
-            Optional<StatusMessage> errMessage = checkRateOfMeter(meterName, AlertLevel.ERR, fiveMinuteRate);
-            Optional<StatusMessage> warnMessage = checkRateOfMeter(meterName, AlertLevel.WARN, fiveMinuteRate);
+            Optional<StatusMessage> errMessage = checkRateOfMeter(meterName, AlertLevel.ERR, meterValue);
+            Optional<StatusMessage> warnMessage = checkRateOfMeter(meterName, AlertLevel.WARN, meterValue);
 
             // add any messages to the list
             if (errMessage.isPresent()) {
@@ -152,11 +154,11 @@ public class SystemStatusRunnable implements SystemStatus {
 
 
     /**
-     * Checks the rate of a meter by reading it from {@link AppConfig} then comparing against the meter's rate
+     * Checks the specified value of a meter against its WARN/ERR thresholds defined in {@link AppConfig}
      *
      * @return WARN/ERR message or empty if not triggered
      */
-    private Optional<StatusMessage> checkRateOfMeter(String meterName, AlertLevel level, double fiveMinuteRate) {
+    private Optional<StatusMessage> checkRateOfMeter(String meterName, AlertLevel level, double meterValue) {
         // get meter type or stop if not found
         Optional<MeterType> meterType = getMeterType(meterName);
         if (!meterType.isPresent()) {
@@ -172,26 +174,26 @@ public class SystemStatusRunnable implements SystemStatus {
         MeterType type = meterType.get();
         Double threshold = thresholdFor.get();
 
-        // check greater-than threshhold; the alert is fired when threshold is hit (inclusive)
-        if (type.alertType() == GREATER_THAN && fiveMinuteRate >= threshold) {
-            return Optional.of(createMetricStatusMessage(meterName, level, fiveMinuteRate));
+        // check greater-than threshhold; the alert is fired when the threshold is hit
+        if (type.alertType() == GREATER_THAN && meterValue >= threshold) {
+            return Optional.of(createMeterStatusMessage(meterName, level, meterValue));
 
-        // check less-than threshhold; the alert is fired when rate goes below threshold (exclusive)
-        } else if (type.alertType() == LESS_THAN && fiveMinuteRate <= threshold) {
-            return Optional.of(createMetricStatusMessage(meterName, level, fiveMinuteRate));
+        // check less-than threshhold; the alert is fired when value goes below thethreshold
+        } else if (type.alertType() == LESS_THAN && meterValue <= threshold) {
+            return Optional.of(createMeterStatusMessage(meterName, level, meterValue));
         }
 
-        // log each metric's rate
-        logStatusMessage(createMetricStatusMessage(SYSTEM_STATUS + " " + meterName, AlertLevel.OK, fiveMinuteRate));
+        // log each metric's current value
+        logStatusMessage(createMeterStatusMessage(SYSTEM_STATUS + " " + meterName, AlertLevel.OK, meterValue));
 
         return Optional.empty();
     }
 
     /**
-     * @return a {@link StatusMessage} that reports system status based on {@link Metric} values
+     * @return a {@link StatusMessage} that reports system status based on {@link Meter} values
      *         using thresholds specified in {@link AppConfig.Alert}
      */
-    private static StatusMessage createMetricStatusMessage(String meterName, AlertLevel level, double fiveMinuteRate) {
+    private static StatusMessage createMeterStatusMessage(String meterName, AlertLevel level, double fiveMinuteRate) {
         return new StatusMessage(level, String.format(METER_TEMPLATE, level.name(), meterName, fiveMinuteRate));
     }
 
