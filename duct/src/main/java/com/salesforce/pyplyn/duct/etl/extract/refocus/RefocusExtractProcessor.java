@@ -149,6 +149,9 @@ public class RefocusExtractProcessor extends AbstractMeteredExtractProcessor<Ref
                                         logger.error("Could not complete request for endpoint {}; failed metric={}; due to {}", endpointId, refocus.name(), e.getMessage());
                                         failed();
                                     }
+                                } else {
+                                    // log cache debugging data
+                                    logger.info("Sample loaded from cache {}, endpoint {}", sample.name(), endpointId);
                                 }
 
                                 // at this point we either have a valid cached sample or we loaded a new one from the endpoint

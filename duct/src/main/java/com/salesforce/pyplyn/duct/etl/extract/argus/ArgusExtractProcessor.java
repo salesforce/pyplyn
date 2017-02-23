@@ -151,6 +151,10 @@ public class ArgusExtractProcessor extends AbstractMeteredExtractProcessor<Argus
                             // mark successful operation and continue processing
                             succeeded();
 
+                            // log cache debugging data
+                            logger.info("{} samples loaded from cache, {} from endpoint {}",
+                                    cachedResponses.size(), metricResponses.size(), endpointId);
+
                             // check all metrics with noData and populate with defaults, if required
                             return Stream.concat(cachedResponses.stream(), metricResponses.stream())
 
