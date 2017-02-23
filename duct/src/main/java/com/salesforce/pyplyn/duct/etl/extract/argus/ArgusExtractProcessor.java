@@ -152,7 +152,7 @@ public class ArgusExtractProcessor extends AbstractMeteredExtractProcessor<Argus
                             succeeded();
 
                             // log cache debugging data
-                            logger.info("{} samples loaded from cache, {} from endpoint {}",
+                            logger.info("{} metrics loaded from cache, {} from endpoint {}",
                                     cachedResponses.size(), metricResponses.size(), endpointId);
 
                             // check all metrics with noData and populate with defaults, if required
