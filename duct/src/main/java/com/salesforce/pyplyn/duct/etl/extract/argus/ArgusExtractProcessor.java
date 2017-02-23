@@ -126,26 +126,30 @@ public class ArgusExtractProcessor extends AbstractMeteredExtractProcessor<Argus
                                 return null;
                             }
 
-                            // retrieve metrics from Argus endpoint
+                            // retrieve metrics from Argus endpoint, only if we have expressions to retrieve
                             List<MetricResponse> metricResponses;
-                            try (Timer.Context context = systemStatus.timer(meterName(), "get-metrics." + endpointId).time()) {
-                                metricResponses = client.getMetrics(expressions);
+                            if (!expressions.isEmpty()) {
+                                try (Timer.Context context = systemStatus.timer(meterName(), "get-metrics." + endpointId).time()) {
+                                    metricResponses = client.getMetrics(expressions);
+                                }
+
+                                // determine if the retrieval failed; stop here if that's the case
+                                if (isNull(metricResponses)) {
+                                    failed();
+                                    return null;
+                                }
+
+                                // cache expressions that should be cached, based on their cacheMillis() settings mapped in canCache
+                                metricResponses.stream()
+                                        // we are not caching results with no data
+                                        .filter(ArgusExtractProcessor::responseHasDatapoints)
+                                        .forEach(result -> tryCache(result, client, cacheSettings));
+                            } else {
+                                metricResponses = Collections.emptyList();
                             }
 
-                            // determine if the retrieval failed; stop here if that's the case
-                            if (isNull(metricResponses)) {
-                                failed();
-                                return null;
-                            }
-
-                            // mark succesful operation and continue processing
+                            // mark successful operation and continue processing
                             succeeded();
-
-                            // cache expressions that should be cached, based on their cacheMillis() settings mapped in canCache
-                            metricResponses.stream()
-                                    // we are not caching results with no data
-                                    .filter(ArgusExtractProcessor::responseHasDatapoints)
-                                    .forEach(result -> tryCache(result, client, cacheSettings));
 
                             // check all metrics with noData and populate with defaults, if required
                             return Stream.concat(cachedResponses.stream(), metricResponses.stream())

@@ -123,10 +123,10 @@ public class RefocusExtractProcessor extends AbstractMeteredExtractProcessor<Ref
                                             isDefault = true;
                                         }
 
-                                        // if a null response was returned from endpoint and we didn't have a default value, mark as failure and stop
+                                        // if a null response was returned from endpoint and we didn't have a default value, mark no-data and stop
                                         if (isNull(sample)) {
                                             logger.error("No data for sample {}, endpoint {}; null response", refocus.name(), endpointId);
-                                            failed();
+                                            noData();
 
                                             return null;
                                         }

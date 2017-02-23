@@ -83,14 +83,7 @@ public class Argus implements Extract, Serializable {
      * @return
      */
     public final String cacheKey() {
-        return cacheKeyFor(endpoint(), name());
-    }
-
-    /**
-     * Standardizes key names used to cache and retrieve Argus results
-     */
-    static String cacheKeyFor(String endpoint, String name) {
-        return endpoint + ":" + name;
+        return name();
     }
 
 

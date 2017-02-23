@@ -88,14 +88,7 @@ public class Refocus implements Extract, Serializable {
      * @return the cache key for this object
      */
     public final String cacheKey() {
-        return cacheKeyFor(endpoint(), name());
-    }
-
-    /**
-     * Standardizes key names used to cache and retrieve Refocus results
-     */
-    static String cacheKeyFor(String endpoint, String name) {
-        return endpoint + ":" + name;
+        return name();
     }
 
 
