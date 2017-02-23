@@ -127,7 +127,7 @@ public class SystemStatusRunnable implements SystemStatus {
             long percentileMillis = TimeUnit.NANOSECONDS.toMillis((long)entry.getValue().getSnapshot().get95thPercentile());
 
             // log each timer's 95th percentile
-            logStatusMessage(createTimerStatusMessage(timerName, percentileMillis));
+            logStatusMessage(createTimerStatusMessage(SYSTEM_STATUS + " " + timerName, percentileMillis));
         }
 
         // send status to all consumers
@@ -182,7 +182,7 @@ public class SystemStatusRunnable implements SystemStatus {
         }
 
         // log each metric's rate
-        logStatusMessage(createMetricStatusMessage(meterName, AlertLevel.OK, fiveMinuteRate));
+        logStatusMessage(createMetricStatusMessage(SYSTEM_STATUS + " " + meterName, AlertLevel.OK, fiveMinuteRate));
 
         return Optional.empty();
     }
