@@ -14,7 +14,6 @@ import com.salesforce.refocus.model.*;
 import com.salesforce.refocus.model.builder.AspectBuilder;
 import com.salesforce.refocus.model.builder.SampleBuilder;
 import com.salesforce.refocus.model.builder.SubjectBuilder;
-import okhttp3.Headers;
 import okhttp3.MediaType;
 import okhttp3.ResponseBody;
 import org.mockito.Mock;

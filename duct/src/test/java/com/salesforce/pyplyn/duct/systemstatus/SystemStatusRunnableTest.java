@@ -8,8 +8,8 @@
 
 package com.salesforce.pyplyn.duct.systemstatus;
 
-import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapFixtures;
 import com.salesforce.pyplyn.duct.app.MetricDuct;
+import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapFixtures;
 import com.salesforce.pyplyn.status.AlertLevel;
 import com.salesforce.pyplyn.status.MeterType;
 import com.salesforce.pyplyn.status.StatusMessage;

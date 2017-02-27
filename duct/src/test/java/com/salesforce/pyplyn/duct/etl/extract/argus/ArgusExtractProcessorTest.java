@@ -8,8 +8,8 @@
 
 package com.salesforce.pyplyn.duct.etl.extract.argus;
 
-import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapFixtures;
 import com.salesforce.pyplyn.duct.app.MetricDuct;
+import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapFixtures;
 import com.salesforce.pyplyn.status.MeterType;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;

@@ -11,11 +11,12 @@ package com.salesforce.pyplyn.duct.connector;
 import com.google.inject.Injector;
 import com.salesforce.pyplyn.configuration.AbstractConnector;
 import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapFixtures;
-import org.testng.annotations.*;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 import java.util.List;
 
-import static org.hamcrest.MatcherAssert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
 /**

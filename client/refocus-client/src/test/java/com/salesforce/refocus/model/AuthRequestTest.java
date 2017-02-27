@@ -10,10 +10,7 @@ package com.salesforce.refocus.model;
 
 import org.testng.annotations.Test;
 
-import java.util.HashMap;
-
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
 

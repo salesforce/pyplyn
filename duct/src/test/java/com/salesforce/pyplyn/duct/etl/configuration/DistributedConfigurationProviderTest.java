@@ -1,3 +1,11 @@
+/*
+ *  Copyright (c) 2016-2017, Salesforce.com, Inc.
+ *  All rights reserved.
+ *  Licensed under the BSD 3-Clause license.
+ *  For full license text, see the LICENSE.txt file in repo root
+ *    or https://opensource.org/licenses/BSD-3-Clause
+ */
+
 package com.salesforce.pyplyn.duct.etl.configuration;
 
 import com.salesforce.pyplyn.configuration.Configuration;
@@ -5,17 +13,12 @@ import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapFixture
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Set;
 
 import static com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.ConfigurationsTestHelper.createCustomConfiguration;
 import static com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.ConfigurationsTestHelper.createFullConfiguration;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasItems;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.not;
-import static org.mockito.Mockito.doReturn;
+import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
