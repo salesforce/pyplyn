@@ -9,7 +9,7 @@
 package com.salesforce.pyplyn.duct.appconfig;
 
 import com.google.inject.Injector;
-import com.salesforce.pyplyn.duct.app.AppBootstrapFixtures;
+import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapFixtures;
 import com.salesforce.pyplyn.util.SerializationHelper;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;

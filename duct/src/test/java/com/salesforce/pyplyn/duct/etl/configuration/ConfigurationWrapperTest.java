@@ -9,7 +9,7 @@
 package com.salesforce.pyplyn.duct.etl.configuration;
 
 import com.salesforce.pyplyn.configuration.UpdatableConfigurationSetProvider;
-import com.salesforce.pyplyn.duct.app.AppBootstrapFixtures;
+import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapFixtures;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 

@@ -8,7 +8,7 @@
 
 package com.salesforce.pyplyn.duct.etl.load.refocus;
 
-import com.salesforce.pyplyn.duct.app.AppBootstrapFixtures;
+import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapFixtures;
 import com.salesforce.pyplyn.duct.app.MetricDuct;
 import com.salesforce.pyplyn.status.MeterType;
 import org.testng.annotations.*;

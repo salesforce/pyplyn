@@ -94,7 +94,7 @@ public class MetricDuct implements Runnable {
      *
      * @return this object (fluent interface implementation)
      */
-    MetricDuct setConfigurationProvider(UpdatableConfigurationSetProvider<ConfigurationWrapper> configurationSetProvider) {
+    public MetricDuct setConfigurationProvider(UpdatableConfigurationSetProvider<ConfigurationWrapper> configurationSetProvider) {
         this.configurationSetProvider = configurationSetProvider;
         return this;
     }

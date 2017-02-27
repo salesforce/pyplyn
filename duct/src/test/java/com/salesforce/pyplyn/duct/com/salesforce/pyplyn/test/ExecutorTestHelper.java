@@ -6,7 +6,7 @@
  *    or https://opensource.org/licenses/BSD-3-Clause
  */
 
-package com.salesforce.pyplyn.duct.app;
+package com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;

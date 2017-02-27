@@ -6,7 +6,7 @@
  *    or https://opensource.org/licenses/BSD-3-Clause
  */
 
-package com.salesforce.pyplyn.duct.app;
+package com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test;
 
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.Timer;
@@ -15,16 +15,21 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.TypeLiteral;
+import com.hazelcast.core.IMap;
 import com.salesforce.argus.ArgusClient;
 import com.salesforce.argus.model.MetricResponse;
 import com.salesforce.pyplyn.cache.CacheFactory;
 import com.salesforce.pyplyn.cache.ConcurrentCacheMap;
-import com.salesforce.pyplyn.client.ClientFactoryException;
 import com.salesforce.pyplyn.client.UnauthorizedException;
 import com.salesforce.pyplyn.configuration.AbstractConnector;
 import com.salesforce.pyplyn.configuration.Configuration;
 import com.salesforce.pyplyn.configuration.UpdatableConfigurationSetProvider;
+import com.salesforce.pyplyn.duct.app.AppBootstrap;
+import com.salesforce.pyplyn.duct.app.BootstrapException;
+import com.salesforce.pyplyn.duct.app.MetricDuct;
+import com.salesforce.pyplyn.duct.app.ShutdownHook;
 import com.salesforce.pyplyn.duct.appconfig.AppConfig;
+import com.salesforce.pyplyn.duct.cluster.Cluster;
 import com.salesforce.pyplyn.duct.connector.AppConnector;
 import com.salesforce.pyplyn.duct.etl.configuration.ConfigurationProvider;
 import com.salesforce.pyplyn.duct.etl.configuration.ConfigurationWrapper;
@@ -60,7 +65,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -73,73 +80,76 @@ import static org.mockito.Mockito.*;
  * @since 5.0
  */
 public class AppBootstrapFixtures {
-    private static final Logger logger = LoggerFactory.getLogger(AppBootstrapFixtures.class);
     public static final String MOCK_CONNECTOR_NAME = "mock-connector";
 
-    AppConfigMocks appConfigMocks;
+    @Mock
+    private AppConnector appConnector;
 
     @Mock
-    AppConnector appConnector;
-
-    List<AbstractConnector> connectors = new ArrayList<>();
+    private SystemStatusRunnable systemStatus;
 
     @Mock
-    SystemStatusRunnable systemStatus;
+    private Meter systemStatusMeter;
 
     @Mock
-    Meter systemStatusMeter;
+    private Timer systemStatusTimer;
 
     @Mock
-    Timer systemStatusTimer;
+    private RemoteClientFactory<ArgusClient> argusClientFactory;
 
     @Mock
-    RemoteClientFactory<ArgusClient> argusClientFactory;
+    private ArgusClient argusClient;
 
     @Mock
-    ArgusClient argusClient;
+    private RemoteClientFactory<RefocusClient> refocusClientFactory;
 
     @Mock
-    RemoteClientFactory<RefocusClient> refocusClientFactory;
+    private RefocusClient refocusClient;
 
     @Mock
-    RefocusClient refocusClient;
+    private SystemStatusConsumer statusConsumer;
 
     @Mock
-    SystemStatusConsumer statusConsumer;
+    private ArgusExtractProcessor argusExtractProcessor;
 
     @Mock
-    ArgusExtractProcessor argusExtractProcessor;
+    private RefocusExtractProcessor refocusExtractProcessor;
 
     @Mock
-    RefocusExtractProcessor refocusExtractProcessor;
+    private CacheFactory cacheFactory;
 
     @Mock
-    CacheFactory cacheFactory;
+    private ConcurrentCacheMap<MetricResponse> metricResponseCache;
 
     @Mock
-    ConcurrentCacheMap<MetricResponse> metricResponseCache;
+    private ConcurrentCacheMap<Sample> sampleCache;
 
     @Mock
-    ConcurrentCacheMap<Sample> sampleCache;
+    private TransformationResult transformationResult;
 
     @Mock
-    TransformationResult transformationResult;
+    private ETLMetadata transformationResultMetadata;
 
     @Mock
-    ETLMetadata transformationResultMetadata;
+    private RefocusLoadProcessor refocusLoadProcessor;
 
     @Mock
-    RefocusLoadProcessor refocusLoadProcessor;
+    private ConfigurationProvider configurationProvider;
 
     @Mock
-    ConfigurationProvider configurationProvider;
+    private Cluster cluster;
 
     @Mock
-    ShutdownHook shutdownHook;
+    IMap<Configuration, ConfigurationWrapper> hazelcastConfigurationMap;
+
+    @Mock
+    private ShutdownHook shutdownHook;
 
     @Mock
     private UpdatableConfigurationSetProvider<ConfigurationWrapper> configurationSetProvider;
 
+    private AppConfigMocks appConfigMocks;
+    private List<AbstractConnector> connectors = new ArrayList<>();
     private Injector injector;
     private MetricDuct app;
 
@@ -270,7 +280,6 @@ public class AppBootstrapFixtures {
         return this;
     }
 
-
     public AppBootstrapFixtures simulateRefocusLoadProcessingDelay(final long duration) {
         // we need to reinitialize the object to provide access to the real failed/succeeded (protected) methods
         refocusLoadProcessor = spy(new RefocusLoadProcessor(refocusClientFactory, shutdownHook));
@@ -285,6 +294,33 @@ public class AppBootstrapFixtures {
 
         }).when(refocusLoadProcessor).process(any(), any());
 
+        return this;
+    }
+
+    public AppBootstrapFixtures configurationProviderReturns(Configuration ... configurations) {
+        doReturn(new HashSet<>(Arrays.asList(configurations))).when(configurationProvider).get();
+        return this;
+    }
+
+    public AppBootstrapFixtures configurationProviderThrowsException() {
+        doThrow(BootstrapException.class).when(configurationProvider).get();
+        return this;
+    }
+
+    public AppBootstrapFixtures clusterReturns(Configuration ... configurations) {
+        doReturn(hazelcastConfigurationMap).when(cluster).distributedMap(any());
+
+        Map<Configuration, ConfigurationWrapper> configurationMap =
+                Stream.of(configurations).collect(Collectors.toMap(Function.identity(), c -> new ConfigurationWrapper(c, null)));
+
+        doReturn(configurationMap.keySet()).when(hazelcastConfigurationMap).localKeySet();
+        doReturn(configurationMap).when(hazelcastConfigurationMap).getAll(configurationMap.keySet());
+
+        return this;
+    }
+
+    public AppBootstrapFixtures clusterMasterNode(boolean isMaster) {
+        doReturn(isMaster).when(cluster).isMaster();
         return this;
     }
 
@@ -306,13 +342,13 @@ public class AppBootstrapFixtures {
     /**
      * Real logic
      */
-    public AppBootstrapFixtures realSinglePartitionConfigProvider(Injector injector) {
-        configurationSetProvider = spy(injector.getInstance(SinglePartitionConfigurationProvider.class));
+    public AppBootstrapFixtures realSinglePartitionConfigProvider() {
+        configurationSetProvider = spy(new SinglePartitionConfigurationProvider(configurationProvider, systemStatus));
         return this;
     }
 
     public AppBootstrapFixtures realDistributedConfigProvider() {
-        configurationSetProvider = spy(injector.getInstance(DistributedConfigurationProvider.class));
+        configurationSetProvider = spy(new DistributedConfigurationProvider(configurationProvider, cluster, systemStatus));
         return this;
     }
 
@@ -356,9 +392,15 @@ public class AppBootstrapFixtures {
         return shutdownHook;
     }
 
+    public ConfigurationProvider configurationProvider() {
+        return configurationProvider;
+    }
+
     public UpdatableConfigurationSetProvider<ConfigurationWrapper> configurationSetProvider() {
         return configurationSetProvider;
     }
+
+
 
     //
     // Utility methods

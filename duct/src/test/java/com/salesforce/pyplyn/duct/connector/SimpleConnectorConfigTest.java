@@ -10,10 +10,9 @@ package com.salesforce.pyplyn.duct.connector;
 
 import com.google.inject.Injector;
 import com.salesforce.pyplyn.configuration.AbstractConnector;
-import com.salesforce.pyplyn.duct.app.AppBootstrapFixtures;
+import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapFixtures;
 import com.salesforce.pyplyn.duct.app.BootstrapException;
 import com.salesforce.pyplyn.util.SerializationHelper;
-import org.mockito.MockitoAnnotations;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 

@@ -6,7 +6,9 @@
  *    or https://opensource.org/licenses/BSD-3-Clause
  */
 
-package com.salesforce.pyplyn.duct.app;
+package com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test;
+
+import com.salesforce.pyplyn.duct.app.MetricDuct;
 
 import java.util.List;
 import java.util.concurrent.CountDownLatch;

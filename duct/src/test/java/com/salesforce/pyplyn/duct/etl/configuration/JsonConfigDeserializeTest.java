@@ -10,7 +10,7 @@ package com.salesforce.pyplyn.duct.etl.configuration;
 
 import com.google.inject.Injector;
 import com.salesforce.pyplyn.configuration.Configuration;
-import com.salesforce.pyplyn.duct.app.AppBootstrapFixtures;
+import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapFixtures;
 import com.salesforce.pyplyn.duct.connector.SimpleConnectorConfig;
 import com.salesforce.pyplyn.util.SerializationHelper;
 import org.testng.annotations.BeforeMethod;

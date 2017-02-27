@@ -8,14 +8,13 @@
 
 package com.salesforce.pyplyn.duct.systemstatus;
 
-import com.salesforce.pyplyn.duct.app.AppBootstrapFixtures;
+import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapFixtures;
 import com.salesforce.pyplyn.duct.app.MetricDuct;
 import com.salesforce.pyplyn.status.AlertLevel;
 import com.salesforce.pyplyn.status.MeterType;
 import com.salesforce.pyplyn.status.StatusMessage;
 import com.salesforce.pyplyn.status.SystemStatusConsumer;
 import org.mockito.ArgumentCaptor;
-import org.mockito.MockitoAnnotations;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 

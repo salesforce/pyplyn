@@ -8,6 +8,9 @@
 
 package com.salesforce.pyplyn.duct.etl.configuration;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -45,18 +48,13 @@ public class SinglePartitionConfigurationProvider implements UpdatableConfigurat
     protected Map<Configuration, ConfigurationWrapper> configurations = new HashMap<>();
 
 
+    /**
+     * Default constructor
+     */
     @Inject
     public SinglePartitionConfigurationProvider(ConfigurationProvider provider, SystemStatus systemStatus) {
         this.provider = provider;
         this.systemStatus = systemStatus;
-    }
-
-    /**
-     * Every time it runs, this class will update all known configurations
-     */
-    @Override
-    public void run() {
-        updateConfigurations();
     }
 
     /**
@@ -70,7 +68,7 @@ public class SinglePartitionConfigurationProvider implements UpdatableConfigurat
             // attempt to acquire a lock and update the list of configurations
             if (updateLock.tryLock(100, TimeUnit.MILLISECONDS)) {
                 // make a copy of all current elements
-                Set<Map.Entry<Configuration, ConfigurationWrapper>> oldEntries = configurations.entrySet();
+                Map<Configuration, ConfigurationWrapper> oldEntries = ImmutableMap.copyOf(configurations);
 
                 try {
                     // merge new configurations into existing map
@@ -93,13 +91,31 @@ public class SinglePartitionConfigurationProvider implements UpdatableConfigurat
         }
     }
 
+
+    /**
+     * Returns all known {@link ConfigurationWrapper}s
+     */
+    @Override
+    public Set<ConfigurationWrapper> get() {
+        return retrieveLocalNodeConfigurations().values().stream().collect(Collectors.toSet());
+    }
+
+    /**
+     * Every time it runs, this class will update all known configurations
+     */
+    @Override
+    public void run() {
+        updateConfigurations();
+    }
+
+
     /**
      * Clears map of any left values and restores old entries from a backup
      */
-    private void restoreBackedUpEntries(Set<Map.Entry<Configuration, ConfigurationWrapper>> oldEntries) {
+    private void restoreBackedUpEntries(Map<Configuration, ConfigurationWrapper> oldEntries) {
         // restore old map
         configurations.clear();
-        oldEntries.forEach(entry -> configurations.put(entry.getKey(), entry.getValue()));
+        oldEntries.entrySet().forEach(entry -> configurations.put(entry.getKey(), entry.getValue()));
     }
 
     /**
@@ -109,7 +125,7 @@ public class SinglePartitionConfigurationProvider implements UpdatableConfigurat
      * <p/>- removes configurations that are not defined anymore
      */
     protected static void mergeConfigurationSets(Set<Configuration> updatedConfigurations, Map<Configuration, ConfigurationWrapper> configurations) {
-        updatedConfigurations.forEach(newConfig -> {
+        for (Configuration newConfig : updatedConfigurations) {
             // returns an existing wrapper (for an update)
             ConfigurationWrapper wrapper = configurations.get(newConfig);
 
@@ -117,18 +133,20 @@ public class SinglePartitionConfigurationProvider implements UpdatableConfigurat
             if (isNull(wrapper)) {
                 wrapper = new ConfigurationWrapper(newConfig, null);
 
-            // if a mapping already existed, we need to update the configuration
+                // if a mapping already existed, we need to update the configuration
             } else {
                 wrapper.update(newConfig);
             }
 
             // update existing OR define new configuration
             configurations.put(newConfig, wrapper);
-        });
+        }
 
         // delete old configurations
-        Sets.SetView<Configuration> deletedConfigurations = Sets.difference(configurations.keySet(), updatedConfigurations);
-        deletedConfigurations.forEach(configurations::remove);
+        Set<Configuration> deletedConfigurations = ImmutableSet.copyOf(Sets.difference(configurations.keySet(), updatedConfigurations));
+        for (Configuration deletedConfiguration : deletedConfigurations) {
+            configurations.remove(deletedConfiguration);
+        }
 
         logger.info("Updated configuration set; {} new/updated configs, {} deleted configs", updatedConfigurations.size(), deletedConfigurations.size());
     }
@@ -136,7 +154,7 @@ public class SinglePartitionConfigurationProvider implements UpdatableConfigurat
     /**
      * Provides a system status update, notifying of an Configuration update failure
      */
-    private void markFailure() {
+    void markFailure() {
         systemStatus.meter(PROCESS_NAME, MeterType.ConfigurationUpdateFailure).mark();
     }
 
@@ -147,13 +165,5 @@ public class SinglePartitionConfigurationProvider implements UpdatableConfigurat
      */
     protected Map<Configuration, ConfigurationWrapper> retrieveLocalNodeConfigurations() {
         return configurations;
-    }
-
-    /**
-     * Returns all known {@link ConfigurationWrapper}s
-     */
-    @Override
-    public Set<ConfigurationWrapper> get() {
-        return retrieveLocalNodeConfigurations().values().stream().collect(Collectors.toSet());
     }
 }

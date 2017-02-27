@@ -8,18 +8,12 @@
 
 package com.salesforce.pyplyn.duct.etl.extract.refocus;
 
-import com.salesforce.pyplyn.duct.app.AppBootstrapFixtures;
+import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapFixtures;
 import com.salesforce.pyplyn.duct.app.MetricDuct;
 import com.salesforce.pyplyn.status.MeterType;
 import org.testng.annotations.*;
 
-import org.mockito.ArgumentCaptor;
-import org.mockito.MockitoAnnotations;
-
 import static org.mockito.Mockito.*;
-
-import static org.hamcrest.MatcherAssert.*;
-import static org.hamcrest.Matchers.*;
 
 /**
  * Test class

@@ -10,16 +10,10 @@ package com.salesforce.pyplyn.duct.connector;
 
 import com.google.inject.Injector;
 import com.salesforce.pyplyn.configuration.AbstractConnector;
-import com.salesforce.pyplyn.duct.app.AppBootstrapFixtures;
-import com.salesforce.pyplyn.util.SerializationHelper;
+import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapFixtures;
 import org.testng.annotations.*;
 
-import org.mockito.ArgumentCaptor;
-import org.mockito.MockitoAnnotations;
-
 import java.util.List;
-
-import static org.mockito.Mockito.*;
 
 import static org.hamcrest.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
