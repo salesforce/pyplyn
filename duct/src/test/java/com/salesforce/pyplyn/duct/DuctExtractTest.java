@@ -66,7 +66,7 @@ public class DuctExtractTest {
 		//ARRANGE
 		@SuppressWarnings("unchecked")
 		ArgusExtractProcessor argusExtractprocessor = spy(new ArgusExtractProcessor(remoteClientFactoryArgus, cacheFactory, shutdownHook));
-		Argus argus = new Argus();
+		Argus argus = new Argus("endpoint", "expression", "name", 1, 2d);
 		
 		//ACT
         doReturn(Collections.singletonList(Collections.singletonList(result))).when(argusExtractprocessor).process(Collections.singletonList(any()));
@@ -83,7 +83,7 @@ public class DuctExtractTest {
 		//ARRANGE
 		@SuppressWarnings("unchecked")
 		RefocusExtractProcessor refocusExtractProcessor = spy(new RefocusExtractProcessor(remoteClientFactoryRefocus, cacheFactory, shutdownHook));
-		Refocus refocus = new Refocus();
+		Refocus refocus = new Refocus("endpoint", "subject", "aspect", 1, 2d);
 		
 		//ACT
         doReturn(Collections.singletonList(Collections.singletonList(result))).when(refocusExtractProcessor).process(Collections.singletonList(any()));

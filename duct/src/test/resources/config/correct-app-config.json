@@ -1,0 +1,19 @@
+{
+  "global": {
+    "configurationsPath": "configurationsPath",
+    "connectorsPath": "connectorsPath",
+    "minRepeatIntervalMillis": 1,
+    "updateConfigurationIntervalMillis": 2
+  },
+  "hazelcast": {
+    "enabled": true,
+    "config": "config"
+  },
+  "alert": {
+    "enabled": true,
+    "checkIntervalMillis": 3,
+    "thresholds": {
+      "thresholds": 4.0
+    }
+  }
+}

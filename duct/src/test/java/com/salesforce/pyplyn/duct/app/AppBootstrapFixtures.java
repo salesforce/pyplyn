@@ -356,6 +356,9 @@ public class AppBootstrapFixtures {
         return shutdownHook;
     }
 
+    public UpdatableConfigurationSetProvider<ConfigurationWrapper> configurationSetProvider() {
+        return configurationSetProvider;
+    }
 
     //
     // Utility methods

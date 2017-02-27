@@ -54,7 +54,8 @@ public class DuctLoadTest {
 		//ARRANGE
 		@SuppressWarnings("unchecked")
 		RefocusLoadProcessor refocusLoadProcessor = spy(new RefocusLoadProcessor(remoteClientFactory, shutdownHook));
-		Refocus refocus = new Refocus();
+		Refocus refocus = new Refocus("endpoint", "subject", "aspect",
+				"defaultMessageCode", "defaultMessageBody", null);
 		Boolean boolVal = Boolean.TRUE;
 		
 		//ACT

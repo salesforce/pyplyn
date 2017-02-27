@@ -8,6 +8,7 @@
 
 package com.salesforce.pyplyn.duct.etl.extract.argus;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.salesforce.pyplyn.model.Extract;
 
@@ -39,6 +40,22 @@ public class Argus implements Extract, Serializable {
     @JsonProperty
     private Double defaultValue;
 
+
+    /**
+     * Default constructor
+     */
+    @JsonCreator
+    public Argus(@JsonProperty("endpoint") String endpoint,
+                 @JsonProperty("expression") String expression,
+                 @JsonProperty("name") String name,
+                 @JsonProperty("cacheMillis") Integer cacheMillis,
+                 @JsonProperty("defaultValue") Double defaultValue) {
+        this.endpoint = endpoint;
+        this.expression = expression;
+        this.name = name;
+        this.cacheMillis = cacheMillis;
+        this.defaultValue = defaultValue;
+    }
 
     /**
      * Endpoint where the expression should be executed on

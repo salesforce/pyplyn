@@ -8,9 +8,11 @@
 
 package com.salesforce.pyplyn.duct.etl.load.refocus;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.salesforce.pyplyn.model.Load;
 import com.salesforce.pyplyn.model.TransformationResult;
+import com.salesforce.pyplyn.util.CollectionUtils;
 import com.salesforce.refocus.model.Link;
 import com.salesforce.refocus.model.Sample;
 
@@ -46,6 +48,24 @@ public class Refocus implements Load, Serializable {
     @JsonProperty
     private List<Link> relatedLinks;
 
+
+    /**
+     * Default constructor
+     */
+    @JsonCreator
+    public Refocus(@JsonProperty("endpoint") String endpoint,
+                   @JsonProperty("subject") String subject,
+                   @JsonProperty("aspect") String aspect,
+                   @JsonProperty("defaultMessageCode") String defaultMessageCode,
+                   @JsonProperty("defaultMessageBody") String defaultMessageBody,
+                   @JsonProperty("relatedLinks") List<Link> relatedLinks) {
+        this.endpoint = endpoint;
+        this.subject = subject;
+        this.aspect = aspect;
+        this.defaultMessageCode = defaultMessageCode;
+        this.defaultMessageBody = defaultMessageBody;
+        this.relatedLinks = CollectionUtils.immutableListOrNull(relatedLinks);
+    }
 
     /**
      * Endpoint where the results should be published

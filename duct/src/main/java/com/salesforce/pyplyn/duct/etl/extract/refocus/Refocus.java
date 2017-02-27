@@ -8,6 +8,7 @@
 
 package com.salesforce.pyplyn.duct.etl.extract.refocus;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.salesforce.pyplyn.model.Extract;
 
@@ -38,6 +39,22 @@ public class Refocus implements Extract, Serializable {
     @JsonProperty
     private Double defaultValue;
 
+
+    /**
+     * Default constructor
+     */
+    @JsonCreator
+    public Refocus(@JsonProperty("endpoint") String endpoint,
+                   @JsonProperty("subject") String subject,
+                   @JsonProperty("aspect") String aspect,
+                   @JsonProperty("cacheMillis") Integer cacheMillis,
+                   @JsonProperty("defaultValue") Double defaultValue) {
+        this.endpoint = endpoint;
+        this.subject = subject;
+        this.aspect = aspect;
+        this.cacheMillis = cacheMillis;
+        this.defaultValue = defaultValue;
+    }
 
     /**
      * Endpoint where the expression should be executed on

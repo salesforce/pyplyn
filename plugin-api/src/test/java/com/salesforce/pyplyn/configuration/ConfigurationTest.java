@@ -21,7 +21,7 @@ import static org.hamcrest.Matchers.*;
  * Test class
  *
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
- * @since ${project.version}
+ * @since 3.0
  */
 public class ConfigurationTest {
     @Test

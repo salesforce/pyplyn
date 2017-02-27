@@ -33,6 +33,8 @@ import static java.util.Objects.isNull;
  * @since 3.0
  */
 public class ConfigurationIntake {
+    public static final String CONFIGURATIONS_READ_ERROR = "Errors encountered reading configurations: ";
+
     private static final Logger logger = LoggerFactory.getLogger(ConfigurationIntake.class);
     private final List<Throwable> errors = new ArrayList<>();
     private final SerializationHelper serializer;
@@ -128,7 +130,7 @@ public class ConfigurationIntake {
 
             // create new exception and add first error as cause
             final BootstrapException ex =
-                    new BootstrapException("Errors encountered reading configurations: " + errors.size(), cause);
+                    new BootstrapException(CONFIGURATIONS_READ_ERROR + errors.size(), cause);
 
             // add remaining errors as suppressed exceptions
             errors.stream().skip(1).forEach(ex::addSuppressed);
