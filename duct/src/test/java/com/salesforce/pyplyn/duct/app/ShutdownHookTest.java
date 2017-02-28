@@ -68,6 +68,7 @@ public class ShutdownHookTest {
         AppBootstrapLatches.isProcessingExtractDatasources().await();
         shutdownHook.shutdown();
         AppBootstrapLatches.beforeLoadProcessorStarts().await();
+        awaitExecutorTermination();
         boolean appWasShutDown = AppBootstrapLatches.appHasShutdown().await(5000, TimeUnit.MILLISECONDS);
 
         // ASSERT
@@ -100,6 +101,7 @@ public class ShutdownHookTest {
         AppBootstrapLatches.beforeExtractProcessorStarts().await();
         shutdownHook.shutdown();
         AppBootstrapLatches.isProcessingExtractDatasources().await();
+        awaitExecutorTermination();
         boolean appWasShutDown = AppBootstrapLatches.appHasShutdown().await(5000, TimeUnit.MILLISECONDS);
 
         // ASSERT
@@ -132,6 +134,7 @@ public class ShutdownHookTest {
         AppBootstrapLatches.beforeExtractProcessorStarts().await();
         shutdownHook.shutdown();
         AppBootstrapLatches.isProcessingExtractDatasources().await();
+        awaitExecutorTermination();
         boolean appWasShutDown = AppBootstrapLatches.appHasShutdown().await(5000, TimeUnit.MILLISECONDS);
 
         // ASSERT
@@ -162,5 +165,12 @@ public class ShutdownHookTest {
     private ShutdownHook registerExecutorWithShutdownHook() {
         fixtures.shutdownHook().registerExecutor(executor);
         return fixtures.shutdownHook();
+    }
+
+    /**
+     * We are assuming the app was shut down, give the executor a chance to terminate
+     */
+    private void awaitExecutorTermination() throws InterruptedException {
+        executor.awaitTermination(10000, TimeUnit.MILLISECONDS);
     }
 }
