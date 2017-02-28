@@ -9,6 +9,7 @@
 package com.salesforce.pyplyn.duct.cluster;
 
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
@@ -32,6 +33,7 @@ import static java.util.Objects.nonNull;
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
  * @since 1.0
  */
+@Singleton
 public class Cluster {
     private final HazelcastInstance hazelcast;
 
@@ -56,6 +58,10 @@ public class Cluster {
 
     /**
      * Initializes the Hazelcast instance based on the passed path to *hazelcast.xml*
+     * <p/>
+     * <p/>NOTE: This is not a great pattern, however it is required to allow testing of this class,
+     *  without actually starting a Hazelcast cluster; be EXTRA CAREFUL when you override this method,
+     *  as it called in this class' constructor!
      */
     HazelcastInstance init(String configFile) throws FileNotFoundException {
         Config config = new XmlConfigBuilder(loadResourceInsecure(configFile)).build();

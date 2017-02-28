@@ -26,4 +26,4 @@ import java.io.Serializable;
  * @since 3.0
  */
 @JsonIgnoreProperties("format")
-public interface Extract { }
+public interface Extract extends Serializable { }

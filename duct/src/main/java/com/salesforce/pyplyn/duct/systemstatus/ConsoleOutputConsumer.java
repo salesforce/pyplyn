@@ -30,6 +30,6 @@ public class ConsoleOutputConsumer implements SystemStatusConsumer {
      */
     @Override
     public void accept(List<StatusMessage> messages) {
-        logger.info("System status: " + Arrays.toString(messages.toArray()));
+        logger.info("System status: {}", Arrays.toString(messages.toArray()));
     }
 }

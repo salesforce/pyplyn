@@ -9,6 +9,7 @@
 package com.salesforce.pyplyn.duct.cluster;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.Member;
 import com.salesforce.pyplyn.duct.app.ShutdownHook;
 import com.salesforce.pyplyn.duct.appconfig.AppConfig;
 import org.mockito.Mock;
@@ -17,6 +18,8 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.io.FileNotFoundException;
+import java.util.Collections;
+import java.util.Set;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -60,6 +63,19 @@ public class ClusterTest {
         verify(shutdownHook, times(0)).registerOperation(any());
     }
 
+    @Test
+    public void testIsNotMaster() throws Exception {
+        // ARRANGE
+        doReturn(true).when(hazelcast).isEnabled();
+        doReturn("config").when(hazelcast).config();
+
+        MockedCluster cluster = new MockedCluster(appConfig, shutdownHook);
+        cluster.isMasterNode(false);
+
+        // ACT/ASSERT
+        assertThat("Expecting isMaster=false, when Hazelcast is running", cluster.isMaster(), equalTo(false));
+        verify(shutdownHook).registerOperation(any());
+    }
 
     @Test
     public void testDistributedMap() throws Exception {
@@ -104,15 +120,29 @@ public class ClusterTest {
      */
     private static class MockedCluster extends Cluster {
         private HazelcastInstance hazelcast;
+        private com.hazelcast.core.Cluster hazelCluster;
+        private Member member;
 
         public MockedCluster(AppConfig appConfig, ShutdownHook shutdownHook) throws FileNotFoundException {
             super(appConfig, shutdownHook);
         }
 
+        /**
+         * NOTE: this is called from the parent constructor; be careful to avoid adding circular dependencies !
+         */
         @Override
         HazelcastInstance init(String configFile) throws FileNotFoundException {
             hazelcast = mock(HazelcastInstance.class);
             return hazelcast;
+        }
+
+        void isMasterNode(boolean masterNode) {
+            hazelCluster = mock(com.hazelcast.core.Cluster.class);
+            doReturn(hazelCluster).when(hazelcast).getCluster();
+
+            member = mock(Member.class);
+            doReturn(Collections.singleton(member)).when(hazelCluster).getMembers();
+            doReturn(masterNode).when(member).localMember();
         }
     }
 }

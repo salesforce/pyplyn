@@ -27,6 +27,6 @@ import java.util.List;
  * @since 3.0
  */
 @JsonIgnoreProperties("name")
-public interface Transform {
+public interface Transform extends Serializable {
     List<List<TransformationResult>> apply(List<List<TransformationResult>> input);
 }
