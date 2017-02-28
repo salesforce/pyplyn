@@ -68,7 +68,7 @@ public class ShutdownHookTest {
         AppBootstrapLatches.isProcessingExtractDatasources().await();
         shutdownHook.shutdown();
         AppBootstrapLatches.beforeLoadProcessorStarts().await();
-        boolean appWasShutDown = AppBootstrapLatches.appHasShutdown().await(2000, TimeUnit.MILLISECONDS);
+        boolean appWasShutDown = AppBootstrapLatches.appHasShutdown().await(5000, TimeUnit.MILLISECONDS);
 
         // ASSERT
         assertAppShutdown(appWasShutDown);
@@ -100,7 +100,7 @@ public class ShutdownHookTest {
         AppBootstrapLatches.beforeExtractProcessorStarts().await();
         shutdownHook.shutdown();
         AppBootstrapLatches.isProcessingExtractDatasources().await();
-        boolean appWasShutDown = AppBootstrapLatches.appHasShutdown().await(2000, TimeUnit.MILLISECONDS);
+        boolean appWasShutDown = AppBootstrapLatches.appHasShutdown().await(5000, TimeUnit.MILLISECONDS);
 
         // ASSERT
         assertAppShutdown(appWasShutDown);
@@ -132,7 +132,7 @@ public class ShutdownHookTest {
         AppBootstrapLatches.beforeExtractProcessorStarts().await();
         shutdownHook.shutdown();
         AppBootstrapLatches.isProcessingExtractDatasources().await();
-        boolean appWasShutDown = AppBootstrapLatches.appHasShutdown().await(2000, TimeUnit.MILLISECONDS);
+        boolean appWasShutDown = AppBootstrapLatches.appHasShutdown().await(5000, TimeUnit.MILLISECONDS);
 
         // ASSERT
         assertAppShutdown(appWasShutDown);
