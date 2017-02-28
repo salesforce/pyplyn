@@ -177,6 +177,7 @@ public abstract class AbstractRemoteClient<S> implements Cacheable {
             logger.error("Unsuccessful API operation: {}", errorBody);
 
         } catch (IOException e) {
+            call.cancel();
             logger.error("IOException occurred executing API call", e);
         }
 
