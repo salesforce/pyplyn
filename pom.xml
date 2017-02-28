@@ -360,7 +360,7 @@
             <dependency>
                 <groupId>com.hazelcast</groupId>
                 <artifactId>hazelcast</artifactId>
-                <version>3.7</version>
+                <version>3.8</version>
             </dependency>
 
             <!-- CLI arg parsing -->
