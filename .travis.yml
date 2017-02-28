@@ -1,0 +1,20 @@
+language: java
+jdk: oraclejdk8
+
+env:
+  global:
+   # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
+   #   via the "travis encrypt" command using the project repo's public key
+   - secure: "Fqf4RcM9Nn1Vodnnl/GgEJR8GN+juqIhnJ0m2qGT5/59Oo0afV6bhBtCknLOAGSAeYQMnk3eogU1zOeO35zuSuXlZmPJuCJKoMPox8yXQPqsLZROF0pZF60ZZ8a49RZeQ6fM6/OA96LfoJsXT3/dcbA2GYWJOQ3LhpP/hop6gCYbPzqYJL8fLv3SE2e28HvuzfeAKtVLe8p6uqpAIeeftaqDAlr/+Ck2YvUWiN5PDz/v/RZvrtYYYCktjuWn1TD9/CUgK+YXDkQ3Ieb6GFDhr1Nu48B0afzWFBgFy0+RM+NWG6kRfh7rntNJMKGSjRVmr8LBn7hEr64s991AMjRBf0Ed07/mBndzHk0WuRQKmtUQGInHgGUSpBhJrL2xDx53hyoesIqNBWY/JP0Q7AMmrDi7+lp6uo9fyHnosrjMNs87ZSN0iPsKZ+5b/2/f/F7OwhE6RUql2xc7YYoE5XPcyL9mo9ocY+uBlGmVlz7p882cTGAWF+kftQkQVUntE5vdetn3Sa0HnyJNeLFYMnxOG0sieeTijXuuna6sT+jO1sFg2sfdx1ENEZbTRNLxdohP2UekOPH7QF6VrcXsU3tR3lg5LO21OYPNlnh7obhtv1OJleVc76G4PWPgStiwxLdZpEs63g/33sbhwrf/dooYYaHItjGQWVp/zWZOEejGIjY="
+
+before_install:
+      - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
+
+addons:
+  coverity_scan:
+    project:
+      name: "salesforce/pyplyn"
+      description: "A scalable time-series data collector with ETL capabilities that allows you to ship metrics and visualize system health in real-time."
+    build_command_prepend: "mvn clean"
+    build_command:   "mvn -DskipTests=true compile"
+    branch_pattern: master
