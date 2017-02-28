@@ -552,6 +552,11 @@ public class AppBootstrapFixtures {
             return this;
         }
 
+        public AppConfigMocks configurationsPath(String path) {
+            doReturn(path).when(global).configurationsPath();
+            return this;
+        }
+
         public AppConfig get() {
             return appConfig;
         }

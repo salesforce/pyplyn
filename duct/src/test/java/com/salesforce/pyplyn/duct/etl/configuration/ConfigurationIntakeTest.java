@@ -88,4 +88,28 @@ public class ConfigurationIntakeTest {
         // ACT/ASSERT
         configurationIntake.listOfConfigurations("/invalid/dir/should/throw/IOException");
     }
+
+    @Test
+    public void testInvalidConfigurationsViaProvider() throws Exception {
+        // ARRANGE
+        String invalidConfigurationsDir = this.getClass().getResource(INVALID_CONFIGURATIONS).getFile();
+        fixtures.appConfigMocks().configurationsPath(invalidConfigurationsDir);
+
+        SerializationHelper serializationHelper = fixSerializationHelper(fixtures);
+        ConfigurationIntake configurationIntake = new ConfigurationIntake(serializationHelper);
+
+        // ACT
+        ConfigurationProvider configurationProvider = new ConfigurationProvider(fixtures.appConfigMocks().get(), configurationIntake);
+
+        try {
+            configurationProvider.get();
+
+            // ASSERT
+            fail("Expecting an exception to be thrown");
+
+        } catch (BootstrapException e) {
+            // ASSERT
+            assertThat(e.getMessage(), containsString(ConfigurationIntake.CONFIGURATIONS_READ_ERROR));
+        }
+    }
 }

@@ -19,7 +19,6 @@ import org.testng.annotations.Test;
 
 import java.io.FileNotFoundException;
 import java.util.Collections;
-import java.util.Set;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.nullValue;
