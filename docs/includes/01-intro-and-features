@@ -1,4 +1,6 @@
-<h1 id="introduction-to-pyplyn">Introduction to Pyplyn</h1>
+<h1 id="introduction">Introduction</h1>
+
+<p><img src="/images/pyplyn-logo-full.png" alt="Pyplyn: a scalable time-series data collector" /></p>
 
 <p>Pyplyn (meaning <em><em>pipeline</em></em> in <a href="https://translate.google.com/#af/en/pyplyn">Afrikaans</a>) is an 
  <a href="https://en.wikipedia.org/wiki/Extract,_transform,_load">ETL</a> tool that converts <a href="https://github.com/Salesforce/Argus">Argus</a>&rsquo;s 

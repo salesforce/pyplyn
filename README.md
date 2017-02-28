@@ -1,4 +1,6 @@
-# What is Pyplyn?
+# Introduction
+
+![Pyplyn: a scalable time-series data collector](docs/images/pyplyn-logo-full.png)
 
 Pyplyn (meaning _*pipeline*_ in [Afrikaans](https://translate.google.com/#af/en/pyplyn)) is an 
  [ETL](https://en.wikipedia.org/wiki/Extract,_transform,_load) tool that converts [Argus](https://github.com/Salesforce/Argus)'s 
