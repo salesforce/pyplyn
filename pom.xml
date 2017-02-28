@@ -349,13 +349,6 @@
                 <version>2.2.0</version>
             </dependency>
 
-            <!-- Authentication -->
-            <dependency>
-                <groupId>com.salesforce.trustfabric</groupId>
-                <artifactId>Jczar-all</artifactId>
-                <version>0.1.3</version>
-            </dependency>
-
             <!-- Clustering -->
             <dependency>
                 <groupId>com.hazelcast</groupId>
@@ -375,13 +368,6 @@
                 <groupId>io.dropwizard.metrics</groupId>
                 <artifactId>metrics-core</artifactId>
                 <version>3.1.2</version>
-            </dependency>
-
-            <!-- CSV parsing -->
-            <dependency>
-                <groupId>com.opencsv</groupId>
-                <artifactId>opencsv</artifactId>
-                <version>3.7</version>
             </dependency>
 
             <!-- Logging bindings -->
