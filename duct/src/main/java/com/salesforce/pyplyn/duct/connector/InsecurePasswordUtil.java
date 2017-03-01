@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.Optional;
 
 import static com.salesforce.pyplyn.util.CollectionUtils.nullOutByteArray;
@@ -49,31 +50,32 @@ class InsecurePasswordUtil {
      */
     static byte[] readPasswordBytes(String connectorFile, String id) {
         try {
-            Optional<InsecureConnector> thisConnector =
-                    Arrays.stream(mapper.readValue(SerializationHelper.loadResourceInsecure(connectorFile), InsecureConnector[].class))
-                            .filter(connector -> connector.id.equals(id))
-                            .findAny();
+            InsecureConnector[] connectors = mapper.readValue(SerializationHelper.loadResourceInsecure(connectorFile), InsecureConnector[].class);
+            if (isNull(connectors)) {
+                logger.warn("Could not read connectors from {}", connectorFile);
+                return null;
+            }
 
-            if (thisConnector.isPresent()) {
-                InsecureConnector insecureConnector = thisConnector.get();
+            try {
+                // try to find current connector by id
+                Optional<InsecureConnector> current = Arrays.stream(connectors)
+                        .filter(connector -> Objects.equals(connector.id, id))
+                        .findAny();
 
-                try {
-                    // retrieve password from connector definition, or return null
-                    return nullableArrayCopy(insecureConnector.password);
+                // retrieve password from connector definition, or return null
+                return current.map(InsecureConnector::password).orElse(null);
 
-                } finally {
-                    insecureConnector.clearPassword();
-                }
+
+            } finally {
+                // clear all password bytes
+                Arrays.stream(connectors).forEach(InsecureConnector::clearPassword);
             }
 
         } catch (IOException e) {
             // this shouldn't happen, unless the source file is moved, deleted, made unavailable, or its syntax is made invalid
-            logger.error("Unexpected error deserializing from the connector source", e);
-
+            logger.error("Unexpected error reading from the connectors file " + connectorFile, e);
+            return null;
         }
-
-        // return null if connector was not found, or IOException during deserialization
-        return null;
     }
 
 
@@ -88,6 +90,13 @@ class InsecurePasswordUtil {
 
         @JsonProperty(required = true)
         private byte[] password;
+
+        /**
+         * @return a copy of the password bytes
+         */
+        private byte[] password() {
+            return nullableArrayCopy(password);
+        }
 
         /**
          * Null-out password bytes
