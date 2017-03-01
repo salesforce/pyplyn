@@ -23,6 +23,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 /**
  * Deserializes ETL configuration models ({@link com.salesforce.pyplyn.model.Extract}, {@link com.salesforce.pyplyn.model.Transform}, {@link com.salesforce.pyplyn.model.Load}),
@@ -68,38 +69,41 @@ public class ETLConfigDeserializer<T> extends StdDeserializer<T> {
     @Override
     public T deserialize(JsonParser jsonParser, DeserializationContext ctx) throws IOException {
         ObjectCodec mapper = jsonParser.getCodec();
-        ObjectNode root = mapper.readTree(jsonParser);
-        Class<? extends T> objectType = findDeserializationClass(ctx, root.fields());
+        ObjectNode rootNode = mapper.readTree(jsonParser);
+        Class<? extends T> objectType = findDeserializationClass(ctx, rootNode);
 
         // parse as specified object type
-        return mapper.treeToValue(root, objectType);
+        return mapper.treeToValue(rootNode, objectType);
     }
 
     /**
      * Identifies the object type to deserialize into by matching the value specified in {@link ETLConfigDeserializer#typeField}
      *   against {@link ETLConfigDeserializer#knownTypes} for this object
      */
-    private Class<? extends T> findDeserializationClass(DeserializationContext ctx, Iterator<Map.Entry<String, JsonNode>> elementsIterator) throws JsonMappingException {
-        while (elementsIterator.hasNext()) {
-            // retrieve the field's name and determine if it's the searched type
-            Map.Entry<String, JsonNode> element = elementsIterator.next();
-            String field = element.getKey();
-            if (!typeField.equals(field)) {
-                continue;
-            }
+    private Class<? extends T> findDeserializationClass(DeserializationContext ctx, ObjectNode rootNode) throws JsonMappingException {
+        if (nonNull(rootNode)) {
+            Iterator<Map.Entry<String, JsonNode>> elements = rootNode.fields();
+            while (elements.hasNext()) {
+                // retrieve the field's name and determine if it's the searched type
+                Map.Entry<String, JsonNode> element = elements.next();
+                String field = element.getKey();
+                if (!typeField.equals(field)) {
+                    continue;
+                }
 
-            // retrieve the value and continue if not a text value
-            String value = element.getValue().textValue();
-            if (isNull(value)) {
-                continue;
-            }
+                // retrieve the value and continue if not a text value
+                String value = element.getValue().textValue();
+                if (isNull(value)) {
+                    continue;
+                }
 
-            // throw exception if unable to match type
-            if (!knownTypes.containsKey(value)) {
-                throw ctx.mappingException("The specified type \"%s\" is not known to the deserializer!", value);
-            }
+                // throw exception if unable to match type
+                if (!knownTypes.containsKey(value)) {
+                    throw ctx.mappingException("The specified type \"%s\" is not known to the deserializer!", value);
+                }
 
-            return knownTypes.get(value);
+                return knownTypes.get(value);
+            }
         }
 
         // stop here if the object's deserialization type was not specified

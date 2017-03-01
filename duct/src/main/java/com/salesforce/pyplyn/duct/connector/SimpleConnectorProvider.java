@@ -10,8 +10,10 @@ package com.salesforce.pyplyn.duct.connector;
 
 import com.google.inject.Inject;
 import com.google.inject.Provider;
+import com.hazelcast.util.CollectionUtil;
 import com.salesforce.pyplyn.configuration.AbstractConnector;
 import com.salesforce.pyplyn.duct.appconfig.AppConfig;
+import com.salesforce.pyplyn.util.CollectionUtils;
 import com.salesforce.pyplyn.util.SerializationHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,9 +22,11 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 /**
  * Reads all connector configurations from the input JSON and returns a list of connectors
@@ -54,11 +58,21 @@ public class SimpleConnectorProvider implements Provider<List<AbstractConnector>
      * @throws IOException on any deserialization errors
      */
     private List<AbstractConnector> readFromConnectorsFile(SerializationHelper serializer, String connectorPath) throws IOException {
-        return Collections.unmodifiableList(
-                Arrays.stream(serializer.deserializeJsonFile(connectorPath, SimpleConnectorConfig[].class))
-                        .peek(c -> c.setConnectorFilePath(connectorPath))
-                        .collect(Collectors.toList())
-        );
+        // first attempt to deserialize the connectors
+        SimpleConnectorConfig[] connectors = serializer.deserializeJsonFile(connectorPath, SimpleConnectorConfig[].class);
+
+        // if we have connectors, set the path
+        if (nonNull(connectors)) {
+            for (SimpleConnectorConfig connector : connectors) {
+                connector.setConnectorFilePath(connectorPath);
+            }
+
+        // or re-initialize the array as empty
+        } else {
+            connectors = new SimpleConnectorConfig[0];
+        }
+
+        return CollectionUtils.immutableOrEmptyList(Arrays.asList(connectors));
     }
 
     /**

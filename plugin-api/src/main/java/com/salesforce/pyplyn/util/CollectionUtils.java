@@ -10,6 +10,8 @@ package com.salesforce.pyplyn.util;
 
 import java.util.*;
 
+import static java.util.Objects.nonNull;
+
 /**
  * Various utils used for manipulating collection and array data structures
  *
@@ -60,7 +62,9 @@ final public class CollectionUtils {
      *   use this method to null-out passwords
      */
     public static void nullOutByteArray(byte... input) {
-        Arrays.fill(input, (byte) 0);
+        if (nonNull(input)) {
+            Arrays.fill(input, (byte) 0);
+        }
     }
 
     /**

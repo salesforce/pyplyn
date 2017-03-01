@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import static com.salesforce.pyplyn.util.CollectionUtils.nullOutByteArray;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
@@ -80,23 +81,30 @@ public class RefocusClient extends AbstractRemoteClient<RefocusService> {
     @Override
     public boolean auth() throws UnauthorizedException {
         // if a token is specified (null user, password specified as byte[])
-        if (isNull(connector.username()) && nonNull(connector.password())) {
-            // store it so we can authenticate all calls with it
-            this.authorizationHeader = generateAuthorizationHeader(new String(connector.password(), Charset.defaultCharset()));
-            return true;
+        byte[] password = connector.password();
+        try {
+            if (isNull(connector.username()) && nonNull(password)) {
+                // store it so we can authenticate all calls with it
+                this.authorizationHeader = generateAuthorizationHeader(new String(password, Charset.defaultCharset()));
+                return true;
+            }
+
+            // otherwise attempt to auth user/pass
+            AuthResponse authResponse =
+                    executeAndRetrieveBody(svc().authenticate(new AuthRequest(connector.username(), password)), null);
+
+            // if successful, generate and store the auth header
+            if (nonNull(authResponse)) {
+                this.authorizationHeader = generateAuthorizationHeader(authResponse.token());
+                return true;
+            }
+
+            return false;
+
+        // null out password bytes, once used
+        } finally {
+            nullOutByteArray(password);
         }
-
-        // otherwise attempt to auth user/pass
-        AuthResponse authResponse =
-                executeAndRetrieveBody(svc().authenticate(new AuthRequest(connector.username(), connector.password())), null);
-
-        // if successful, generate and store the auth header
-        if (nonNull(authResponse)) {
-            this.authorizationHeader = generateAuthorizationHeader(authResponse.token());
-            return true;
-        }
-
-        return false;
     }
 
     /**
