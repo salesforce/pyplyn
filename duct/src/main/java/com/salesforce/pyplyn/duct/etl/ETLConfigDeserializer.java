@@ -11,6 +11,7 @@ package com.salesforce.pyplyn.duct.etl;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.ObjectCodec;
 import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -68,10 +69,18 @@ public class ETLConfigDeserializer<T> extends StdDeserializer<T> {
     public T deserialize(JsonParser jsonParser, DeserializationContext ctx) throws IOException {
         ObjectCodec mapper = jsonParser.getCodec();
         ObjectNode root = mapper.readTree(jsonParser);
-        Iterator<Map.Entry<String, JsonNode>> elementsIterator = root.fields();
+        Class<? extends T> objectType = findDeserializationClass(ctx, root.fields());
 
-        Class<? extends T> objectType = null;
-        while (elementsIterator.hasNext() && isNull(objectType)) {
+        // parse as specified object type
+        return mapper.treeToValue(root, objectType);
+    }
+
+    /**
+     * Identifies the object type to deserialize into by matching the value specified in {@link ETLConfigDeserializer#typeField}
+     *   against {@link ETLConfigDeserializer#knownTypes} for this object
+     */
+    private Class<? extends T> findDeserializationClass(DeserializationContext ctx, Iterator<Map.Entry<String, JsonNode>> elementsIterator) throws JsonMappingException {
+        while (elementsIterator.hasNext()) {
             // retrieve the field's name and determine if it's the searched type
             Map.Entry<String, JsonNode> element = elementsIterator.next();
             String field = element.getKey();
@@ -87,13 +96,13 @@ public class ETLConfigDeserializer<T> extends StdDeserializer<T> {
 
             // throw exception if unable to match type
             if (!knownTypes.containsKey(value)) {
-                throw ctx.mappingException("The specified type \"%s\" is not known by the deserializer!", value);
+                throw ctx.mappingException("The specified type \"%s\" is not known to the deserializer!", value);
             }
 
-            objectType = knownTypes.get(value);
+            return knownTypes.get(value);
         }
 
-        // parse as specified object type
-        return mapper.treeToValue(root, objectType);
+        // stop here if the object's deserialization type was not specified
+        throw ctx.mappingException("Could not find deserialization type. Did you specify \"%s\"?", typeField);
     }
 }
