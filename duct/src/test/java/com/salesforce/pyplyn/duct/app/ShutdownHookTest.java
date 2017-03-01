@@ -16,11 +16,11 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -34,7 +34,7 @@ import static org.mockito.Mockito.verify;
  */
 public class ShutdownHookTest {
     AppBootstrapFixtures fixtures;
-    ThreadPoolExecutor executor;
+    ExecutorService executor;
 
     @BeforeMethod
     public void setUp() throws Exception {
@@ -47,7 +47,7 @@ public class ShutdownHookTest {
      * Checks that triggering the ShutdownHook will stop an ongoing ETL cycle
      * <p/> and that RefocusLoadProcessor does not post to Refocus endpoint on Shutdown
      */
-    @Test
+    @Test(timeOut = 10000L)
     public void testAppNotPostingResultsToRefocusAfterShuttingDown() throws Exception {
         // ARRANGE
         // bootstrap
@@ -68,11 +68,9 @@ public class ShutdownHookTest {
         AppBootstrapLatches.isProcessingExtractDatasources().await();
         shutdownHook.shutdown();
         AppBootstrapLatches.beforeLoadProcessorStarts().await();
-        awaitExecutorTermination();
-        boolean appWasShutDown = AppBootstrapLatches.appHasShutdown().await(5000, TimeUnit.MILLISECONDS);
 
         // ASSERT
-        assertAppShutdown(appWasShutDown);
+        awaitAndAssertCompletion();
 
         // since the load was interrupted, expecting the RefocusLoadProcessor to log a failure
         verify(fixtures.systemStatus()).meter("Refocus", MeterType.LoadFailure);
@@ -81,7 +79,7 @@ public class ShutdownHookTest {
     /**
      * ArgusExtractProcessor does not query the remote Argus endpoint if the app is shutting down
      */
-    @Test
+    @Test(timeOut = 10000L)
     public void testArgusNotQueriedIfShuttingDown() throws Exception {
         // ARRANGE
         // bootstrap
@@ -101,11 +99,9 @@ public class ShutdownHookTest {
         AppBootstrapLatches.beforeExtractProcessorStarts().await();
         shutdownHook.shutdown();
         AppBootstrapLatches.isProcessingExtractDatasources().await();
-        awaitExecutorTermination();
-        boolean appWasShutDown = AppBootstrapLatches.appHasShutdown().await(5000, TimeUnit.MILLISECONDS);
 
         // ASSERT
-        assertAppShutdown(appWasShutDown);
+        awaitAndAssertCompletion();
 
         // since the extract was interrupted, expecting the timer surrounding ArgusClient.getMetrics(List) to not be executed
         verify(fixtures.systemStatus(), times(0)).timer("Argus", "get-metrics." + AppBootstrapFixtures.MOCK_CONNECTOR_NAME);
@@ -114,7 +110,7 @@ public class ShutdownHookTest {
     /**
      * RefocusExtractProcessor does not query the remote Argus endpoint if the app is shutting down
      */
-    @Test
+    @Test(timeOut = 10000L)
     public void testRefocusNotQueriedIfShuttingDown() throws Exception {
         // ARRANGE
         // bootstrap
@@ -134,11 +130,9 @@ public class ShutdownHookTest {
         AppBootstrapLatches.beforeExtractProcessorStarts().await();
         shutdownHook.shutdown();
         AppBootstrapLatches.isProcessingExtractDatasources().await();
-        awaitExecutorTermination();
-        boolean appWasShutDown = AppBootstrapLatches.appHasShutdown().await(5000, TimeUnit.MILLISECONDS);
 
         // ASSERT
-        assertAppShutdown(appWasShutDown);
+        awaitAndAssertCompletion();
 
         // since the extract was interrupted, expecting the timer surrounding RefocusClient.getSample(String, List) to not be executed
         verify(fixtures.systemStatus(), times(0)).timer("Refocus", "get-sample." + AppBootstrapFixtures.MOCK_CONNECTOR_NAME);
@@ -154,9 +148,9 @@ public class ShutdownHookTest {
     /**
      * Asserts that the app was successfully shut down
      */
-    private void assertAppShutdown(boolean appWasShutDown) {
+    private void awaitAndAssertCompletion() throws InterruptedException {
+        boolean appWasShutDown = AppBootstrapLatches.appHasShutdown().await(9000, TimeUnit.MILLISECONDS);
         assertThat("Expected app to have shut down", appWasShutDown, is(true));
-        assertThat("There should be no active threads in the executor", executor.getActiveCount(), equalTo(0));
     }
 
     /**
@@ -165,12 +159,5 @@ public class ShutdownHookTest {
     private ShutdownHook registerExecutorWithShutdownHook() {
         fixtures.shutdownHook().registerExecutor(executor);
         return fixtures.shutdownHook();
-    }
-
-    /**
-     * We are assuming the app was shut down, give the executor a chance to terminate
-     */
-    private void awaitExecutorTermination() throws InterruptedException {
-        executor.awaitTermination(10000, TimeUnit.MILLISECONDS);
     }
 }

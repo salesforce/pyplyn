@@ -24,11 +24,10 @@ import static java.util.Objects.nonNull;
 public class ExecutorTestHelper {
 
     /**
-     * Initializes a single thread executor, used to run a process under test
-     * @return a {@link ThreadPoolExecutor} as we want to be able to query the number of active threads
+     * @return Initialized {@link ExecutorService} used to run different threads in tests
      */
-    public static ThreadPoolExecutor initSingleThreadExecutor() {
-        return (ThreadPoolExecutor)Executors.newFixedThreadPool(1);
+    public static ExecutorService initSingleThreadExecutor() {
+        return Executors.newFixedThreadPool(1);
     }
 
     /**
