@@ -67,15 +67,15 @@ public interface SerializationHelper {
     /**
      * Returns true the specified resource can be opened
      *   or false if for whatever reason it is not accessible
+     *   or {@link InputStream#close()} could not be called
      *
      * @param name Path to filename or package resource
      */
     static boolean canRead(String name) {
-        try {
-            loadResourceInsecure(name);
+        try (InputStream is = loadResourceInsecure(name)) {
             return true;
 
-        } catch (FileNotFoundException e) {
+        } catch (IOException e) {
             return false;
         }
     }
