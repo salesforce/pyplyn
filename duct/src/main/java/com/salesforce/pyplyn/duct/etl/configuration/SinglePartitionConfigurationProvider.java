@@ -87,6 +87,7 @@ public class SinglePartitionConfigurationProvider implements UpdatableConfigurat
 
         } catch (InterruptedException e) {
             // nothing to do, either the program is stopping or another thread was updating the configurations
+            logger.warn("Could not acquire lock to update configurations!", e);
         }
     }
 
