@@ -151,6 +151,12 @@ public class AppBootstrapFixtures {
     private Injector injector;
     private MetricDuct app;
 
+    /**
+     * If enabled, will initialize all latches in {@link AppBootstrapLatches} to wait, otherwise
+     *  they are disabled by default and the program flows without any limits
+     */
+    private boolean withLatches = false;
+
 
     /**
      * Initializes the fixtures and default
@@ -185,7 +191,7 @@ public class AppBootstrapFixtures {
      */
     public AppBootstrapFixtures freeze() {
         // init latches
-        AppBootstrapLatches.init();
+        AppBootstrapLatches.init(withLatches);
 
         // creates the injector and the MetricDuct app object
         injector = Guice.createInjector(new MockedDependenciesModule());
@@ -198,9 +204,15 @@ public class AppBootstrapFixtures {
     }
 
 
-    /**
+    /*
      *  Mock logic
      */
+
+    public AppBootstrapFixtures enableLatches() {
+        withLatches = true;
+        return this;
+    }
+
     public AppBootstrapFixtures oneArgusToRefocusConfiguration() {
         doReturn(new HashSet<>(Collections.singleton(new ConfigurationMocks().argusExtract().buildWrapper(null))))
                 .when(configurationSetProvider)
@@ -234,6 +246,8 @@ public class AppBootstrapFixtures {
         // we are replacing the default filtering logic, since the passed object will be a mock
         doAnswer(invocation -> {
             AppBootstrapLatches.beforeExtractProcessorStarts().countDown();
+            AppBootstrapLatches.holdOffBeforeExtractProcessorStarts().await();
+
             return filter(invocation.getArguments(), Argus.class);
         }).when(argusExtractProcessor).filter(any());
 
@@ -253,6 +267,8 @@ public class AppBootstrapFixtures {
         // we are replacing the default filtering logic, since the passed object will be a mock
         doAnswer(invocation -> {
             AppBootstrapLatches.beforeExtractProcessorStarts().countDown();
+            AppBootstrapLatches.holdOffBeforeExtractProcessorStarts().await();
+
             return filter(invocation.getArguments(), Refocus.class);
         }).when(refocusExtractProcessor).filter(any());
 
@@ -272,6 +288,8 @@ public class AppBootstrapFixtures {
         // we are replacing the default filtering logic, since the passed object will be a mock
         doAnswer(invocation -> {
             AppBootstrapLatches.beforeLoadProcessorStarts().countDown();
+            AppBootstrapLatches.holdOffBeforeLoadProcessorStarts().await();
+
             return filter(invocation.getArguments(), com.salesforce.pyplyn.duct.etl.load.refocus.Refocus.class);
         }).when(refocusLoadProcessor).filter(any());
 
@@ -287,6 +305,8 @@ public class AppBootstrapFixtures {
 
         doAnswer(invocation -> {
             AppBootstrapLatches.beforeLoadProcessorStarts().countDown();
+            AppBootstrapLatches.holdOffBeforeLoadProcessorStarts().await();
+
             sleepForMs(duration);
             return invocation.callRealMethod();
 
@@ -428,10 +448,7 @@ public class AppBootstrapFixtures {
      * Used to replace the default filtering in Extract and Load processors
      *   since we are mocking the models, which then will then in turn not match the "obj instanceof ModelClass" test
      */
-    private <T, S> List<T> filter(S[] objects, final Class<T> cls) {
-        // signal that we are extracting
-        AppBootstrapLatches.isProcessingExtractDatasources().countDown();
-
+    private <T, S> List<T> filter(S[] objects, final Class<T> cls) throws InterruptedException {
         return Arrays.stream(objects)
                 .filter(cls::isInstance)
                 .map(cls::cast)

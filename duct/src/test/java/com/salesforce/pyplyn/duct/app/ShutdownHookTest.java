@@ -47,11 +47,12 @@ public class ShutdownHookTest {
      * Checks that triggering the ShutdownHook will stop an ongoing ETL cycle
      * <p/> and that RefocusLoadProcessor does not post to Refocus endpoint on Shutdown
      */
-    @Test(timeOut = 10000L)
+    @Test
     public void testAppNotPostingResultsToRefocusAfterShuttingDown() throws Exception {
         // ARRANGE
         // bootstrap
         fixtures.realShutdownHook()
+                .enableLatches()
                 .oneArgusToRefocusConfiguration()
                 .returnMockedTransformationResultFromAllExtractProcessors()
                 .simulateRefocusLoadProcessingDelay(100)
@@ -64,10 +65,11 @@ public class ShutdownHookTest {
         // ACT
         executor.submit(app);
 
-        // wait until at least one Extract is being processed and then shutdown
-        AppBootstrapLatches.isProcessingExtractDatasources().await();
-        shutdownHook.shutdown();
+        // wait until we are ready to load, shutdown and allow extract processor to run
         AppBootstrapLatches.beforeLoadProcessorStarts().await();
+        shutdownHook.shutdown();
+        AppBootstrapLatches.holdOffBeforeLoadProcessorStarts().countDown();
+
 
         // ASSERT
         awaitAndAssertCompletion();
@@ -79,11 +81,12 @@ public class ShutdownHookTest {
     /**
      * ArgusExtractProcessor does not query the remote Argus endpoint if the app is shutting down
      */
-    @Test(timeOut = 10000L)
+    @Test
     public void testArgusNotQueriedIfShuttingDown() throws Exception {
         // ARRANGE
         // bootstrap
         fixtures.realShutdownHook()
+                .enableLatches()
                 .oneArgusToRefocusConfiguration()
                 .callRealArgusExtractProcessor()
                 .freeze();
@@ -95,10 +98,10 @@ public class ShutdownHookTest {
         // ACT
         executor.submit(app);
 
-        // wait until we are ready to start
+        // wait until we are ready to start, shutdown and allow extract processor to run
         AppBootstrapLatches.beforeExtractProcessorStarts().await();
         shutdownHook.shutdown();
-        AppBootstrapLatches.isProcessingExtractDatasources().await();
+        AppBootstrapLatches.holdOffBeforeExtractProcessorStarts().countDown();
 
         // ASSERT
         awaitAndAssertCompletion();
@@ -110,11 +113,12 @@ public class ShutdownHookTest {
     /**
      * RefocusExtractProcessor does not query the remote Argus endpoint if the app is shutting down
      */
-    @Test(timeOut = 10000L)
+    @Test
     public void testRefocusNotQueriedIfShuttingDown() throws Exception {
         // ARRANGE
         // bootstrap
         fixtures.realShutdownHook()
+                .enableLatches()
                 .oneRefocusToRefocusConfiguration()
                 .callRealRefocusExtractProcessor()
                 .freeze();
@@ -126,10 +130,10 @@ public class ShutdownHookTest {
         // ACT
         executor.submit(app);
 
-        // wait until we are ready to start
+        // wait until we are ready to start, shutdown and allow extract processor to run
         AppBootstrapLatches.beforeExtractProcessorStarts().await();
         shutdownHook.shutdown();
-        AppBootstrapLatches.isProcessingExtractDatasources().await();
+        AppBootstrapLatches.holdOffBeforeExtractProcessorStarts().countDown();
 
         // ASSERT
         awaitAndAssertCompletion();
@@ -149,7 +153,7 @@ public class ShutdownHookTest {
      * Asserts that the app was successfully shut down
      */
     private void awaitAndAssertCompletion() throws InterruptedException {
-        boolean appWasShutDown = AppBootstrapLatches.appHasShutdown().await(9000, TimeUnit.MILLISECONDS);
+        boolean appWasShutDown = AppBootstrapLatches.appHasShutdown().await(5000, TimeUnit.MILLISECONDS);
         assertThat("Expected app to have shut down", appWasShutDown, is(true));
     }
 

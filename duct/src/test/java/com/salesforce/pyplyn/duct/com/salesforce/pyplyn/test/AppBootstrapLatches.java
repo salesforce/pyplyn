@@ -20,27 +20,28 @@ import java.util.concurrent.CountDownLatch;
  * @since 5.0
  */
 public class AppBootstrapLatches {
-    private static CountDownLatch isProcessingExtractDatasources;
     private static CountDownLatch beforeExtractProcessorStarts;
     private static CountDownLatch beforeLoadProcessorStarts;
     private static CountDownLatch appHasShutdown;
+
+    private static CountDownLatch holdOffBeforeExtractProcessorStarts;
+    private static CountDownLatch holdOffBeforeLoadProcessorStarts;
+
 
     /**
      * Initializes all known latches to default values; this is called automatically in {@link AppBootstrapFixtures#freeze()}
      * <p/>NOTE: it is best to not call this manually, as it might yield unexpected results (since it's not synchronized)
      */
-    static void init() {
-        isProcessingExtractDatasources = new CountDownLatch(1);
-        beforeExtractProcessorStarts = new CountDownLatch(1);
-        beforeLoadProcessorStarts = new CountDownLatch(1);
-        appHasShutdown = new CountDownLatch(1);
-    }
+    static void init(boolean withLatches) {
+        // if latches are not enabled, set to zero so all latches are ignored
+        int initialCount = withLatches?1:0;
 
-    /**
-     * @return latch used to signal we are processing {@link com.salesforce.pyplyn.model.Extract} datasources
-     */
-    public static CountDownLatch isProcessingExtractDatasources() {
-        return isProcessingExtractDatasources;
+        beforeExtractProcessorStarts = new CountDownLatch(initialCount);
+        beforeLoadProcessorStarts = new CountDownLatch(initialCount);
+        appHasShutdown = new CountDownLatch(initialCount);
+
+        holdOffBeforeExtractProcessorStarts = new CountDownLatch(initialCount);
+        holdOffBeforeLoadProcessorStarts = new CountDownLatch(initialCount);
     }
 
     /**
@@ -62,5 +63,18 @@ public class AppBootstrapLatches {
      */
     public static CountDownLatch appHasShutdown() {
         return appHasShutdown;
+    }
+
+    /**
+     * @return latch used to block any processing in {@link com.salesforce.pyplyn.processor.ExtractProcessor}
+     */
+    public static CountDownLatch holdOffBeforeExtractProcessorStarts() {
+        return holdOffBeforeExtractProcessorStarts;
+    }
+    /**
+     * @return latch used to block any processing in {@link com.salesforce.pyplyn.processor.LoadProcessor}
+     */
+    public static CountDownLatch holdOffBeforeLoadProcessorStarts() {
+        return holdOffBeforeLoadProcessorStarts;
     }
 }
