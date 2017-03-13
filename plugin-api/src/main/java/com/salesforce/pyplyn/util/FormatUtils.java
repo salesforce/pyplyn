@@ -13,10 +13,10 @@ import com.salesforce.pyplyn.model.TransformationResult;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.text.ParseException;
-import java.time.Instant;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.Optional;
 
 /**
  * Date and value format class
@@ -66,7 +66,7 @@ public final class FormatUtils {
      * Parses string as time
      *   accepted formats are milliseconds from epoch and valid date string
      *
-     * @throws DateTimeParseException if value cannot be parsed as valid datetime
+     * @throws DateTimeParseException if the value cannot be parsed as valid datetime
      */
     public static ZonedDateTime parseUTCTime(String value) {
         try {
@@ -75,8 +75,13 @@ public final class FormatUtils {
             return instant.atZone(ZoneOffset.UTC);
 
         } catch (NumberFormatException e) {
-            // parses date as string and returns at UTC offset
-            return ZonedDateTime.of(ZonedDateTime.parse(value).toLocalDateTime(), ZoneOffset.UTC);
+            // parse passed date
+            return Optional.of(ZonedDateTime.parse(value))
+                    // convert to UTC
+                    .map(zdt -> zdt.withZoneSameInstant(ZoneOffset.UTC))
+                    // and return the value; this is safe to call without orElse,
+                    //   since ZonedDateTime will throw an exception if it cannot parse the value
+                    .get();
         }
     }
 

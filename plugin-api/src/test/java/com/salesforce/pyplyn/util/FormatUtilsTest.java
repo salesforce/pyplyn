@@ -12,6 +12,7 @@ import org.testng.annotations.Test;
 
 import java.text.ParseException;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -105,7 +106,7 @@ public class FormatUtilsTest {
 
 
     @Test
-    public void testParseDateTime() throws Exception {
+    public void testParseUTCDateTime() throws Exception {
         // ARRANGE
         String date = "2016-12-31T12:13:14Z";
 
@@ -119,6 +120,32 @@ public class FormatUtilsTest {
         assertThat(year, equalTo(2016));
         assertThat(dayOfMonth, equalTo(31));
         assertThat(hour, equalTo(12));
+    }
+
+    @Test
+    public void testParseNonGMTDateTime() throws Exception {
+        // ARRANGE
+        String date = "2016-12-31T12:13:14-07:00";
+
+        // ACT
+        ZonedDateTime dateTime = FormatUtils.parseUTCTime(date);
+        int year = dateTime.getYear();
+        int dayOfMonth = dateTime.getDayOfMonth();
+        int hour = dateTime.getHour();
+
+        // ASSERT
+        assertThat(year, equalTo(2016));
+        assertThat(dayOfMonth, equalTo(31));
+        assertThat(hour, equalTo(19));
+    }
+
+    @Test(expectedExceptions = DateTimeParseException.class)
+    public void testParseInvalidDateTimeFail() throws Exception {
+        // ARRANGE
+        String date = "100-12-31T12:13:14-07:00";
+
+        // ACT/ASSERT
+        FormatUtils.parseUTCTime(date);
     }
 
     @Test
