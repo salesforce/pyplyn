@@ -8,27 +8,29 @@
 
 package com.salesforce.pyplyn.duct;
 
-import com.salesforce.pyplyn.duct.etl.transform.highestvalue.HighestValue;
-import com.salesforce.pyplyn.duct.etl.transform.infostatus.InfoStatus;
-import com.salesforce.pyplyn.duct.etl.transform.lastdatapoint.LastDatapoint;
-import com.salesforce.pyplyn.duct.etl.transform.savemetricmetadata.SaveMetricMetadata;
-import com.salesforce.pyplyn.duct.etl.transform.threshold.Threshold;
-import com.salesforce.pyplyn.model.TransformationResult;
-import com.salesforce.pyplyn.model.builder.TransformationResultBuilder;
-import org.mockito.MockitoAnnotations;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
-
-import java.time.ZonedDateTime;
-import java.util.Collections;
-import java.util.List;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
+
+import java.time.ZonedDateTime;
+import java.util.Collections;
+import java.util.List;
+
+import org.mockito.MockitoAnnotations;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
+
+import com.salesforce.pyplyn.duct.etl.transform.highestvalue.HighestValue;
+import com.salesforce.pyplyn.duct.etl.transform.inertiathreshold.InertiaThreshold;
+import com.salesforce.pyplyn.duct.etl.transform.infostatus.InfoStatus;
+import com.salesforce.pyplyn.duct.etl.transform.lastdatapoint.LastDatapoint;
+import com.salesforce.pyplyn.duct.etl.transform.savemetricmetadata.SaveMetricMetadata;
+import com.salesforce.pyplyn.duct.etl.transform.threshold.Threshold;
+import com.salesforce.pyplyn.model.TransformationResult;
+import com.salesforce.pyplyn.model.builder.TransformationResultBuilder;
 
 public class DuctTransformTest {
 
@@ -126,4 +128,20 @@ public class DuctTransformTest {
         assertThat(results.get(0).get(0).name(), is(ACTUAL_NAME));
 		
 	}
+	
+	@Test
+	public void applyInertiaThreshold() throws Exception{
+		InertiaThreshold inertiaThreshold = spy(new InertiaThreshold());
+		TransformationResult transformationResult = new TransformationResultBuilder(result).withName(ACTUAL_NAME).build();
+		
+		//ACT
+		doReturn(Collections.singletonList(Collections.singletonList(result))).when(inertiaThreshold).apply(Collections.singletonList(Collections.singletonList(any())));
+        List<List<TransformationResult>> results = inertiaThreshold.apply(Collections.singletonList(Collections.singletonList(transformationResult)));
+
+        //ASSERT
+        assertThat(results, hasSize(1));
+        assertThat(results.get(0), hasSize(1));
+        assertThat(results.get(0).get(0).name(), is(ACTUAL_NAME));
+		
+	}	
 }
