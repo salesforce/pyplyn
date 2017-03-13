@@ -24,11 +24,11 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import com.salesforce.pyplyn.duct.etl.transform.highestvalue.HighestValue;
-import com.salesforce.pyplyn.duct.etl.transform.inertiathreshold.InertiaThreshold;
 import com.salesforce.pyplyn.duct.etl.transform.infostatus.InfoStatus;
 import com.salesforce.pyplyn.duct.etl.transform.lastdatapoint.LastDatapoint;
 import com.salesforce.pyplyn.duct.etl.transform.savemetricmetadata.SaveMetricMetadata;
 import com.salesforce.pyplyn.duct.etl.transform.threshold.Threshold;
+import com.salesforce.pyplyn.duct.etl.transform.thresholdmetforduration.ThresholdMetForDuration;
 import com.salesforce.pyplyn.model.TransformationResult;
 import com.salesforce.pyplyn.model.builder.TransformationResultBuilder;
 
@@ -131,7 +131,7 @@ public class DuctTransformTest {
 	
 	@Test
 	public void applyInertiaThreshold() throws Exception{
-		InertiaThreshold inertiaThreshold = spy(new InertiaThreshold());
+		ThresholdMetForDuration inertiaThreshold = spy(new ThresholdMetForDuration());
 		TransformationResult transformationResult = new TransformationResultBuilder(result).withName(ACTUAL_NAME).build();
 		
 		//ACT
