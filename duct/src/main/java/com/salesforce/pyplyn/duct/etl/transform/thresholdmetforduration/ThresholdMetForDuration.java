@@ -1,4 +1,4 @@
-package com.salesforce.pyplyn.duct.etl.transform.inertiathreshold;
+package com.salesforce.pyplyn.duct.etl.transform.thresholdmetforduration;
 
 import static com.salesforce.pyplyn.util.FormatUtils.formatNumber;
 import static java.util.Objects.nonNull;
@@ -32,7 +32,7 @@ import com.salesforce.pyplyn.model.builder.TransformationResultBuilder;
  *
  * @since 5.1
  */
-public class InertiaThreshold implements Transform, Serializable{
+public class ThresholdMetForDuration implements Transform, Serializable{
 	private static final long serialVersionUID = -4594665847342745577L;
 	private final static String MESSAGE_TEMPLATE = "%s threshold hit by %s, with value=%s %s %.2f, inertia longer than %s";	
 	
@@ -46,10 +46,10 @@ public class InertiaThreshold implements Transform, Serializable{
     Type type;
     
     @JsonProperty(defaultValue = "0")
-    Long critialInertiaMillis;
+    Long critialDurationMillis;
 
     @JsonProperty(defaultValue = "0")
-    Long warnInertiaMillis;
+    Long warnDurationMillis;
 
 	@Override
 	public List<List<TransformationResult>> apply(List<List<TransformationResult>> input) {
@@ -61,7 +61,7 @@ public class InertiaThreshold implements Transform, Serializable{
 	
 	/**
 	 * check for the input points, compare each with threshold,
-	 * if it continue to pass the threshold for the critial/warn inertia time period, change its the value to be
+	 * if it continue to pass the threshold for the critial/warn duration time period, change its the value to be
 	 * critial/warn, otherwise, it's ok  
 	 * 
 	 * @param points
@@ -72,11 +72,11 @@ public class InertiaThreshold implements Transform, Serializable{
 			TransformationResult lastPoint = Iterables.getLast(points, null);
 			ZonedDateTime lastPointTS = lastPoint.time();
 			
-			//get the timestamp for the critial can warning inertia timestamp 
+			//get the timestamp for the critial can warning duration timestamp 
 			ZonedDateTime warnInertiaTS = lastPointTS, critialInertiaTS = lastPointTS;			
 			//if the milisecond unit is not supported, it would throw UnsupportedTemporalTypeException, which is what we want
-			warnInertiaTS = lastPointTS.minus(warnInertiaMillis, ChronoUnit.MILLIS);
-			critialInertiaTS = lastPointTS.minus(critialInertiaMillis, ChronoUnit.MILLIS);
+			warnInertiaTS = lastPointTS.minus(warnDurationMillis, ChronoUnit.MILLIS);
+			critialInertiaTS = lastPointTS.minus(critialDurationMillis, ChronoUnit.MILLIS);
 			
 			ListIterator<TransformationResult> iter = points.listIterator(points.size());
 			boolean matchThreshold = true;
@@ -90,7 +90,7 @@ public class InertiaThreshold implements Transform, Serializable{
 	
 		    	if(matchThreshold){
 			    	if(pointTS.compareTo(critialInertiaTS) <= 0){
-			    		return Collections.singletonList(appendMessage(changeValue(result, 3d), "CRIT", threshold, critialInertiaMillis));
+			    		return Collections.singletonList(appendMessage(changeValue(result, 3d), "CRIT", threshold, critialDurationMillis));
 			    	}
 			    	else if(pointTS.compareTo(warnInertiaTS) <= 0){
 		    			atWarningLevel = true;
@@ -98,7 +98,7 @@ public class InertiaThreshold implements Transform, Serializable{
 		    	}
 		    	else{
 		    		if(pointTS.compareTo(warnInertiaTS) <= 0){
-		    			return Collections.singletonList(appendMessage(changeValue(result, 2d), "WARN", threshold, warnInertiaMillis));
+		    			return Collections.singletonList(appendMessage(changeValue(result, 2d), "WARN", threshold, warnDurationMillis));
 		    		}	    		
 		    		else{
 		    			return Collections.singletonList(changeValue(result, 0d));		//OK status
@@ -107,7 +107,7 @@ public class InertiaThreshold implements Transform, Serializable{
 		    }		
 			
 		    //critical or warning inertia value is longer than available time series
-		    return atWarningLevel ? Collections.singletonList(appendMessage(changeValue(lastPoint, 2d), "WARN", threshold, warnInertiaMillis)) :
+		    return atWarningLevel ? Collections.singletonList(appendMessage(changeValue(lastPoint, 2d), "WARN", threshold, warnDurationMillis)) :
 		    			Collections.singletonList(changeValue(lastPoint, 0d));
 		}
 		else{
@@ -161,10 +161,10 @@ public class InertiaThreshold implements Transform, Serializable{
 	public int hashCode() {
 		final int prime = 37;
 		int result = 1;
-		result = prime * result + ((critialInertiaMillis == null) ? 0 : critialInertiaMillis.hashCode());
+		result = prime * result + ((critialDurationMillis == null) ? 0 : critialDurationMillis.hashCode());
 		result = prime * result + ((threshold == null) ? 0 : threshold.hashCode());
 		result = prime * result + ((type == null) ? 0 : type.hashCode());
-		result = prime * result + ((warnInertiaMillis == null) ? 0 : warnInertiaMillis.hashCode());
+		result = prime * result + ((warnDurationMillis == null) ? 0 : warnDurationMillis.hashCode());
 		return result;
 	}
 
@@ -177,11 +177,11 @@ public class InertiaThreshold implements Transform, Serializable{
 			return false;
 		}
 		
-		InertiaThreshold other = (InertiaThreshold) obj;
+		ThresholdMetForDuration other = (ThresholdMetForDuration) obj;
 		
-		if(critialInertiaMillis != null ? !critialInertiaMillis.equals(other.critialInertiaMillis) : other.critialInertiaMillis != null)
+		if(critialDurationMillis != null ? !critialDurationMillis.equals(other.critialDurationMillis) : other.critialDurationMillis != null)
 			return false;
-		if(warnInertiaMillis != null ? !warnInertiaMillis.equals(other.warnInertiaMillis) : other.warnInertiaMillis != null)			
+		if(warnDurationMillis != null ? !warnDurationMillis.equals(other.warnDurationMillis) : other.warnDurationMillis != null)			
 			return false;
 		if(threshold != null ? !threshold.equals(other.threshold) : other.threshold != null)			
 			return false;
