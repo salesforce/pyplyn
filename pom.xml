@@ -55,6 +55,14 @@
             <email>akarande@salesforce.com</email>
             <organization>Salesforce</organization>
         </developer>
+        <developer>
+            <name>Jing Qian</name>
+            <roles>
+                <role>Member</role>
+            </roles>
+            <email>jqian@salesforce.com</email>
+            <organization>Salesforce</organization>
+        </developer>        
     </developers>
 
     <properties>
