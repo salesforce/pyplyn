@@ -36,7 +36,7 @@ import com.salesforce.pyplyn.model.builder.TransformationResultBuilder;
  *
  * @author Jing Qian &lt;jqian@salesforce.com&gt;
  *
- * @since 5.1
+ * @since 5.0
  */
 public class ThresholdMetForDuration implements Transform, Serializable {
     private static final long serialVersionUID = -4594665847342745577L;
