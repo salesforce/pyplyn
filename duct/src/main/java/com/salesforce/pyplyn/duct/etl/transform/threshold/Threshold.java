@@ -113,7 +113,7 @@ public class Threshold implements Transform, Serializable {
     /**
      * Changes the result's value
      */
-    TransformationResult changeValue(TransformationResult result, Double value) {
+    public static TransformationResult changeValue(TransformationResult result, Double value) {
         return new TransformationResultBuilder(result)
                 .withValue(value)
                 .build();
@@ -172,7 +172,7 @@ public class Threshold implements Transform, Serializable {
     /**
      * Possible trigger types
      */
-    private enum Type {
+    public static enum Type {
         GREATER_THAN, LESS_THAN;
 
         /**

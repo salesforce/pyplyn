@@ -28,6 +28,7 @@ import com.salesforce.pyplyn.duct.etl.transform.infostatus.InfoStatusModule;
 import com.salesforce.pyplyn.duct.etl.transform.lastdatapoint.LastDatapointModule;
 import com.salesforce.pyplyn.duct.etl.transform.savemetricmetadata.SaveMetricMetadataModule;
 import com.salesforce.pyplyn.duct.etl.transform.threshold.ThresholdModule;
+import com.salesforce.pyplyn.duct.etl.transform.thresholdmetforduration.ThresholdMetForDurationModule;
 import com.salesforce.pyplyn.duct.providers.client.ArgusClientModule;
 import com.salesforce.pyplyn.duct.providers.client.RefocusClientModule;
 import com.salesforce.pyplyn.duct.providers.jackson.JacksonSerializationInitModule;
@@ -124,6 +125,7 @@ public class AppBootstrap {
                 new SaveMetricMetadataModule(),
                 new ThresholdModule(),
                 new InfoStatusModule(),
+                new ThresholdMetForDurationModule(),
 
                 // Load
                 new RefocusLoadModule(),
