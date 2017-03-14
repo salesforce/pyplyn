@@ -2,6 +2,7 @@ package com.salesforce.pyplyn.duct.etl.transform.thresholdmetforduration;
 
 import static com.salesforce.pyplyn.util.FormatUtils.formatNumber;
 import static com.salesforce.pyplyn.duct.etl.transform.threshold.Threshold.*;
+import static java.util.Objects.isNull;
 
 import java.io.Serializable;
 import java.time.ZonedDateTime;
@@ -76,7 +77,7 @@ public class ThresholdMetForDuration implements Transform, Serializable {
             return null;
         }
 
-        TransformationResult lastPoint = Iterables.getLast(points, null);
+        TransformationResult lastPoint = Iterables.getLast(points);
         ZonedDateTime lastPointTS = lastPoint.time();
 
         // get the timestamp for the critial, warning, info duration timestamp
