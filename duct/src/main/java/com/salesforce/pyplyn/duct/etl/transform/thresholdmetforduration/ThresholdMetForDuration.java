@@ -49,7 +49,7 @@ public class ThresholdMetForDuration implements Transform, Serializable {
     Type type;
 
     @JsonProperty(defaultValue = "0")
-    Long critialDurationMillis;
+    Long criticalDurationMillis;
 
     @JsonProperty(defaultValue = "0")
     Long warnDurationMillis;
@@ -66,71 +66,66 @@ public class ThresholdMetForDuration implements Transform, Serializable {
     }
 
     /**
-     * check for the input points, compare each with threshold, if it continue
-     * to pass the threshold for the critial/warn/info duration time period, change
-     * its the value to be critial/warn/info, otherwise, it's ok
-     * 
-     * @param points
-     * @return
+     * Check for the input points, compare each with threshold, if it continue
+     *   to pass the threshold for the critical/warn/info duration time period, change
+     *   its the value to be critical/warn/info, otherwise, it's ok
      */
     List<TransformationResult> applyThreshold(List<TransformationResult> points) {
-        if (!points.isEmpty()) {
-            TransformationResult lastPoint = Iterables.getLast(points, null);
-            ZonedDateTime lastPointTS = lastPoint.time();
-
-            // get the timestamp for the critial, warning, info duration timestamp
-            ZonedDateTime infoDurationTS = lastPointTS;
-            ZonedDateTime warnDurationTS = lastPointTS;
-            ZonedDateTime critialDurationTS = lastPointTS;
-            // if the milisecond unit is not supported, it would throw
-            // UnsupportedTemporalTypeException, which is what we want
-            infoDurationTS = lastPointTS.minus(infoDurationMillis, ChronoUnit.MILLIS);
-            warnDurationTS = lastPointTS.minus(warnDurationMillis, ChronoUnit.MILLIS);
-            critialDurationTS = lastPointTS.minus(critialDurationMillis, ChronoUnit.MILLIS);
-
-            ListIterator<TransformationResult> iter = points.listIterator(points.size());
-            boolean matchThreshold = true;
-            boolean atWarningLevel = false;
-            boolean atInfoLevel = false;
-            
-            while (iter.hasPrevious() && matchThreshold) {
-                TransformationResult result = iter.previous();
-                ZonedDateTime pointTS = result.time();
-
-                Number value = result.value();
-                matchThreshold = type.matches(value, threshold);
-
-                if (matchThreshold) {
-                    if (pointTS.compareTo(critialDurationTS) <= 0) {
-                        return Collections.singletonList(
-                                appendMessage(changeValue(result, 3d), "CRIT", threshold, critialDurationMillis));
-                    } else if (pointTS.compareTo(warnDurationTS) <= 0) {
-                        atWarningLevel = true;
-                    } else if (pointTS.compareTo(infoDurationTS) <= 0) {
-                        atInfoLevel = true;
-                    }
-                } else {
-                    if (pointTS.compareTo(warnDurationTS) <= 0) {
-                        return Collections.singletonList(
-                                appendMessage(changeValue(result, 2d), "WARN", threshold, warnDurationMillis));
-                    } else if (pointTS.compareTo(infoDurationTS) <= 0) {
-                        return Collections.singletonList(
-                                appendMessage(changeValue(result, 1d), "INFO", threshold, warnDurationMillis));
-                    } else {
-                        return Collections.singletonList(changeValue(result, 0d)); // OK status
-                    }
-                }
-            }
-
-            // critical, warning or info duration value is longer than available input time series
-            return atWarningLevel
-                    ? Collections.singletonList(appendMessage(changeValue(lastPoint, 2d), "WARN", threshold, warnDurationMillis))
-                    : (atInfoLevel 
-                            ? Collections.singletonList(appendMessage(changeValue(lastPoint, 2d), "WARN", threshold, warnDurationMillis)) 
-                            : Collections.singletonList(changeValue(lastPoint, 0d)));
-        } else {
+        // nothing to do
+        if (points.isEmpty()) {
             return null;
         }
+
+        TransformationResult lastPoint = Iterables.getLast(points, null);
+        ZonedDateTime lastPointTS = lastPoint.time();
+
+        // get the timestamp for the critial, warning, info duration timestamp
+        // if the millisecond unit is not supported, it would throw
+        // UnsupportedTemporalTypeException, which is what we want
+        ZonedDateTime infoDurationTS = lastPointTS.minus(infoDurationMillis, ChronoUnit.MILLIS);
+        ZonedDateTime warnDurationTS = lastPointTS.minus(warnDurationMillis, ChronoUnit.MILLIS);
+        ZonedDateTime criticalDurationTS = lastPointTS.minus(criticalDurationMillis, ChronoUnit.MILLIS);
+
+        ListIterator<TransformationResult> iter = points.listIterator(points.size());
+        boolean matchThreshold = true;
+        boolean atWarningLevel = false;
+        boolean atInfoLevel = false;
+
+        while (iter.hasPrevious() && matchThreshold) {
+            TransformationResult result = iter.previous();
+            ZonedDateTime pointTS = result.time();
+
+            Number value = result.value();
+            matchThreshold = type.matches(value, threshold);
+
+            if (matchThreshold) {
+                if (pointTS.compareTo(criticalDurationTS) <= 0) {
+                    return Collections.singletonList(
+                            appendMessage(changeValue(result, 3d), "CRIT", threshold, criticalDurationMillis));
+                } else if (pointTS.compareTo(warnDurationTS) <= 0) {
+                    atWarningLevel = true;
+                } else if (pointTS.compareTo(infoDurationTS) <= 0) {
+                    atInfoLevel = true;
+                }
+            } else {
+                if (pointTS.compareTo(warnDurationTS) <= 0) {
+                    return Collections.singletonList(
+                            appendMessage(changeValue(result, 2d), "WARN", threshold, warnDurationMillis));
+                } else if (pointTS.compareTo(infoDurationTS) <= 0) {
+                    return Collections.singletonList(
+                            appendMessage(changeValue(result, 1d), "INFO", threshold, warnDurationMillis));
+                } else {
+                    return Collections.singletonList(changeValue(result, 0d)); // OK status
+                }
+            }
+        }
+
+        // critical, warning or info duration value is longer than available input time series
+        return atWarningLevel
+                ? Collections.singletonList(appendMessage(changeValue(lastPoint, 2d), "WARN", threshold, warnDurationMillis))
+                : (atInfoLevel
+                        ? Collections.singletonList(appendMessage(changeValue(lastPoint, 2d), "WARN", threshold, warnDurationMillis))
+                        : Collections.singletonList(changeValue(lastPoint, 0d)));
     }
 
     /**
@@ -138,21 +133,20 @@ public class ThresholdMetForDuration implements Transform, Serializable {
      */
     TransformationResult appendMessage(TransformationResult result, String code, Double threshold, long durationMillis) {
         String thresholdHitAlert = String.format(MESSAGE_TEMPLATE, code, result.name(),
-                formatNumber(result.originalValue()), type.name(), threshold, converToTimeDuration(durationMillis));
+                formatNumber(result.originalValue()), type.name(), threshold, convertToTimeDuration(durationMillis));
 
         return new TransformationResultBuilder(result).metadata((metadata) -> metadata.addMessage(thresholdHitAlert))
                 .build();
     }
 
     /**
-     * convert duration milli to day:hour:min:second dd:hh:mm:ss
-     * omitted any duration that's less than 1 second
+     * Convert duration milli to day:hour:min:second dd:hh:mm:ss
+     *   omitted any duration that's less than 1 second
      * 
-     * @param milliseconds
      * @return if less than 1 day, xxh:xxm:xxs
      *         if more than 1 day, xx days xxh:xxm:xxs
      */
-    private String converToTimeDuration(long milliseconds) {
+    private String convertToTimeDuration(long milliseconds) {
         long days = TimeUnit.MILLISECONDS.toDays(milliseconds);
         String hms = String.format("%02dh:%02dm:%02ds",
                 TimeUnit.MILLISECONDS.toHours(milliseconds) % TimeUnit.DAYS.toHours(1),
@@ -161,11 +155,12 @@ public class ThresholdMetForDuration implements Transform, Serializable {
         return (days > 0 ? String.format("%02ddays ", days) : "") + hms;
     }
 
+
     @Override
     public int hashCode() {
         final int prime = 37;
         int result = 1;
-        result = prime * result + ((critialDurationMillis == null) ? 0 : critialDurationMillis.hashCode());
+        result = prime * result + ((criticalDurationMillis == null) ? 0 : criticalDurationMillis.hashCode());
         result = prime * result + ((threshold == null) ? 0 : threshold.hashCode());
         result = prime * result + ((type == null) ? 0 : type.hashCode());
         result = prime * result + ((warnDurationMillis == null) ? 0 : warnDurationMillis.hashCode());
@@ -184,8 +179,8 @@ public class ThresholdMetForDuration implements Transform, Serializable {
 
         ThresholdMetForDuration other = (ThresholdMetForDuration) obj;
 
-        if (critialDurationMillis != null ? !critialDurationMillis.equals(other.critialDurationMillis)
-                : other.critialDurationMillis != null)
+        if (criticalDurationMillis != null ? !criticalDurationMillis.equals(other.criticalDurationMillis)
+                : other.criticalDurationMillis != null)
             return false;
         if (warnDurationMillis != null ? !warnDurationMillis.equals(other.warnDurationMillis)
                 : other.warnDurationMillis != null)
@@ -197,5 +192,4 @@ public class ThresholdMetForDuration implements Transform, Serializable {
             return false;
         return type == other.type;
     }
-
 }

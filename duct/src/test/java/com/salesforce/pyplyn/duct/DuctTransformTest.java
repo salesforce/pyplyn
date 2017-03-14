@@ -142,6 +142,5 @@ public class DuctTransformTest {
         assertThat(results, hasSize(1));
         assertThat(results.get(0), hasSize(1));
         assertThat(results.get(0).get(0).name(), is(ACTUAL_NAME));
-		
-	}	
+	}
 }
