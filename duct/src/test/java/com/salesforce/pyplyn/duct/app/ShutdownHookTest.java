@@ -138,7 +138,7 @@ public class ShutdownHookTest {
         // ASSERT
         awaitAndAssertCompletion();
 
-        // since the extract was interrupted, expecting the timer surrounding RefocusClient.getSample(String, List) to not be executed
+        // since the extract was interrupted, expecting the timer surrounding RefocusClient#getSamples(String) to not be executed
         verify(fixtures.systemStatus(), times(0)).timer("Refocus", "get-sample." + AppBootstrapFixtures.MOCK_CONNECTOR_NAME);
     }
 

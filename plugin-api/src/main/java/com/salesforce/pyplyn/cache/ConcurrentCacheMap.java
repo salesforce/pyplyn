@@ -8,7 +8,7 @@
 
 package com.salesforce.pyplyn.cache;
 
-import java.lang.ref.WeakReference;
+import java.lang.ref.SoftReference;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -24,19 +24,19 @@ public class ConcurrentCacheMap<T extends Cacheable> implements Cache<T> {
     /**
      * Concurrent map that holds the cached values
      */
-    private final Map<String, WeakReference<CacheEntry<T>>> cache = new ConcurrentHashMap<>();
+    private final Map<String, SoftReference<CacheEntry<T>>> cache = new ConcurrentHashMap<>();
 
     /**
      * Caches an <b>object</b> for <b>millis</b> milliseconds
      * <p/>
-     * <p/>Values are stored as {@link WeakReference}s to allow them to be garbage collected if memory is low.
+     * <p/>Values are stored as {@link SoftReference}s to allow them to be garbage collected if memory is low.
      *
      * @param object the value to cache
      * @param millis the number of milliseconds to cache for
      */
     @Override
     public void cache(T object, long millis) {
-        cache.put(object.cacheKey(), new WeakReference<>(new CacheEntry<>(object, millis)));
+        cache.put(object.cacheKey(), new SoftReference<>(new CacheEntry<>(object, millis)));
     }
 
     /**
@@ -46,7 +46,7 @@ public class ConcurrentCacheMap<T extends Cacheable> implements Cache<T> {
     @Override
     public T isCached(final String key) {
         // retrieve reference from cache and then attempt to retrieve the entry
-        final WeakReference<CacheEntry<T>> entryRef = cache.get(key);
+        final SoftReference<CacheEntry<T>> entryRef = cache.get(key);
 
         // stop here if cache entry does not exist
         if (isNull(entryRef)) {

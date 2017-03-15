@@ -46,7 +46,7 @@ public class ConfigurationsTestHelper {
                                                           long repeatIntervalMillis, boolean disabled) {
         Extract[] extracts = new Extract[]{
                 new Argus(argusEndpoint, argusExpression, argusName, 1, 2d),
-                new Refocus(refocusEndpoint, refocusSubject, refocusAspect, 1, 2d)
+                new Refocus(refocusEndpoint, refocusSubject, null, refocusAspect, 1, 2d)
         };
 
         Transform[] transform = new Transform[]{

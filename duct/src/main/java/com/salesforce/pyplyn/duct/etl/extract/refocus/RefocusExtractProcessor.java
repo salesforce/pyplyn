@@ -94,7 +94,6 @@ public class RefocusExtractProcessor extends AbstractMeteredExtractProcessor<Ref
                     return endpointExpressions.getValue().stream()
                             .map(refocus -> {
                                 // attempt to load from cache
-                                boolean shouldCache = false;
                                 boolean isDefault = false;
                                 Sample sample = endpointCache.isCached(refocus.cacheKey());
 
@@ -107,48 +106,53 @@ public class RefocusExtractProcessor extends AbstractMeteredExtractProcessor<Ref
                                         }
 
                                         // load Sample from Refocus endpoint
-                                        try (Timer.Context context = systemStatus.timer(meterName(), "get-sample." + endpointId).time()) {
-                                            sample = client.getSample(refocus.name(), null);
+                                        try (Timer.Context context = systemStatus.timer(meterName(), "get-samples." + endpointId).time()) {
+                                            // retrive all samples by name
+                                            List<Sample> samples = client.getSamples(refocus.name());
+
+                                            // if we are looking to cache these samples, do so
+                                            if (refocus.cacheMillis() > 0) {
+                                                long cachedSamples = samples.stream()
+                                                        // filter out timed out samples
+                                                        .filter(s -> !isTimedOut(s))
+
+                                                        // cache all remaining ones
+                                                        .peek(s -> endpointCache.cache(s, refocus.cacheMillis()))
+
+                                                        // count how many samples we've cached
+                                                        .count();
+                                                logger.info("Cached {} samples for {}, endpoint {}", cachedSamples, refocus.name(), endpointId);
+                                            }
+
+                                            // find the required sample by cacheKey
+                                            sample = samples.stream().filter(s -> s.cacheKey().equals(refocus.cacheKey())).findFirst().orElse(null);
                                         }
 
-                                        // if a null response was returned, but we have a default value, create a sample from it
-                                        if (isNull(sample) && nonNull(refocus.defaultValue())) {
+                                        // if a null response was returned or the response is timed out, and we have a default value specified, generate a sample from it
+                                        if ((isNull(sample) || isTimedOut(sample)) && nonNull(refocus.defaultValue())) {
                                             String now = Instant.now().atZone(ZoneOffset.UTC).toString();
                                             sample = new SampleBuilder()
-                                                    .withName(refocus.name())
+                                                    .withName(refocus.filteredName())
                                                     .withValue(formatNumber(refocus.defaultValue()))
                                                     .withUpdatedAt(now)
                                                     .build();
-                                            logger.info("Default data provided for {}={}, endpoint {}", sample.name(), sample.value(), endpointId);
+                                            logger.info("Default data provided for sample {}={}, endpoint {}", sample.name(), sample.value(), endpointId);
                                             isDefault = true;
                                         }
 
                                         // if a null response was returned from endpoint and we didn't have a default value, mark no-data and stop
                                         if (isNull(sample)) {
-                                            logger.error("No data for sample {}, endpoint {}; null response", refocus.name(), endpointId);
+                                            logger.error("No data for sample {}, endpoint {}; null response", refocus.filteredName(), endpointId);
                                             noData();
 
                                             return null;
                                         }
 
-                                        // if a default value was specified, and we have a timed out sample, replace it with the default value
-                                        if (nonNull(refocus.defaultValue()) && isTimedOut(sample)) {
-                                            sample = new SampleBuilder(sample).withValue(formatNumber(refocus.defaultValue())).build();
-                                            logger.info("Default data provided for {}={}, endpoint {}", sample.name(), sample.value(), endpointId);
-                                            isDefault = true;
-                                        }
-
-                                        // since we loaded a new sample from the endpoint,
-                                        if (!isDefault && !isTimedOut(sample)) {
-                                            // cache it if not timed out, if so configured
-                                            shouldCache = refocus.cacheMillis() > 0;
-                                        }
-
-
                                     } catch (UnauthorizedException e) {
-                                        logger.error("Could not complete request for endpoint {}; failed metric={}; due to {}", endpointId, refocus.name(), e.getMessage());
+                                        logger.error("Could not complete sample get request for endpoint {}; failed metric={}; due to {}", endpointId, refocus.name(), e.getMessage());
                                         failed();
                                     }
+
                                 } else {
                                     // log cache debugging data
                                     logger.info("Sample loaded from cache {}, endpoint {}", sample.name(), endpointId);
@@ -173,13 +177,8 @@ public class RefocusExtractProcessor extends AbstractMeteredExtractProcessor<Ref
                                             .build();
                                 }
 
-                                // cache result if required;
-                                if (shouldCache) {
-                                    endpointCache.cache(sample, refocus.cacheMillis());
-                                }
-
                                 succeeded();
-                                logger.info("Loaded data for {}, endpoint {}", refocus.name(), endpointId);
+                                logger.info("Loaded data for sample {}, endpoint {}", refocus.name(), endpointId);
 
                                 return result;
 
@@ -233,7 +232,7 @@ public class RefocusExtractProcessor extends AbstractMeteredExtractProcessor<Ref
     /**
      * Returns true, if the sample is timed out
      */
-    private boolean isTimedOut(Sample sample) {
+    private static boolean isTimedOut(Sample sample) {
         return RESPONSE_TIMEOUT.equals(sample.value());
     }
 

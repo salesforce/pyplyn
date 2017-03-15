@@ -128,6 +128,18 @@ public class RefocusClient extends AbstractRemoteClient<RefocusService> {
         return executeAndRetrieveBody(svc().getSample(authorizationHeader, key, fields), null);
     }
 
+    /**
+     * Retrieves a sample by name from the remote endpoint
+     *
+     * @param name Name of sample; can include wildcards, i.e.: Subject.Path.*|ASPECT_NAME
+     * @throws IllegalArgumentException if a null name was passed
+     * @return null if not found
+     */
+    public List<Sample> getSamples(String name) throws UnauthorizedException {
+        Preconditions.checkNotNull(name, "Name should not be null");
+        return executeAndRetrieveBody(svc().getSample(authorizationHeader, name), Collections.emptyList());
+    }
+
 
     /**
      * Upsert a list of samples

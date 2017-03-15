@@ -39,6 +39,10 @@ public interface RefocusService {
     @Headers("Content-Type: application/json")
     Call<Sample> getSample(@Header("Authorization") String authorization, @Path("key") String key, @Query("fields") List<String> fields);
 
+    @GET("samples")
+    @Headers("Content-Type: application/json")
+    Call<List<Sample>> getSample(@Header("Authorization") String authorization, @Query("name") String name);
+
     @POST("samples/upsert/bulk")
     @Headers("Content-Type: application/json")
     Call<ResponseBody> upsertSamplesBulk(@Header("Authorization") String authorization, @Body List<Sample> samples);

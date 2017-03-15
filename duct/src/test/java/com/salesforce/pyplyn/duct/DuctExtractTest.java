@@ -83,7 +83,7 @@ public class DuctExtractTest {
 		//ARRANGE
 		@SuppressWarnings("unchecked")
 		RefocusExtractProcessor refocusExtractProcessor = spy(new RefocusExtractProcessor(remoteClientFactoryRefocus, cacheFactory, shutdownHook));
-		Refocus refocus = new Refocus("endpoint", "subject", "aspect", 1, 2d);
+		Refocus refocus = new Refocus("endpoint", "subject", null, "aspect", 1, 2d);
 		
 		//ACT
         doReturn(Collections.singletonList(Collections.singletonList(result))).when(refocusExtractProcessor).process(Collections.singletonList(any()));

@@ -30,6 +30,9 @@ public class Refocus implements Extract, Serializable {
     @JsonProperty(required = true)
     private String subject;
 
+    @JsonProperty
+    private String actualSubject;
+
     @JsonProperty(required = true)
     private String aspect;
 
@@ -46,11 +49,13 @@ public class Refocus implements Extract, Serializable {
     @JsonCreator
     public Refocus(@JsonProperty("endpoint") String endpoint,
                    @JsonProperty("subject") String subject,
+                   @JsonProperty("actualSubject") String actualSubject,
                    @JsonProperty("aspect") String aspect,
                    @JsonProperty("cacheMillis") Integer cacheMillis,
                    @JsonProperty("defaultValue") Double defaultValue) {
         this.endpoint = endpoint;
         this.subject = subject;
+        this.actualSubject = actualSubject;
         this.aspect = aspect;
         this.cacheMillis = cacheMillis;
         this.defaultValue = defaultValue;
@@ -64,10 +69,23 @@ public class Refocus implements Extract, Serializable {
     }
 
     /**
-     * Subject to load data for
+     * Subject to load data for; can include wildcards
      */
     public String subject() {
         return subject;
+    }
+
+    /**
+     * Used to filter samples returned from the Refocus endpoint by the name specified in this field;
+     *   useful when wanting to cache multiple samples that match a wildcard, but only return one
+     *   <p/>For example, given: subject=Subject.Root.*, actualSubject=Subject.Root.Name, aspect=ASPECT, cacheMillis=60000
+     *   <p/>All returned samples that match "Subject.Root.*|ASPECT" will be cached for 60s but only "Subject.Root.Name|ASPECT"
+     *   will be returned by {@link RefocusExtractProcessor}
+     *
+     * @return {@link Refocus#actualSubject} if specified, or otherwise {@link Refocus#subject}, since in that case they are the same
+     */
+    public String actualSubject() {
+        return Optional.ofNullable(actualSubject).orElse(subject);
     }
 
     /**
@@ -98,14 +116,21 @@ public class Refocus implements Extract, Serializable {
      * @return the Refocus standardized sample name (i.e.: SUBJECT.PATH|ASPECT)
      */
     public final String name() {
-        return String.format("%s|%s", subject, aspect);
+        return String.format("%s|%s", subject(), aspect);
+    }
+
+    /**
+     * @return the Refocus filtered sample name (i.e.: SUBJECT.PATH.*|ASPECT)
+     */
+    public final String filteredName() {
+        return String.format("%s|%s", actualSubject(), aspect);
     }
 
     /**
      * @return the cache key for this object
      */
     public final String cacheKey() {
-        return name();
+        return filteredName();
     }
 
 

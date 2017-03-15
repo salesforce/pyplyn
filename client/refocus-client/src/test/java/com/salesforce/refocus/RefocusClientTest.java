@@ -232,19 +232,19 @@ public class RefocusClientTest {
         // ASSERT
         assertThat(subjects.size(), equalTo(0));
     }
-    
+
     @Test
     public void getSample() throws Exception {
-    	// ARRANGE
-    	String name = "cceDevils";
-    	String value = "sampleValue";
-    	String id = "123456";
-    	List<String> fields = Arrays.asList("id", "name", "isPublished");
+        // ARRANGE
+        String name = "cceDevils";
+        String value = "sampleValue";
+        String id = "123456";
+        List<String> fields = Arrays.asList("id", "name", "isPublished");
         Sample sample = new SampleBuilder().withName(name).withValue(value).withId(id).build();
         Response<Sample> response = Response.success(sample);
 
         @SuppressWarnings("unchecked")
-        Call<ResponseBody> responseCall = (Call<ResponseBody>)mock(Call.class);
+        Call<ResponseBody> responseCall = (Call<ResponseBody>) mock(Call.class);
         doReturn(response).when(responseCall).execute();
         doReturn(responseCall).when(svc).getSample(any(), any(), anyList());
 
@@ -256,7 +256,31 @@ public class RefocusClientTest {
         assertThat(result.value(), is(value));
         assertThat(result.id(), is(id));
     }
-    
+
+    @Test
+    public void getSamples() throws Exception {
+        // ARRANGE
+        String name = "cceDevils";
+        String value = "sampleValue";
+        String id = "123456";
+        Sample sample = new SampleBuilder().withName(name).withValue(value).withId(id).build();
+        Response<List<Sample>> response = Response.success(Collections.singletonList(sample));
+
+        @SuppressWarnings("unchecked")
+        Call<ResponseBody> responseCall = (Call<ResponseBody>) mock(Call.class);
+        doReturn(response).when(responseCall).execute();
+        doReturn(responseCall).when(svc).getSample(any(), anyString());
+
+        // ACT
+        List<Sample> results = refocus.getSamples(name);
+
+        // ASSERT
+        assertThat(results, hasSize(1));
+        assertThat(results.get(0).name(), is(name));
+        assertThat(results.get(0).value(), is(value));
+        assertThat(results.get(0).id(), is(id));
+    }
+
     @Test
     public void upsertSamplesBulk() throws Exception {
     	// ARRANGE
