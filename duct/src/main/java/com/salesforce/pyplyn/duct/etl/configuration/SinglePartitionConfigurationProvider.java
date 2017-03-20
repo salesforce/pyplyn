@@ -29,6 +29,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 /**
  * Loads all configurations, disregarding any logic to split on multiple hosts
@@ -65,12 +66,16 @@ public class SinglePartitionConfigurationProvider implements UpdatableConfigurat
     public void updateConfigurations() {
         try {
             // attempt to acquire a lock and update the list of configurations
-            if (updateLock.tryLock(100, TimeUnit.MILLISECONDS)) {
-                // make a copy of all current elements
-                Map<Configuration, ConfigurationWrapper> oldEntries = ImmutableMap.copyOf(configurations);
+            logger.info("Attempting configuration update");
+            if (updateLock.tryLock(1000, TimeUnit.MILLISECONDS)) {
+                Map<Configuration, ConfigurationWrapper> oldEntries = null;
 
                 try {
+                    // make a copy of all current elements
+                    oldEntries = ImmutableMap.copyOf(configurations);
+
                     // merge new configurations into existing map
+                    logger.info("Merging configurations");
                     mergeConfigurationSets(provider.get(), configurations);
 
                 } catch (RuntimeException e) {
@@ -78,16 +83,21 @@ public class SinglePartitionConfigurationProvider implements UpdatableConfigurat
                     markFailure();
 
                     // if we could not update configurations, we will restore the old set
-                    restoreBackedUpEntries(oldEntries);
+                    if (nonNull(oldEntries)) {
+                        restoreBackedUpEntries(oldEntries);
+                    }
 
                 } finally {
                     updateLock.unlock();
                 }
+
+            } else {
+                logger.warn("Could not acquire lock to update configurations!");
             }
 
         } catch (InterruptedException e) {
             // nothing to do, either the program is stopping or another thread was updating the configurations
-            logger.warn("Could not acquire lock to update configurations!", e);
+            logger.warn("Interrupted while trying to acquire lock to update configurations!", e);
         }
     }
 
