@@ -139,6 +139,7 @@ public class Refocus implements Extract, Serializable {
         if (this == o) {
             return true;
         }
+
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
@@ -148,7 +149,12 @@ public class Refocus implements Extract, Serializable {
         if (!endpoint.equals(refocus.endpoint)) {
             return false;
         }
+
         if (!subject.equals(refocus.subject)) {
+            return false;
+        }
+
+        if (actualSubject != null ? !actualSubject.equals(refocus.actualSubject) : refocus.actualSubject != null) {
             return false;
         }
 
@@ -157,6 +163,10 @@ public class Refocus implements Extract, Serializable {
 
     @Override
     public int hashCode() {
-        return 31 * (31 * endpoint.hashCode() + subject.hashCode()) + aspect.hashCode();
+        int result = endpoint.hashCode();
+        result = 31 * result + subject.hashCode();
+        result = 31 * result + (actualSubject != null ? actualSubject.hashCode() : 0);
+        result = 31 * result + aspect.hashCode();
+        return result;
     }
 }
