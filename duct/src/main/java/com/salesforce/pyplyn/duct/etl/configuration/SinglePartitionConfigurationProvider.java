@@ -72,7 +72,7 @@ public class SinglePartitionConfigurationProvider implements UpdatableConfigurat
 
                 try {
                     // make a copy of all current elements
-                    oldEntries = ImmutableMap.copyOf(configurations);
+                    oldEntries = new HashMap<>(configurations);
 
                     // merge new configurations into existing map
                     logger.info("Merging configurations");
