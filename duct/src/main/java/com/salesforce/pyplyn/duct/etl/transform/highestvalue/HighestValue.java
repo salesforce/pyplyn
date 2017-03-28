@@ -8,9 +8,11 @@
 
 package com.salesforce.pyplyn.duct.etl.transform.highestvalue;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.salesforce.pyplyn.model.Transform;
 import com.salesforce.pyplyn.model.TransformationResult;
+import com.salesforce.pyplyn.model.ETLMetadata;
 import com.salesforce.pyplyn.model.builder.TransformationResultBuilder;
 
 import java.io.Serializable;
@@ -36,6 +38,20 @@ public class HighestValue implements Transform, Serializable {
     private Display messageCodeSource;
 
 
+    /**
+     * Default constructor
+     * @param messageCodeSource if specified, will decide what to set in the {@link TransformationResult}'s
+     *   {@link ETLMetadata}
+     */
+    @JsonCreator
+    public HighestValue(@JsonProperty("messageCodeSource") Display messageCodeSource) {
+        this.messageCodeSource = messageCodeSource;
+    }
+
+
+    /**
+     * Applies this transformation and returns a new {@link TransformationResult} matrix
+     */
     @Override
     public List<List<TransformationResult>> apply(List<List<TransformationResult>> stageInput) {
         final List<TransformationResult> stageResult = new ArrayList<>();
@@ -63,7 +79,7 @@ public class HighestValue implements Transform, Serializable {
     /**
      * Holds different options for setting the <b>defaultMessageCode</b> on the {@link TransformationResult}
      */
-    private enum Display{
+    public enum Display{
         ORIGINAL_VALUE
     }
 

@@ -91,7 +91,7 @@ public final class DuctMain {
             // execute app; this operation will block until program completion
             executor.schedule(app);
 
-        } catch (ConfigParseException e) {//NOPMD
+        } catch (ConfigParseException e) {
             // nothing to do, allow the program to exit gracefully
 
         } catch (Exception e) {

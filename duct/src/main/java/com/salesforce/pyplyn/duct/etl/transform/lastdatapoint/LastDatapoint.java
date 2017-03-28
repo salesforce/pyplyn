@@ -34,6 +34,9 @@ public class LastDatapoint implements Transform, Serializable {
     private static final long serialVersionUID = -2187464148729449576L;
 
 
+    /**
+     * Applies this transformation and returns a new {@link TransformationResult} matrix
+     */
     @Override
     public List<List<TransformationResult>> apply(List<List<TransformationResult>> input) {
         return input.stream()

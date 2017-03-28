@@ -227,12 +227,31 @@ public class AppBootstrapFixtures {
         return this;
     }
 
+    public AppBootstrapFixtures argusToRefocusConfigurationWithTransforms(Transform[] transforms) {
+        doReturn(new HashSet<>(Collections.singleton(new ConfigurationMocks().argusExtract().withTransforms(transforms).buildWrapper(null))))
+                .when(configurationSetProvider)
+                .get();
+        return this;
+    }
+
     public AppBootstrapFixtures returnMockedTransformationResultFromAllExtractProcessors() {
         doReturn(Collections.singletonList(Collections.singletonList(transformationResult))).when(argusExtractProcessor).process(any());
         doAnswer(invocation -> filter(invocation.getArguments(), Argus.class)).when(argusExtractProcessor).filter(any());
         doCallRealMethod().when(argusExtractProcessor).execute(any());
 
         doReturn(Collections.singletonList(Collections.singletonList(transformationResult))).when(refocusExtractProcessor).process(any());
+        doAnswer(invocation -> filter(invocation.getArguments(), Refocus.class)).when(refocusExtractProcessor).filter(any());
+        doCallRealMethod().when(refocusExtractProcessor).execute(any());
+
+        return this;
+    }
+
+    public AppBootstrapFixtures returnTransformationResultFromAllExtractProcessors(List<List<TransformationResult>> results) {
+        doReturn(results).when(argusExtractProcessor).process(any());
+        doAnswer(invocation -> filter(invocation.getArguments(), Argus.class)).when(argusExtractProcessor).filter(any());
+        doCallRealMethod().when(argusExtractProcessor).execute(any());
+
+        doReturn(results).when(refocusExtractProcessor).process(any());
         doAnswer(invocation -> filter(invocation.getArguments(), Refocus.class)).when(refocusExtractProcessor).filter(any());
         doCallRealMethod().when(refocusExtractProcessor).execute(any());
 
@@ -418,7 +437,9 @@ public class AppBootstrapFixtures {
         return configurationSetProvider;
     }
 
-
+    public RefocusLoadProcessor refocusLoadProcessor() {
+        return refocusLoadProcessor;
+    }
 
     //
     // Utility methods
@@ -630,6 +651,11 @@ public class AppBootstrapFixtures {
 
         public ConfigurationMocks lastDatapoint() {
             doReturn(new Transform[]{new LastDatapoint()}).when(configuration).transform();
+            return this;
+        }
+
+        public ConfigurationMocks withTransforms(Transform[] transforms) {
+            doReturn(transforms).when(configuration).transform();
             return this;
         }
 

@@ -30,6 +30,9 @@ public class InfoStatus implements Transform, Serializable {
     private static final long serialVersionUID = -1927779729819920375L;
 
 
+    /**
+     * Applies this transformation and returns a new {@link TransformationResult} matrix
+     */
     @Override
     public List<List<TransformationResult>> apply(List<List<TransformationResult>> input) {
         // for all rows and columns
@@ -48,6 +51,7 @@ public class InfoStatus implements Transform, Serializable {
                 )
                 .collect(Collectors.toList());
     }
+
 
     @Override
     public boolean equals(Object o) {

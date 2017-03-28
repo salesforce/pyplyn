@@ -8,6 +8,7 @@
 
 package com.salesforce.pyplyn.duct.etl.transform.threshold;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.salesforce.pyplyn.duct.etl.transform.highestvalue.HighestValue;
 import com.salesforce.pyplyn.model.Transform;
@@ -18,6 +19,7 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.salesforce.pyplyn.duct.etl.transform.threshold.Threshold.Value.*;
 import static com.salesforce.pyplyn.util.FormatUtils.formatNumber;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
@@ -44,9 +46,7 @@ public class Threshold implements Transform, Serializable {
     private static final long serialVersionUID = 1883668176362666986L;
     private final static String MESSAGE_TEMPLATE = "%s threshold hit by %s, with value=%s %s %.2f";
 
-    /**
-     * Leave null/unspecified to apply to all results
-     */
+
     @JsonProperty
     String applyToMetricName;
 
@@ -63,6 +63,31 @@ public class Threshold implements Transform, Serializable {
     Type type;
 
 
+    /**
+     * Default constructor
+     *
+     * @param applyToMetricName Leave null/unspecified to apply to all results
+     * @param criticalThreshold Critical threshold
+     * @param warningThreshold Warning threshold
+     * @param infoThreshold Info threshold
+     * @param type Decides if the values matched against the specified thresholds, should be greater or lower
+     */
+    @JsonCreator
+    public Threshold(@JsonProperty("applyToMetricName") String applyToMetricName,
+                     @JsonProperty("criticalThreshold") Double criticalThreshold,
+                     @JsonProperty("warningThreshold") Double warningThreshold,
+                     @JsonProperty("infoThreshold") Double infoThreshold,
+                     @JsonProperty("type") Type type) {
+        this.applyToMetricName = applyToMetricName;
+        this.criticalThreshold = criticalThreshold;
+        this.warningThreshold = warningThreshold;
+        this.infoThreshold = infoThreshold;
+        this.type = type;
+    }
+
+    /**
+     * Applies this transformation and returns a new {@link TransformationResult} matrix
+     */
     @Override
     public List<List<TransformationResult>> apply(List<List<TransformationResult>> input) {
         return input.stream()
@@ -91,7 +116,7 @@ public class Threshold implements Transform, Serializable {
 
         // if type is not specified, transform to OK
         if (isNull(type)) {
-            return changeValue(result, 0d);
+            return changeValue(result, OK.value());
         }
 
         // otherwise compare value to all thresholds and determine it's status
@@ -99,13 +124,16 @@ public class Threshold implements Transform, Serializable {
         //   if all thresholds are not specified, the result will be transformed to OK
         Number value = result.value();
         if (type.matches(value, criticalThreshold)) {
-            return appendMessage(changeValue(result, 3d), "CRIT", criticalThreshold);
+            return appendMessage(changeValue(result, CRIT.value()), CRIT.code(), criticalThreshold);
+
         } else if (type.matches(value, warningThreshold)) {
-            return appendMessage(changeValue(result, 2d), "WARN", warningThreshold);
+            return appendMessage(changeValue(result, WARN.value()), WARN.code(), warningThreshold);
+
         } else if (type.matches(value, infoThreshold)) {
-            return appendMessage(changeValue(result, 1d), "INFO", infoThreshold);
+            return appendMessage(changeValue(result, INFO.value()), INFO.code(), infoThreshold);
+
         } else {
-            return changeValue(result, 0d);
+            return changeValue(result, OK.value());
         }
     }
 
@@ -172,7 +200,7 @@ public class Threshold implements Transform, Serializable {
     /**
      * Possible trigger types
      */
-    public static enum Type {
+    public enum Type {
         GREATER_THAN, LESS_THAN;
 
         /**
@@ -188,6 +216,32 @@ public class Threshold implements Transform, Serializable {
             }
 
             return false;
+        }
+    }
+
+    /**
+     * Predefined values for OK/INFO/WARN/ERR
+     */
+    public enum Value {
+        OK(0d, "OK"),
+        INFO(1d, "INFO"),
+        WARN(2d, "WARN"),
+        CRIT(3d, "CRIT");
+
+        private final Double value;
+        private final String code;
+
+        Value(double val, String code) {
+            this.value = val;
+            this.code = code;
+        }
+
+        public Double value() {
+            return value;
+        }
+
+        public String code() {
+            return code;
         }
     }
 }

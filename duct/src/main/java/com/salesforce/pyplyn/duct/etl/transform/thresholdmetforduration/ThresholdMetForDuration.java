@@ -1,5 +1,6 @@
 package com.salesforce.pyplyn.duct.etl.transform.thresholdmetforduration;
 
+import static com.salesforce.pyplyn.duct.etl.transform.threshold.Threshold.Value.*;
 import static com.salesforce.pyplyn.util.FormatUtils.formatNumber;
 import static com.salesforce.pyplyn.duct.etl.transform.threshold.Threshold.*;
 import static java.util.Objects.isNull;
@@ -14,6 +15,7 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.Iterables;
 import com.salesforce.pyplyn.duct.etl.transform.threshold.Threshold.Type;
@@ -43,6 +45,7 @@ public class ThresholdMetForDuration implements Transform, Serializable {
     private static final long serialVersionUID = -4594665847342745577L;
     private final static String MESSAGE_TEMPLATE = "%s threshold hit by %s, with value=%s %s %.2f, duration longer than %s";
 
+
     @JsonProperty(required=true)
     Double threshold;
 
@@ -58,6 +61,28 @@ public class ThresholdMetForDuration implements Transform, Serializable {
     @JsonProperty(defaultValue = "0")
     Long infoDurationMillis;
 
+
+    /**
+     * Default constructor
+     *
+     * @param threshold Threshold to match
+     * @param type Determines if the duration should be higher or lower than the threshold
+     * @param criticalDurationMillis Duration after which the status becomes "critical"
+     * @param warnDurationMillis Duration after which the status becomes "warning"
+     * @param infoDurationMillis Duration after which the status becomes "info"
+     */
+    @JsonCreator
+    public ThresholdMetForDuration(Double threshold, Type type, Long criticalDurationMillis, Long warnDurationMillis, Long infoDurationMillis) {
+        this.threshold = threshold;
+        this.type = type;
+        this.criticalDurationMillis = criticalDurationMillis;
+        this.warnDurationMillis = warnDurationMillis;
+        this.infoDurationMillis = infoDurationMillis;
+    }
+
+    /**
+     * Applies this transformation and returns a new {@link TransformationResult} matrix
+     */
     @Override
     public List<List<TransformationResult>> apply(List<List<TransformationResult>> input) {
         return input.stream()
@@ -80,9 +105,8 @@ public class ThresholdMetForDuration implements Transform, Serializable {
         TransformationResult lastPoint = Iterables.getLast(points);
         ZonedDateTime lastPointTS = lastPoint.time();
 
-        // get the timestamp for the critial, warning, info duration timestamp
-        // if the millisecond unit is not supported, it would throw
-        // UnsupportedTemporalTypeException, which is what we want
+        // get the timestamp for the critical, warning, info durations
+        //   if the millisecond unit is not supported, it will throw UnsupportedTemporalTypeException
         ZonedDateTime infoDurationTS = lastPointTS.minus(infoDurationMillis, ChronoUnit.MILLIS);
         ZonedDateTime warnDurationTS = lastPointTS.minus(warnDurationMillis, ChronoUnit.MILLIS);
         ZonedDateTime criticalDurationTS = lastPointTS.minus(criticalDurationMillis, ChronoUnit.MILLIS);
@@ -101,32 +125,34 @@ public class ThresholdMetForDuration implements Transform, Serializable {
 
             if (matchThreshold) {
                 if (pointTS.compareTo(criticalDurationTS) <= 0) {
-                    return Collections.singletonList(
-                            appendMessage(changeValue(result, 3d), "CRIT", threshold, criticalDurationMillis));
+                    return Collections.singletonList(appendMessage(changeValue(result, CRIT.value()), CRIT.code(), threshold, criticalDurationMillis));
+
                 } else if (pointTS.compareTo(warnDurationTS) <= 0) {
                     atWarningLevel = true;
+
                 } else if (pointTS.compareTo(infoDurationTS) <= 0) {
                     atInfoLevel = true;
                 }
+
             } else {
                 if (pointTS.compareTo(warnDurationTS) <= 0) {
-                    return Collections.singletonList(
-                            appendMessage(changeValue(result, 2d), "WARN", threshold, warnDurationMillis));
+                    return Collections.singletonList(appendMessage(changeValue(result, WARN.value()), WARN.code(), threshold, warnDurationMillis));
+
                 } else if (pointTS.compareTo(infoDurationTS) <= 0) {
-                    return Collections.singletonList(
-                            appendMessage(changeValue(result, 1d), "INFO", threshold, warnDurationMillis));
+                    return Collections.singletonList(appendMessage(changeValue(result, INFO.value()), INFO.code(), threshold, warnDurationMillis));
+
                 } else {
-                    return Collections.singletonList(changeValue(result, 0d)); // OK status
+                    return Collections.singletonList(changeValue(result, OK.value())); // OK status
                 }
             }
         }
 
         // critical, warning or info duration value is longer than available input time series
         return atWarningLevel
-                ? Collections.singletonList(appendMessage(changeValue(lastPoint, 2d), "WARN", threshold, warnDurationMillis))
+                ? Collections.singletonList(appendMessage(changeValue(lastPoint, WARN.value()), WARN.code(), threshold, warnDurationMillis))
                 : (atInfoLevel
-                        ? Collections.singletonList(appendMessage(changeValue(lastPoint, 2d), "WARN", threshold, warnDurationMillis))
-                        : Collections.singletonList(changeValue(lastPoint, 0d)));
+                        ? Collections.singletonList(appendMessage(changeValue(lastPoint, INFO.value()), INFO.code(), threshold, warnDurationMillis))
+                        : Collections.singletonList(changeValue(lastPoint, OK.value())));
     }
 
     /**
@@ -142,10 +168,10 @@ public class ThresholdMetForDuration implements Transform, Serializable {
 
     /**
      * Convert duration milli to day:hour:min:second dd:hh:mm:ss
-     *   omitted any duration that's less than 1 second
+     * <p/>omitted any duration that's less than 1 second
      * 
      * @return if less than 1 day, xxh:xxm:xxs
-     *         if more than 1 day, xx days xxh:xxm:xxs
+     *         <p/>if more than 1 day, xx days xxh:xxm:xxs
      */
     private String convertToTimeDuration(long milliseconds) {
         long days = TimeUnit.MILLISECONDS.toDays(milliseconds);
@@ -158,21 +184,10 @@ public class ThresholdMetForDuration implements Transform, Serializable {
 
 
     @Override
-    public int hashCode() {
-        final int prime = 37;
-        int result = 1;
-        result = prime * result + ((criticalDurationMillis == null) ? 0 : criticalDurationMillis.hashCode());
-        result = prime * result + ((threshold == null) ? 0 : threshold.hashCode());
-        result = prime * result + ((type == null) ? 0 : type.hashCode());
-        result = prime * result + ((warnDurationMillis == null) ? 0 : warnDurationMillis.hashCode());
-        result = prime * result + ((infoDurationMillis == null) ? 0 : infoDurationMillis.hashCode());
-        return result;
-    }
-
-    @Override
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
+        }
 
         if (obj == null || getClass() != obj.getClass()) {
             return false;
@@ -180,17 +195,33 @@ public class ThresholdMetForDuration implements Transform, Serializable {
 
         ThresholdMetForDuration other = (ThresholdMetForDuration) obj;
 
-        if (criticalDurationMillis != null ? !criticalDurationMillis.equals(other.criticalDurationMillis)
-                : other.criticalDurationMillis != null)
+        if (criticalDurationMillis != null ? !criticalDurationMillis.equals(other.criticalDurationMillis) : other.criticalDurationMillis != null) {
             return false;
-        if (warnDurationMillis != null ? !warnDurationMillis.equals(other.warnDurationMillis)
-                : other.warnDurationMillis != null)
+        }
+
+        if (warnDurationMillis != null ? !warnDurationMillis.equals(other.warnDurationMillis) : other.warnDurationMillis != null) {
             return false;
-        if (infoDurationMillis != null ? !infoDurationMillis.equals(other.warnDurationMillis)
-                : other.infoDurationMillis != null)
-            return false;        
-        if (threshold != null ? !threshold.equals(other.threshold) : other.threshold != null)
+        }
+
+        if (infoDurationMillis != null ? !infoDurationMillis.equals(other.warnDurationMillis) : other.infoDurationMillis != null) {
             return false;
+        }
+
+        if (threshold != null ? !threshold.equals(other.threshold) : other.threshold != null) {
+            return false;
+        }
+
         return type == other.type;
     }
+
+    @Override
+    public int hashCode() {
+        int result = ((criticalDurationMillis == null) ? 0 : criticalDurationMillis.hashCode());
+        result = 31 * result + ((threshold == null) ? 0 : threshold.hashCode());
+        result = 31 * result + ((type == null) ? 0 : type.hashCode());
+        result = 31 * result + ((warnDurationMillis == null) ? 0 : warnDurationMillis.hashCode());
+        result = 31 * result + ((infoDurationMillis == null) ? 0 : infoDurationMillis.hashCode());
+        return result;
+    }
 }
+

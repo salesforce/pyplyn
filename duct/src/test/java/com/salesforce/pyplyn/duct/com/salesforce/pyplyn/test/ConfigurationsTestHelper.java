@@ -49,13 +49,7 @@ public class ConfigurationsTestHelper {
                 new Refocus(refocusEndpoint, refocusSubject, null, refocusAspect, 1, 2d)
         };
 
-        Transform[] transform = new Transform[]{
-                new HighestValue(),
-                new InfoStatus(),
-                new LastDatapoint(),
-                new SaveMetricMetadata(),
-                new Threshold()
-        };
+        Transform[] transform = createThresholdTransforms("metric");
 
         Load[] load = new Load[]{
                 new com.salesforce.pyplyn.duct.etl.load.refocus.Refocus(refocusEndpoint, refocusSubject, refocusAspect,
@@ -63,5 +57,17 @@ public class ConfigurationsTestHelper {
         };
 
         return new Configuration(repeatIntervalMillis, extracts, transform, load, disabled);
+    }
+
+    /**
+     * Creates an array of {@link Transform}'s, based on {@link Threshold}
+     */
+    public static Transform[] createThresholdTransforms(String metricName) {
+        LastDatapoint lastDatapoint = new LastDatapoint();
+        SaveMetricMetadata saveMetricMetadata = new SaveMetricMetadata();
+        Threshold threshold = new Threshold(metricName, 1000d, 100d, 10d, Threshold.Type.GREATER_THAN);
+        InfoStatus infoStatus = new InfoStatus();
+        HighestValue highestValue = new HighestValue(HighestValue.Display.ORIGINAL_VALUE);
+        return new Transform[]{lastDatapoint, saveMetricMetadata, threshold, infoStatus, highestValue};
     }
 }
