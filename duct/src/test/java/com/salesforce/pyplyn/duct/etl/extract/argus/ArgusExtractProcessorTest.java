@@ -10,10 +10,18 @@ package com.salesforce.pyplyn.duct.etl.extract.argus;
 
 import com.salesforce.pyplyn.duct.app.MetricDuct;
 import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapFixtures;
+import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapLatches;
+import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.ExecutorTestHelper;
 import com.salesforce.pyplyn.status.MeterType;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -24,7 +32,7 @@ import static org.mockito.Mockito.verify;
  * @since 5.0
  */
 public class ArgusExtractProcessorTest {
-    AppBootstrapFixtures fixtures;
+    private AppBootstrapFixtures fixtures;
 
     @BeforeMethod
     public void setUp() throws Exception {

@@ -125,12 +125,12 @@ public class RefocusExtractProcessor extends AbstractMeteredExtractProcessor<Ref
                                             }
 
                                             // find the required sample by cacheKey
-                                            sample = samples.stream().filter(s -> s.cacheKey().equals(refocus.cacheKey())).findFirst().orElse(null);
+                                            sample = samples.stream().filter(s -> Objects.equals(s.cacheKey(), refocus.cacheKey())).findFirst().orElse(null);
                                         }
 
                                         // if a null response was returned or the response is timed out, and we have a default value specified, generate a sample from it
                                         if ((isNull(sample) || isTimedOut(sample)) && nonNull(refocus.defaultValue())) {
-                                            String now = Instant.now().atZone(ZoneOffset.UTC).toString();
+                                            String now = ZonedDateTime.now(ZoneOffset.UTC).toString();
                                             sample = new SampleBuilder()
                                                     .withName(refocus.filteredName())
                                                     .withValue(formatNumber(refocus.defaultValue()))

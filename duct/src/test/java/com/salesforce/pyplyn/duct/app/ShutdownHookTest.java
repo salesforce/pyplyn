@@ -70,50 +70,51 @@ public class ShutdownHookTest {
         shutdownHook.shutdown();
         AppBootstrapLatches.holdOffBeforeLoadProcessorStarts().countDown();
 
+        // wait for shutdown
+        AppBootstrapLatches.appHasShutdown().await();
 
         // ASSERT
-        awaitAndAssertCompletion();
-
         // since the load was interrupted, expecting the RefocusLoadProcessor to log a failure
         verify(fixtures.systemStatus()).meter("Refocus", MeterType.LoadFailure);
     }
 
-    /**
-     * ArgusExtractProcessor does not query the remote Argus endpoint if the app is shutting down
-     */
-    @Test
+    @Test(timeOut = 5000L)
     public void testArgusNotQueriedIfShuttingDown() throws Exception {
         // ARRANGE
-        // bootstrap
         fixtures.realShutdownHook()
                 .enableLatches()
                 .oneArgusToRefocusConfiguration()
                 .callRealArgusExtractProcessor()
                 .freeze();
 
-        // init app and register executor for shutdown
+        // register executor with ShutdownHook
         ShutdownHook shutdownHook = registerExecutorWithShutdownHook();
         MetricDuct app = fixtures.app();
 
         // ACT
+
+        // start app
         executor.submit(app);
 
-        // wait until we are ready to start, shutdown and allow extract processor to run
+        // wait until we're ready to extract, then shutdown
         AppBootstrapLatches.beforeExtractProcessorStarts().await();
         shutdownHook.shutdown();
         AppBootstrapLatches.holdOffBeforeExtractProcessorStarts().countDown();
 
-        // ASSERT
-        awaitAndAssertCompletion();
+        // wait for shutdown
+        AppBootstrapLatches.appHasShutdown().await();
 
-        // since the extract was interrupted, expecting the timer surrounding ArgusClient.getMetrics(List) to not be executed
-        verify(fixtures.systemStatus(), times(0)).timer("Argus", "get-metrics." + AppBootstrapFixtures.MOCK_CONNECTOR_NAME);
+        // ASSERT
+        // expecting no failures or successes to be logged when the app was shutdown
+        verify(fixtures.systemStatus(), times(0)).meter("Argus", MeterType.ExtractFailure);
+        verify(fixtures.systemStatus(), times(0)).meter("Argus", MeterType.ExtractSuccess);
     }
+
 
     /**
      * RefocusExtractProcessor does not query the remote Argus endpoint if the app is shutting down
      */
-    @Test
+    @Test(timeOut = 5000L)
     public void testRefocusNotQueriedIfShuttingDown() throws Exception {
         // ARRANGE
         // bootstrap
@@ -135,9 +136,10 @@ public class ShutdownHookTest {
         shutdownHook.shutdown();
         AppBootstrapLatches.holdOffBeforeExtractProcessorStarts().countDown();
 
-        // ASSERT
-        awaitAndAssertCompletion();
+        // wait for shutdown
+        AppBootstrapLatches.appHasShutdown().await();
 
+        // ASSERT
         // since the extract was interrupted, expecting the timer surrounding RefocusClient#getSamples(String) to not be executed
         verify(fixtures.systemStatus(), times(0)).timer("Refocus", "get-sample." + AppBootstrapFixtures.MOCK_CONNECTOR_NAME);
     }
@@ -146,15 +148,6 @@ public class ShutdownHookTest {
     public void tearDown() throws Exception {
         // if an executor was started, shut it down
         ExecutorTestHelper.shutdown(executor);
-    }
-
-
-    /**
-     * Asserts that the app was successfully shut down
-     */
-    private void awaitAndAssertCompletion() throws InterruptedException {
-        boolean appWasShutDown = AppBootstrapLatches.appHasShutdown().await(5000, TimeUnit.MILLISECONDS);
-        assertThat("Expected app to have shut down", appWasShutDown, is(true));
     }
 
     /**

@@ -300,6 +300,11 @@ public class AppBootstrapFixtures {
         return this;
     }
 
+    public AppBootstrapFixtures refocusClientReturns(List<Sample> samples) throws UnauthorizedException {
+        doReturn(samples).when(refocusClient).getSamples(any());
+        return this;
+    }
+
     public AppBootstrapFixtures callRealRefocusLoadProcessor() {
         // we need to reinitialize the object to provide access to the real failed/succeeded (protected) methods
         refocusLoadProcessor = spy(new RefocusLoadProcessor(refocusClientFactory, shutdownHook));
@@ -634,12 +639,14 @@ public class AppBootstrapFixtures {
         public ConfigurationMocks argusExtract() {
             doReturn(new Argus[]{argusExtract}).when(configuration).extract();
             doReturn(MOCK_CONNECTOR_NAME).when(argusExtract).endpoint();
+            doReturn(null).when(argusExtract).defaultValue();
             return this;
         }
 
         public ConfigurationMocks refocusExtract() {
             doReturn(new Refocus[]{refocusExtract}).when(configuration).extract();
             doReturn(MOCK_CONNECTOR_NAME).when(refocusExtract).endpoint();
+            doReturn(null).when(refocusExtract).defaultValue();
             return this;
         }
 
