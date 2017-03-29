@@ -30,6 +30,7 @@ import static org.hamcrest.Matchers.*;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -47,6 +48,7 @@ public class RefocusExtractProcessorTest {
         // ARRANGE
         fixtures = new AppBootstrapFixtures();
     }
+
 
     @Test
     public void testProcessShouldFailWhenClientIsMissing() throws Exception {
@@ -77,7 +79,7 @@ public class RefocusExtractProcessorTest {
         Sample timedOutValue = new SampleBuilder()
                 .withName("subject|aspect")
                 .withUpdatedAt(ZonedDateTime.now(ZoneOffset.UTC).toString())
-                .withValue("Timeout")
+                .withValue(RefocusExtractProcessor.RESPONSE_TIMEOUT)
                 .build();
 
         // bootstrap
@@ -115,6 +117,72 @@ public class RefocusExtractProcessorTest {
     }
 
     @Test
+    public void testSamplesAreCached() throws Exception {
+        // ARRANGE
+        // create a sample
+        Sample sample = new SampleBuilder()
+                .withName("subject|aspect")
+                .withUpdatedAt(ZonedDateTime.now(ZoneOffset.UTC).toString())
+                .withValue("1.2")
+                .build();
+
+        // bootstrap
+        fixtures.appConfigMocks()
+                .runOnce();
+
+        fixtures.oneRefocusToRefocusConfigurationWithCache()
+                .realSampleCache()
+                .callRealRefocusExtractProcessor()
+                .refocusClientReturns(Collections.singletonList(sample))
+                .freeze();
+
+        // init app and register executor for shutdown
+        MetricDuct app = fixtures.app();
+        app.run();
+
+        // ACT
+        app.run();
+
+        // ASSERT
+        // since we had no real client, expecting RefocusExtractProcessor to have logged a failure
+        verify(fixtures.systemStatus(), times(2)).meter("Refocus", MeterType.ExtractSuccess);
+        verify(fixtures.sampleCache(), times(2)).isCached("subject|aspect");
+        verify(fixtures.sampleCache(), times(1)).cache(any(), anyLong());
+    }
+
+    @Test
+    public void testTimedOutSamplesAreNotCached() throws Exception {
+        // ARRANGE
+        // create a sample
+        Sample sample = new SampleBuilder()
+                .withName("subject|aspect")
+                .withUpdatedAt(ZonedDateTime.now(ZoneOffset.UTC).toString())
+                .withValue(RefocusExtractProcessor.RESPONSE_TIMEOUT)
+                .build();
+
+        // bootstrap
+        fixtures.appConfigMocks()
+                .runOnce();
+
+        fixtures.oneRefocusToRefocusConfigurationWithCache()
+                .realSampleCache()
+                .callRealRefocusExtractProcessor()
+                .refocusClientReturns(Collections.singletonList(sample))
+                .freeze();
+
+        // init app and register executor for shutdown
+        MetricDuct app = fixtures.app();
+
+        // ACT
+        app.run();
+
+        // ASSERT
+        // since we had no real client, expecting RefocusExtractProcessor to have logged a failure
+        verify(fixtures.sampleCache(), times(1)).isCached("subject|aspect");
+        verify(fixtures.sampleCache(), times(0)).cache(any(), anyLong());
+    }
+
+    @Test
     public void testProcessShouldFailWhenDataInvalid() throws Exception {
         // create a sample
         Sample badSample = new SampleBuilder()
@@ -132,7 +200,7 @@ public class RefocusExtractProcessorTest {
         Sample badSample = new SampleBuilder()
                 .withName("subject|aspect")
                 .withUpdatedAt(ZonedDateTime.now(ZoneOffset.UTC).toString())
-                .withValue("Timeout")
+                .withValue(RefocusExtractProcessor.RESPONSE_TIMEOUT)
                 .build();
 
         assertFailureWithSample(badSample);

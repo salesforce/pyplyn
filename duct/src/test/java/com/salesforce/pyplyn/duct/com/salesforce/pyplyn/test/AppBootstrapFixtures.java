@@ -220,8 +220,8 @@ public class AppBootstrapFixtures {
         return this;
     }
 
-    public AppBootstrapFixtures oneRefocusToRefocusConfiguration() {
-        doReturn(new HashSet<>(Collections.singleton(new ConfigurationMocks().refocusExtract(null).buildWrapper(null))))
+    public AppBootstrapFixtures oneArgusToRefocusConfigurationWithCache() {
+        doReturn(new HashSet<>(Collections.singleton(new ConfigurationMocks().argusExtract(null).shouldCache(60000).buildWrapper(null))))
                 .when(configurationSetProvider)
                 .get();
         return this;
@@ -234,15 +234,29 @@ public class AppBootstrapFixtures {
         return this;
     }
 
-    public AppBootstrapFixtures oneRefocusToRefocusConfigurationWithDefaultValue(Double defaultValue) {
-        doReturn(new HashSet<>(Collections.singleton(new ConfigurationMocks().refocusExtract(defaultValue).buildWrapper(null))))
+    public AppBootstrapFixtures argusToRefocusConfigurationWithTransforms(Transform[] transforms) {
+        doReturn(new HashSet<>(Collections.singleton(new ConfigurationMocks().argusExtract(null).withTransforms(transforms).buildWrapper(null))))
                 .when(configurationSetProvider)
                 .get();
         return this;
     }
 
-    public AppBootstrapFixtures argusToRefocusConfigurationWithTransforms(Transform[] transforms) {
-        doReturn(new HashSet<>(Collections.singleton(new ConfigurationMocks().argusExtract(null).withTransforms(transforms).buildWrapper(null))))
+    public AppBootstrapFixtures oneRefocusToRefocusConfiguration() {
+        doReturn(new HashSet<>(Collections.singleton(new ConfigurationMocks().refocusExtract(null).buildWrapper(null))))
+                .when(configurationSetProvider)
+                .get();
+        return this;
+    }
+
+    public AppBootstrapFixtures oneRefocusToRefocusConfigurationWithCache() {
+        doReturn(new HashSet<>(Collections.singleton(new ConfigurationMocks().refocusExtract(null).shouldCache(60000).buildWrapper(null))))
+                .when(configurationSetProvider)
+                .get();
+        return this;
+    }
+
+    public AppBootstrapFixtures oneRefocusToRefocusConfigurationWithDefaultValue(Double defaultValue) {
+        doReturn(new HashSet<>(Collections.singleton(new ConfigurationMocks().refocusExtract(defaultValue).buildWrapper(null))))
                 .when(configurationSetProvider)
                 .get();
         return this;
@@ -395,6 +409,19 @@ public class AppBootstrapFixtures {
         return this;
     }
 
+    public AppBootstrapFixtures realSampleCache() {
+        sampleCache = spy(new CacheFactory().newCache());
+        doReturn(sampleCache).when(cacheFactory).newCache();
+        return this;
+    }
+
+    public AppBootstrapFixtures realMetricResponseCache() {
+        metricResponseCache = spy(new CacheFactory().newCache());
+        doReturn(metricResponseCache).when(cacheFactory).newCache();
+        return this;
+    }
+
+
     /**
      * Initializes any fixtures that need to be applied on the {@link MetricDuct} app spy
       */
@@ -479,8 +506,12 @@ public class AppBootstrapFixtures {
         return appConnector;
     }
 
-    public CacheFactory cacheFactory() {
-        return cacheFactory;
+    public ConcurrentCacheMap<MetricResponse> metricResponseCache() {
+        return metricResponseCache;
+    }
+
+    public ConcurrentCacheMap<Sample> sampleCache() {
+        return sampleCache;
     }
 
     //
@@ -688,6 +719,12 @@ public class AppBootstrapFixtures {
             doReturn("subject").when(refocusExtract).subject();
             doReturn("subject").when(refocusExtract).actualSubject();
             doReturn("aspect").when(refocusExtract).aspect();
+            return this;
+        }
+
+        public ConfigurationMocks shouldCache(int cacheFor) {
+            doReturn(cacheFor).when(refocusExtract).cacheMillis();
+            doReturn(cacheFor).when(argusExtract).cacheMillis();
             return this;
         }
 

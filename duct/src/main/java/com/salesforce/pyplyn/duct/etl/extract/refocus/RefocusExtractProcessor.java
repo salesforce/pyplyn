@@ -51,7 +51,7 @@ import static java.util.Objects.nonNull;
  */
 @Singleton
 public class RefocusExtractProcessor extends AbstractMeteredExtractProcessor<Refocus> implements AuthenticatedEndpointProvider<RefocusClient> {
-    private static final String RESPONSE_TIMEOUT = "Timeout";
+    public static final String RESPONSE_TIMEOUT = "Timeout";
     private final RemoteClientFactory<RefocusClient> refocusClientFactory;
     private final CacheFactory cacheFactory;
     private final ConcurrentHashMap<RefocusClient, ConcurrentCacheMap<Sample>> clientToCacheMap = new ConcurrentHashMap<>();

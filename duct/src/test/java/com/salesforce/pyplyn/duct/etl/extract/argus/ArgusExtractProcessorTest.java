@@ -20,13 +20,16 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.TreeMap;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -108,6 +111,68 @@ public class ArgusExtractProcessorTest {
         assertThat(result.value(), equalTo(1.2d));
         assertThat(result.originalValue(), equalTo(1.2d));
         assertThat(result.metadata().messages(), hasItem(containsString("Default value")));
+    }
+
+    @Test
+    public void testMetricResponsesAreCached() throws Exception {
+        // ARRANGE
+        String now = Long.valueOf(Instant.now().toEpochMilli()).toString();
+        MetricResponse response = new MetricResponseBuilder()
+                .withMetric("argus-metric")
+                .withDatapoints(new TreeMap<>(Collections.singletonMap(now, "1.2")))
+                .build();
+
+        // bootstrap
+        fixtures.appConfigMocks()
+                .runOnce();
+
+        fixtures.oneArgusToRefocusConfigurationWithCache()
+                .realMetricResponseCache()
+                .callRealArgusExtractProcessor()
+                .argusClientReturns(Collections.singletonList(response))
+                .freeze();
+
+        // init app and register executor for shutdown
+        MetricDuct app = fixtures.app();
+        app.run();
+
+        // ACT
+        app.run();
+
+        // ASSERT
+        verify(fixtures.systemStatus(), times(2)).meter("Argus", MeterType.ExtractSuccess);
+        verify(fixtures.metricResponseCache(), times(4)).isCached("argus-metric");
+        verify(fixtures.metricResponseCache(), times(1)).cache(any(), anyLong());
+    }
+
+    @Test
+    public void testMetricResponsesWithNoDatapointsAreNotCached() throws Exception {
+        // ARRANGE
+        MetricResponse response = new MetricResponseBuilder()
+                .withMetric("argus-metric")
+                .withDatapoints(Collections.emptySortedMap())
+                .build();
+
+        // bootstrap
+        fixtures.appConfigMocks()
+                .runOnce();
+
+        fixtures.oneArgusToRefocusConfigurationWithCache()
+                .realMetricResponseCache()
+                .callRealArgusExtractProcessor()
+                .argusClientReturns(Collections.singletonList(response))
+                .freeze();
+
+        // init app and register executor for shutdown
+        MetricDuct app = fixtures.app();
+
+        // ACT
+        app.run();
+
+        // ASSERT
+        verify(fixtures.systemStatus(), times(1)).meter("Argus", MeterType.ExtractSuccess);
+        verify(fixtures.metricResponseCache(), times(2)).isCached("argus-metric");
+        verify(fixtures.metricResponseCache(), times(0)).cache(any(), anyLong());
     }
 
     @Test
