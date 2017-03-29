@@ -10,27 +10,18 @@ package com.salesforce.pyplyn.duct.etl.extract.argus;
 
 import com.salesforce.argus.model.MetricResponse;
 import com.salesforce.argus.model.builder.MetricResponseBuilder;
+import com.salesforce.pyplyn.client.UnauthorizedException;
 import com.salesforce.pyplyn.duct.app.MetricDuct;
 import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapFixtures;
-import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapLatches;
-import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.ExecutorTestHelper;
 import com.salesforce.pyplyn.model.TransformationResult;
 import com.salesforce.pyplyn.status.MeterType;
-import com.salesforce.refocus.model.Sample;
-import com.salesforce.refocus.model.builder.SampleBuilder;
 import org.mockito.ArgumentCaptor;
-import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.time.Instant;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
-import java.util.TreeMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -80,10 +71,9 @@ public class ArgusExtractProcessorTest {
 
     @Test
     public void testDefaultValueProvidedOnTimeout() throws Exception {
-        String now = Long.valueOf(Instant.now().toEpochMilli()).toString();
+        // ARRANGE
         MetricResponse response = new MetricResponseBuilder()
                 .withMetric("argus-metric")
-                //.withDatapoints(new TreeMap<>(Collections.singletonMap(now, "1.2")))
                 .build();
 
         // bootstrap
@@ -102,9 +92,9 @@ public class ArgusExtractProcessorTest {
         app.run();
 
         // ASSERT
-        // since we had no real client, expecting RefocusExtractProcessor to have logged a failure
-        verify(fixtures.systemStatus(), times(0)).meter("Refocus", MeterType.ExtractFailure);
-        verify(fixtures.systemStatus(), times(0)).meter("Refocus", MeterType.ExtractNoDataReturned);
+        verify(fixtures.systemStatus(), times(1)).meter("Argus", MeterType.ExtractSuccess);
+        verify(fixtures.systemStatus(), times(0)).meter("Argus", MeterType.ExtractFailure);
+        verify(fixtures.systemStatus(), times(0)).meter("Argus", MeterType.ExtractNoDataReturned);
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<List<TransformationResult>> dataCaptor = ArgumentCaptor.forClass(List.class);
@@ -118,5 +108,73 @@ public class ArgusExtractProcessorTest {
         assertThat(result.value(), equalTo(1.2d));
         assertThat(result.originalValue(), equalTo(1.2d));
         assertThat(result.metadata().messages(), hasItem(containsString("Default value")));
+    }
+
+    @Test
+    public void testProcessShouldFailWithNullResponse() throws Exception {
+        testWithMetricResponse(null);
+
+        // ASSERT
+        verify(fixtures.systemStatus(), times(1)).meter("Argus", MeterType.ExtractFailure);
+    }
+
+    @Test
+    public void testProcessShouldFailWithEmptyDatapoints() throws Exception {
+        // create a sample
+        MetricResponse response = new MetricResponseBuilder()
+                .withMetric("argus-metric")
+                .withDatapoints(Collections.emptySortedMap())
+                .build();
+
+        testWithMetricResponse(Collections.singletonList(response));
+
+
+        // ASSERT
+        verify(fixtures.systemStatus(), times(1)).meter("Argus", MeterType.ExtractNoDataReturned);
+    }
+
+
+    @Test
+    public void testProcessShouldFailWhenGetMetricsThrowsExceptions() throws Exception {
+        // ARRANGE
+        // bootstrap
+        fixtures.appConfigMocks()
+                .runOnce();
+
+        fixtures.oneArgusToRefocusConfigurationWithDefaultValue(null)
+                .callRealArgusExtractProcessor()
+                .argusClientThrowsExceptionOnGetMetrics()
+                .freeze();
+
+        // init app and register executor for shutdown
+        MetricDuct app = fixtures.app();
+
+        // ACT
+        app.run();
+
+        // ASSERT
+        verify(fixtures.systemStatus(), times(1)).meter("Argus", MeterType.ExtractFailure);
+    }
+
+
+    /**
+     * Executes a test that assumes a failure when a bad sample is returned from the Endpoint
+     */
+    private void testWithMetricResponse(List<MetricResponse> response) throws UnauthorizedException {
+        // ARRANGE
+        // bootstrap
+        fixtures.appConfigMocks()
+                .runOnce();
+
+        fixtures.oneArgusToRefocusConfigurationWithDefaultValue(null)
+                .callRealArgusExtractProcessor()
+                .argusClientReturns(response)
+                .freeze();
+
+        // init app and register executor for shutdown
+        MetricDuct app = fixtures.app();
+
+        // ACT
+        app.run();
     }
 }

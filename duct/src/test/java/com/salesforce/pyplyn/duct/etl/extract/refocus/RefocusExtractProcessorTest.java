@@ -150,6 +150,29 @@ public class RefocusExtractProcessorTest {
         assertFailureWithSample(badSample);
     }
 
+    @Test
+    public void testProcessShouldFailWhenGetSampleThrowsException() throws Exception {
+        // ARRANGE
+        // bootstrap
+        fixtures.appConfigMocks()
+                .runOnce();
+
+        fixtures.oneRefocusToRefocusConfiguration()
+                .callRealRefocusExtractProcessor()
+                .refocusClientThrowsExceptionOnGetSample()
+                .freeze();
+
+        // init app and register executor for shutdown
+        MetricDuct app = fixtures.app();
+
+        // ACT
+        app.run();
+
+        // ASSERT
+        // since we had no real client, expecting RefocusExtractProcessor to have logged a failure
+        verify(fixtures.systemStatus(), times(1)).meter("Refocus", MeterType.ExtractFailure);
+    }
+
     /**
      * Executes a test that assumes a failure when a bad sample is returned from the Endpoint
      */

@@ -151,6 +151,7 @@ public class RefocusExtractProcessor extends AbstractMeteredExtractProcessor<Ref
                                     } catch (UnauthorizedException e) {
                                         logger.error("Could not complete sample get request for endpoint {}; failed metric={}; due to {}", endpointId, refocus.name(), e.getMessage());
                                         failed();
+                                        return null;
                                     }
 
                                 } else {

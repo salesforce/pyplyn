@@ -298,6 +298,11 @@ public class AppBootstrapFixtures {
         return this;
     }
 
+    public AppBootstrapFixtures argusClientThrowsExceptionOnGetMetrics() throws UnauthorizedException {
+        doThrow(UnauthorizedException.class).when(argusClient).getMetrics(any());
+        return this;
+    }
+
     public AppBootstrapFixtures callRealRefocusExtractProcessor() {
         // we need to reinitialize the object to provide access to the real failed/succeeded (protected) methods
         refocusExtractProcessor = spy(new RefocusExtractProcessor(refocusClientFactory, cacheFactory, shutdownHook));
@@ -321,6 +326,11 @@ public class AppBootstrapFixtures {
 
     public AppBootstrapFixtures refocusClientReturns(List<Sample> samples) throws UnauthorizedException {
         doReturn(samples).when(refocusClient).getSamples(any());
+        return this;
+    }
+
+    public AppBootstrapFixtures refocusClientThrowsExceptionOnGetSample() throws UnauthorizedException {
+        doThrow(UnauthorizedException.class).when(refocusClient).getSamples(any());
         return this;
     }
 
