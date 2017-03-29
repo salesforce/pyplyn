@@ -116,14 +116,14 @@ public class Refocus implements Extract, Serializable {
      * @return the Refocus standardized sample name (i.e.: SUBJECT.PATH|ASPECT)
      */
     public final String name() {
-        return String.format("%s|%s", subject(), aspect);
+        return String.format("%s|%s", subject(), aspect());
     }
 
     /**
      * @return the Refocus filtered sample name (i.e.: SUBJECT.PATH.*|ASPECT)
      */
     public final String filteredName() {
-        return String.format("%s|%s", actualSubject(), aspect);
+        return String.format("%s|%s", actualSubject(), aspect());
     }
 
     /**

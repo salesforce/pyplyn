@@ -15,6 +15,7 @@ import com.salesforce.pyplyn.model.TransformationResult;
 import com.salesforce.pyplyn.status.MeterType;
 import com.salesforce.refocus.model.Sample;
 import com.salesforce.refocus.model.builder.SampleBuilder;
+import org.mockito.ArgumentCaptor;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -24,6 +25,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasItem;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -66,10 +72,53 @@ public class RefocusExtractProcessorTest {
     }
 
     @Test
+    public void testDefaultValueProvidedOnTimeout() throws Exception {
+        // ARRANGE
+        Sample timedOutValue = new SampleBuilder()
+                .withName("subject|aspect")
+                .withUpdatedAt(ZonedDateTime.now(ZoneOffset.UTC).toString())
+                .withValue("Timeout")
+                .build();
+
+        // bootstrap
+        fixtures.appConfigMocks()
+                .runOnce();
+
+        fixtures.oneRefocusToRefocusConfigurationWithDefaultValue(1.2d)
+                .callRealRefocusExtractProcessor()
+                .refocusClientReturns(Collections.singletonList(timedOutValue))
+                .freeze();
+
+        // init app and register executor for shutdown
+        MetricDuct app = fixtures.app();
+
+        // ACT
+        app.run();
+
+        // ASSERT
+        // since we had no real client, expecting RefocusExtractProcessor to have logged a failure
+        verify(fixtures.systemStatus(), times(0)).meter("Refocus", MeterType.ExtractFailure);
+        verify(fixtures.systemStatus(), times(0)).meter("Refocus", MeterType.ExtractNoDataReturned);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<TransformationResult>> dataCaptor = ArgumentCaptor.forClass(List.class);
+        verify(fixtures.refocusLoadProcessor()).execute(dataCaptor.capture(), any());
+
+        List<TransformationResult> data = dataCaptor.getValue();
+        assertThat(data, hasSize(1));
+
+        TransformationResult result = data.get(0);
+        assertThat(result.name(), equalTo("subject|aspect"));
+        assertThat(result.value(), equalTo(1.2d));
+        assertThat(result.originalValue(), equalTo(1.2d));
+        assertThat(result.metadata().messages(), hasItem(containsString("Default value")));
+    }
+
+    @Test
     public void testProcessShouldFailWhenDataInvalid() throws Exception {
         // create a sample
         Sample badSample = new SampleBuilder()
-                .withName("null|null")
+                .withName("subject|aspect")
                 .withUpdatedAt("INVALID_DATE")
                 .build();
 
@@ -81,7 +130,7 @@ public class RefocusExtractProcessorTest {
     public void testProcessShouldFailWithTimedOutSample() throws Exception {
         // create a sample
         Sample badSample = new SampleBuilder()
-                .withName("null|null")
+                .withName("subject|aspect")
                 .withUpdatedAt(ZonedDateTime.now(ZoneOffset.UTC).toString())
                 .withValue("Timeout")
                 .build();
@@ -93,7 +142,7 @@ public class RefocusExtractProcessorTest {
     public void testProcessShouldFailWithInvalidSampleValue() throws Exception {
         // create a sample
         Sample badSample = new SampleBuilder()
-                .withName("null|null")
+                .withName("subject|aspect")
                 .withUpdatedAt(ZonedDateTime.now(ZoneOffset.UTC).toString())
                 .withValue("INVALID")
                 .build();

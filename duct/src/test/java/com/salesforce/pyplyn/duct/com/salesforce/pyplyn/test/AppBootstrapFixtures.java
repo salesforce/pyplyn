@@ -214,21 +214,35 @@ public class AppBootstrapFixtures {
     }
 
     public AppBootstrapFixtures oneArgusToRefocusConfiguration() {
-        doReturn(new HashSet<>(Collections.singleton(new ConfigurationMocks().argusExtract().buildWrapper(null))))
+        doReturn(new HashSet<>(Collections.singleton(new ConfigurationMocks().argusExtract(null).buildWrapper(null))))
                 .when(configurationSetProvider)
                 .get();
         return this;
     }
 
     public AppBootstrapFixtures oneRefocusToRefocusConfiguration() {
-        doReturn(new HashSet<>(Collections.singleton(new ConfigurationMocks().refocusExtract().buildWrapper(null))))
+        doReturn(new HashSet<>(Collections.singleton(new ConfigurationMocks().refocusExtract(null).buildWrapper(null))))
+                .when(configurationSetProvider)
+                .get();
+        return this;
+    }
+
+    public AppBootstrapFixtures oneArgusToRefocusConfigurationWithDefaultValue(Double defaultValue) {
+        doReturn(new HashSet<>(Collections.singleton(new ConfigurationMocks().argusExtract(defaultValue).buildWrapper(null))))
+                .when(configurationSetProvider)
+                .get();
+        return this;
+    }
+
+    public AppBootstrapFixtures oneRefocusToRefocusConfigurationWithDefaultValue(Double defaultValue) {
+        doReturn(new HashSet<>(Collections.singleton(new ConfigurationMocks().refocusExtract(defaultValue).buildWrapper(null))))
                 .when(configurationSetProvider)
                 .get();
         return this;
     }
 
     public AppBootstrapFixtures argusToRefocusConfigurationWithTransforms(Transform[] transforms) {
-        doReturn(new HashSet<>(Collections.singleton(new ConfigurationMocks().argusExtract().withTransforms(transforms).buildWrapper(null))))
+        doReturn(new HashSet<>(Collections.singleton(new ConfigurationMocks().argusExtract(null).withTransforms(transforms).buildWrapper(null))))
                 .when(configurationSetProvider)
                 .get();
         return this;
@@ -276,6 +290,11 @@ public class AppBootstrapFixtures {
     public AppBootstrapFixtures argusClientCanNotAuth() throws UnauthorizedException {
         doReturn(false).when(argusClient).isAuthenticated();
         doThrow(UnauthorizedException.class).when(argusClient).auth();
+        return this;
+    }
+
+    public AppBootstrapFixtures argusClientReturns(List<MetricResponse> metrics) throws UnauthorizedException {
+        doReturn(metrics).when(argusClient).getMetrics(any());
         return this;
     }
 
@@ -636,17 +655,21 @@ public class AppBootstrapFixtures {
             return this;
         }
 
-        public ConfigurationMocks argusExtract() {
+        public ConfigurationMocks argusExtract(Double defaultValue) {
             doReturn(new Argus[]{argusExtract}).when(configuration).extract();
             doReturn(MOCK_CONNECTOR_NAME).when(argusExtract).endpoint();
-            doReturn(null).when(argusExtract).defaultValue();
+            doReturn(defaultValue).when(argusExtract).defaultValue();
+            doReturn("argus-metric").when(argusExtract).name();
             return this;
         }
 
-        public ConfigurationMocks refocusExtract() {
+        public ConfigurationMocks refocusExtract(Double defaultValue) {
             doReturn(new Refocus[]{refocusExtract}).when(configuration).extract();
             doReturn(MOCK_CONNECTOR_NAME).when(refocusExtract).endpoint();
-            doReturn(null).when(refocusExtract).defaultValue();
+            doReturn(defaultValue).when(refocusExtract).defaultValue();
+            doReturn("subject").when(refocusExtract).subject();
+            doReturn("subject").when(refocusExtract).actualSubject();
+            doReturn("aspect").when(refocusExtract).aspect();
             return this;
         }
 
