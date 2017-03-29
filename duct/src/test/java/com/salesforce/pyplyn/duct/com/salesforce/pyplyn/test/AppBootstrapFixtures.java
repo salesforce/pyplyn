@@ -475,6 +475,14 @@ public class AppBootstrapFixtures {
         return refocusLoadProcessor;
     }
 
+    public AppConnector appConnector() {
+        return appConnector;
+    }
+
+    public CacheFactory cacheFactory() {
+        return cacheFactory;
+    }
+
     //
     // Utility methods
     //

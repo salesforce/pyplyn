@@ -60,6 +60,14 @@ public class RemoteClientFactory<T extends Cacheable> implements ClientFactory<T
     }
 
     /**
+     * Retrieves or initializes a client for the specified endpoint
+     */
+    @Override
+    public T getClient(String endpointId) {
+        return getClientCacheHolder(endpointId);
+    }
+
+    /**
      * Retrieves an existing client and cache for the specified endpoint
      * <p/>Initializes a new client if one doesn't exist already.
      * <p/>This implementation will ensure that multiple concurrent threads will not instantiate multiple clients.
@@ -94,14 +102,6 @@ public class RemoteClientFactory<T extends Cacheable> implements ClientFactory<T
     }
 
     /**
-     * Retrieves or initializes a client for the specified endpoint
-     */
-    @Override
-    public T getClient(String endpointId) {
-        return getClientCacheHolder(endpointId);
-    }
-
-    /**
      * Initializes or retrieves an existing {@link ReentrantLock} for the specified <b>endpointId</b>
      */
     private ReentrantLock getLock(String endpointId) {
@@ -120,7 +120,7 @@ public class RemoteClientFactory<T extends Cacheable> implements ClientFactory<T
     /**
      * Constructs a new client for the specified <b>endpointId</b>
      */
-    private T initializeClient(String endpointId) {
+    T initializeClient(String endpointId) {
         try {
             // attempt to find a constructor with a single AbstractConnector parameter and build an instance
             Constructor<T> constructor = clientClass.getConstructor(AbstractConnector.class);
