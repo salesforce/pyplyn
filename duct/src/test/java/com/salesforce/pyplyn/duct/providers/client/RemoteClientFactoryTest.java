@@ -13,15 +13,11 @@ import com.salesforce.pyplyn.client.ClientFactoryException;
 import com.salesforce.pyplyn.configuration.AbstractConnector;
 import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapFixtures;
 import org.mockito.Mock;
-import org.testng.annotations.*;
-
-import org.mockito.ArgumentCaptor;
 import org.mockito.MockitoAnnotations;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 import static org.mockito.Mockito.*;
-
-import static org.hamcrest.MatcherAssert.*;
-import static org.hamcrest.Matchers.*;
 
 /**
  * Test class

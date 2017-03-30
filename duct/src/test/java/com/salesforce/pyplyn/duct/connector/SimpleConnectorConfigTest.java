@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Set;
 
 import static com.salesforce.pyplyn.duct.connector.AppConnector.DUPLICATE_CONNECTOR_ERROR;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.*;
 import static org.testng.Assert.fail;

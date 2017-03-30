@@ -1,9 +1,20 @@
-package com.salesforce.pyplyn.duct.etl.transform.thresholdmetforduration;
+/*
+ *  Copyright (c) 2016-2017, Salesforce.com, Inc.
+ *  All rights reserved.
+ *  Licensed under the BSD 3-Clause license.
+ *  For full license text, see the LICENSE.txt file in repo root
+ *    or https://opensource.org/licenses/BSD-3-Clause
+ */
 
-import static com.salesforce.pyplyn.duct.etl.transform.threshold.Threshold.Value.*;
-import static com.salesforce.pyplyn.util.FormatUtils.formatNumber;
-import static com.salesforce.pyplyn.duct.etl.transform.threshold.Threshold.*;
-import static java.util.Objects.isNull;
+package com.salesforce.pyplyn.duct.etl.transform.standard;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.collect.Iterables;
+import com.salesforce.pyplyn.duct.etl.transform.standard.Threshold.Type;
+import com.salesforce.pyplyn.model.Transform;
+import com.salesforce.pyplyn.model.TransformationResult;
+import com.salesforce.pyplyn.model.builder.TransformationResultBuilder;
 
 import java.io.Serializable;
 import java.time.ZonedDateTime;
@@ -15,13 +26,9 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.collect.Iterables;
-import com.salesforce.pyplyn.duct.etl.transform.threshold.Threshold.Type;
-import com.salesforce.pyplyn.model.Transform;
-import com.salesforce.pyplyn.model.TransformationResult;
-import com.salesforce.pyplyn.model.builder.TransformationResultBuilder;
+import static com.salesforce.pyplyn.duct.etl.transform.standard.Threshold.Value.*;
+import static com.salesforce.pyplyn.duct.etl.transform.standard.Threshold.changeValue;
+import static com.salesforce.pyplyn.util.FormatUtils.formatNumber;
 
 /**
  * Determine if the input time series data has matched the specified threshold

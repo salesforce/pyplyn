@@ -13,8 +13,8 @@ import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapFixture
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.MatcherAssert.*;
+import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.verify;
 
 /**

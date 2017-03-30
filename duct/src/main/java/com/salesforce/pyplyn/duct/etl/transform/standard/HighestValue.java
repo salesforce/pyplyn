@@ -6,13 +6,13 @@
  *    or https://opensource.org/licenses/BSD-3-Clause
  */
 
-package com.salesforce.pyplyn.duct.etl.transform.highestvalue;
+package com.salesforce.pyplyn.duct.etl.transform.standard;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.salesforce.pyplyn.model.ETLMetadata;
 import com.salesforce.pyplyn.model.Transform;
 import com.salesforce.pyplyn.model.TransformationResult;
-import com.salesforce.pyplyn.model.ETLMetadata;
 import com.salesforce.pyplyn.model.builder.TransformationResultBuilder;
 
 import java.io.Serializable;
@@ -25,7 +25,7 @@ import static java.util.Objects.nonNull;
 /**
  * Returns the most critical (highest value) result by value
  * <p/>
- * <p/>This transformation is generally used in combination with the {@link com.salesforce.pyplyn.duct.etl.transform.threshold.Threshold}
+ * <p/>This transformation is generally used in combination with the {@link Threshold}
  *   plugin which buckets values according to their severity (most severe have a higher value).
  *
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;

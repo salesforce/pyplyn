@@ -27,7 +27,6 @@ import com.salesforce.refocus.model.Sample;
 import com.salesforce.refocus.model.builder.SampleBuilder;
 
 import java.text.ParseException;
-import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeParseException;

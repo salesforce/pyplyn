@@ -10,7 +10,6 @@ package com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.Objects.nonNull;

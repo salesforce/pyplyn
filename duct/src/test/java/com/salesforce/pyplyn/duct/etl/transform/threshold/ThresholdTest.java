@@ -8,21 +8,17 @@
 
 package com.salesforce.pyplyn.duct.etl.transform.threshold;
 
+import com.salesforce.pyplyn.duct.etl.transform.standard.Threshold;
 import com.salesforce.pyplyn.model.TransformationResult;
-import org.testng.annotations.*;
-
-import org.mockito.ArgumentCaptor;
-import org.mockito.MockitoAnnotations;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static com.salesforce.pyplyn.duct.etl.transform.threshold.Threshold.Type.LESS_THAN;
-import static org.mockito.Mockito.*;
-
+import static com.salesforce.pyplyn.duct.etl.transform.standard.Threshold.Type.LESS_THAN;
 import static org.hamcrest.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
 

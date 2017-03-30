@@ -15,7 +15,7 @@ import java.util.Collection;
 import java.util.Collections;
 
 import static com.salesforce.refocus.model.builder.SampleBuilderTest.defaultSampleBuilder;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
 
 /**

@@ -17,7 +17,7 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import static com.salesforce.pyplyn.duct.connector.SimpleConnectorConfigTest.ONE_CONNECTOR;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.MatcherAssert.*;
 import static org.hamcrest.core.IsNull.notNullValue;
 
 /**

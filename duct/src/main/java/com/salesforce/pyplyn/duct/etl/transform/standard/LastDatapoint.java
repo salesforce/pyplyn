@@ -6,7 +6,7 @@
  *    or https://opensource.org/licenses/BSD-3-Clause
  */
 
-package com.salesforce.pyplyn.duct.etl.transform.lastdatapoint;
+package com.salesforce.pyplyn.duct.etl.transform.standard;
 
 import com.google.common.collect.Iterables;
 import com.salesforce.pyplyn.model.Transform;

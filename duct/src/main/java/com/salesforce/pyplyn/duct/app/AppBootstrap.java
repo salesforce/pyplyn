@@ -20,20 +20,18 @@ import com.salesforce.pyplyn.duct.etl.configuration.ConfigurationModule;
 import com.salesforce.pyplyn.duct.etl.configuration.ConfigurationWrapper;
 import com.salesforce.pyplyn.duct.etl.configuration.DistributedConfigurationProvider;
 import com.salesforce.pyplyn.duct.etl.configuration.SinglePartitionConfigurationProvider;
-import com.salesforce.pyplyn.duct.etl.extract.argus.ArgusExtractModule;
-import com.salesforce.pyplyn.duct.etl.extract.refocus.RefocusExtractModule;
-import com.salesforce.pyplyn.duct.etl.load.refocus.RefocusLoadModule;
-import com.salesforce.pyplyn.duct.etl.transform.highestvalue.HighestValueModule;
-import com.salesforce.pyplyn.duct.etl.transform.infostatus.InfoStatusModule;
-import com.salesforce.pyplyn.duct.etl.transform.lastdatapoint.LastDatapointModule;
-import com.salesforce.pyplyn.duct.etl.transform.savemetricmetadata.SaveMetricMetadataModule;
-import com.salesforce.pyplyn.duct.etl.transform.threshold.ThresholdModule;
-import com.salesforce.pyplyn.duct.etl.transform.thresholdmetforduration.ThresholdMetForDurationModule;
+import com.salesforce.pyplyn.duct.etl.extract.argus.Argus;
+import com.salesforce.pyplyn.duct.etl.extract.argus.ArgusExtractProcessor;
+import com.salesforce.pyplyn.duct.etl.extract.refocus.Refocus;
+import com.salesforce.pyplyn.duct.etl.extract.refocus.RefocusExtractProcessor;
+import com.salesforce.pyplyn.duct.etl.load.refocus.RefocusLoadProcessor;
+import com.salesforce.pyplyn.duct.etl.transform.standard.*;
 import com.salesforce.pyplyn.duct.providers.client.ArgusClientModule;
 import com.salesforce.pyplyn.duct.providers.client.RefocusClientModule;
 import com.salesforce.pyplyn.duct.providers.jackson.JacksonSerializationInitModule;
 import com.salesforce.pyplyn.duct.systemstatus.SystemStatusModule;
 import com.salesforce.pyplyn.status.SystemStatus;
+import com.salesforce.pyplyn.util.ModuleBuilder;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -116,19 +114,19 @@ public class AppBootstrap {
                 new RefocusClientModule(),
 
                 // Extract
-                new ArgusExtractModule(),
-                new RefocusExtractModule(),
+                ModuleBuilder.forExtract(Argus.class, ArgusExtractProcessor.class),
+                ModuleBuilder.forExtract(Refocus.class, RefocusExtractProcessor.class),
 
                 // Transform
-                new HighestValueModule(),
-                new LastDatapointModule(),
-                new SaveMetricMetadataModule(),
-                new ThresholdModule(),
-                new InfoStatusModule(),
-                new ThresholdMetForDurationModule(),
+                ModuleBuilder.forTransform(HighestValue.class),
+                ModuleBuilder.forTransform(LastDatapoint.class),
+                ModuleBuilder.forTransform(SaveMetricMetadata.class),
+                ModuleBuilder.forTransform(Threshold.class),
+                ModuleBuilder.forTransform(ThresholdMetForDuration.class),
+                ModuleBuilder.forTransform(InfoStatus.class),
 
                 // Load
-                new RefocusLoadModule(),
+                ModuleBuilder.forLoad(com.salesforce.pyplyn.duct.etl.load.refocus.Refocus.class, RefocusLoadProcessor.class),
 
                 // ETL configuration parsing
                 new ConfigurationModule()

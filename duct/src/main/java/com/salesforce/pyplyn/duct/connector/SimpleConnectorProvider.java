@@ -10,7 +10,6 @@ package com.salesforce.pyplyn.duct.connector;
 
 import com.google.inject.Inject;
 import com.google.inject.Provider;
-import com.hazelcast.util.CollectionUtil;
 import com.salesforce.pyplyn.configuration.AbstractConnector;
 import com.salesforce.pyplyn.duct.appconfig.AppConfig;
 import com.salesforce.pyplyn.util.CollectionUtils;
@@ -22,8 +21,6 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;

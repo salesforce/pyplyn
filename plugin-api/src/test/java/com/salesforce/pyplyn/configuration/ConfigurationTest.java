@@ -14,7 +14,7 @@ import com.salesforce.pyplyn.model.Load;
 import com.salesforce.pyplyn.model.Transform;
 import org.testng.annotations.Test;
 
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
 
 /**

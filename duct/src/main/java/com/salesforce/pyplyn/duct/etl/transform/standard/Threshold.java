@@ -6,11 +6,10 @@
  *    or https://opensource.org/licenses/BSD-3-Clause
  */
 
-package com.salesforce.pyplyn.duct.etl.transform.threshold;
+package com.salesforce.pyplyn.duct.etl.transform.standard;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.salesforce.pyplyn.duct.etl.transform.highestvalue.HighestValue;
 import com.salesforce.pyplyn.model.Transform;
 import com.salesforce.pyplyn.model.TransformationResult;
 import com.salesforce.pyplyn.model.builder.TransformationResultBuilder;
@@ -19,7 +18,7 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.salesforce.pyplyn.duct.etl.transform.threshold.Threshold.Value.*;
+import static com.salesforce.pyplyn.duct.etl.transform.standard.Threshold.Value.*;
 import static com.salesforce.pyplyn.util.FormatUtils.formatNumber;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;

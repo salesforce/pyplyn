@@ -16,8 +16,8 @@ import java.util.Collections;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.MatcherAssert.*;
+import static org.hamcrest.Matchers.*;
 
 /**
  * Test class

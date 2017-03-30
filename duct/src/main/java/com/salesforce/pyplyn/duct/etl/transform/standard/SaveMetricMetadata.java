@@ -6,7 +6,7 @@
  *    or https://opensource.org/licenses/BSD-3-Clause
  */
 
-package com.salesforce.pyplyn.duct.etl.transform.savemetricmetadata;
+package com.salesforce.pyplyn.duct.etl.transform.standard;
 
 import com.google.common.collect.Iterables;
 import com.salesforce.pyplyn.model.Transform;
@@ -23,7 +23,7 @@ import static com.salesforce.pyplyn.util.FormatUtils.formatNumber;
 /**
  * Tags the result stage with each input's name and value
  * <p/>
- * This transformation should be applied after a {@link com.salesforce.pyplyn.duct.etl.transform.lastdatapoint.LastDatapoint}.
+ * This transformation should be applied after a {@link LastDatapoint}.
  *
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
  * @since 3.0

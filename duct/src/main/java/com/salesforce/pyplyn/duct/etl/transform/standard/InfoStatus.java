@@ -6,7 +6,7 @@
  *    or https://opensource.org/licenses/BSD-3-Clause
  */
 
-package com.salesforce.pyplyn.duct.etl.transform.infostatus;
+package com.salesforce.pyplyn.duct.etl.transform.standard;
 
 import com.salesforce.pyplyn.model.Transform;
 import com.salesforce.pyplyn.model.TransformationResult;
@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
  * Forces at least a status of INFO, if the status is currently OK
  * <p/>Predefined statuses are 0=OK, 1=INFO, 2=WARN, 3=CRIT
  * <p/>
- * <p/>Note: be careful to either apply this transform after a {@link com.salesforce.pyplyn.duct.etl.transform.threshold.Threshold},
+ * <p/>Note: be careful to either apply this transform after a {@link Threshold},
  *     or when you are sure that the input values are already in a [0-3] range
  *
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
