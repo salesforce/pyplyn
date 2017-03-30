@@ -1,4 +1,5 @@
-# Introduction [![Build Status](https://travis-ci.org/salesforce/pyplyn.svg?branch=master)](https://travis-ci.org/salesforce/pyplyn) [![Static Analysis](https://scan.coverity.com/projects/11907/badge.svg)](https://scan.coverity.com/projects/salesforce-pyplyn) [![StackShare](https://img.shields.io/badge/tech-stack-0690fa.svg?style=flat)](https://stackshare.io/MihaiBojin/pyplyn)
+# Introduction [![Build Status](https://travis-ci.org/salesforce/pyplyn.svg?branch=master)](https://travis-ci.org/salesforce/pyplyn) [![Static Analysis](https://scan.coverity.com/projects/11907/badge.svg)](https://scan.coverity.com/projects/salesforce-pyplyn) [![StackShare](https://img.shields.io/badge/tech-stack-0690fa.svg?style=flat)](https://stackshare.io/MihaiBojin/pyplyn) [![Code coverage](https://codecov.io/gh/salesforce/pyplyn/branch/master/graph/badge.svg)](https://codecov.io/gh/salesforce/pyplyn)
+
 
 ![Pyplyn: a scalable time-series data collector](docs/images/pyplyn-logo-full.png)
 
