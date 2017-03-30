@@ -221,7 +221,7 @@ The Pyplyn project was written to process time-series and visualize them as <i>O
 <tr>
 <td>name</td>
 <td>required</td>
-<td>the name of the model class that this object should be deserialized into (i.e.: <a href="https://github.com/salesforce/pyplyn/blob/master/duct/src/main/java/com/salesforce/pyplyn/duct/etl/transform/threshold/Threshold.java">Threshold</a>)</td>
+<td>the name of the model class that this object should be deserialized into (i.e.: <a href="https://github.com/salesforce/pyplyn/blob/master/duct/src/main/java/com/salesforce/pyplyn/duct/etl/transform/standard/Threshold.java">Threshold</a>)</td>
 </tr>
 <tr>
 <td>type</td>

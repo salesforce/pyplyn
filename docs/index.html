@@ -580,7 +580,7 @@ The Pyplyn project was written to process time-series and visualize them as <i>O
 <tr>
 <td>name</td>
 <td>required</td>
-<td>the name of the model class that this object should be deserialized into (i.e.: <a href="https://github.com/salesforce/pyplyn/blob/master/duct/src/main/java/com/salesforce/pyplyn/duct/etl/transform/threshold/Threshold.java">Threshold</a>)</td>
+<td>the name of the model class that this object should be deserialized into (i.e.: <a href="https://github.com/salesforce/pyplyn/blob/master/duct/src/main/java/com/salesforce/pyplyn/duct/etl/transform/standard/Threshold.java">Threshold</a>)</td>
 </tr>
 <tr>
 <td>type</td>
@@ -760,13 +760,26 @@ This ensures you can keep updating to the latest pyplyn version, without having 
 }
 
 </code></pre>
-<p>This example is based on the &ldquo;<a href="https://github.com/salesforce/pyplyn/tree/master/duct/src/main/java/com/salesforce/pyplyn/duct/etl/transform/savemetricmetadata">savemetricmetadata</a>&rdquo; plugin.</p>
+<blockquote>
+<p>5. Alternatively, for Extract/Transform/Load you can use the following shorthand to define modules on-the-fly (anonymous classes)</p>
+</blockquote>
+<pre class="highlight plaintext"><code># Extract example
+ModuleBuilder.forExtract(Argus.class, ArgusExtractProcessor.class);
+
+# Transform example
+ModuleBuilder.forTransform(HighestValue.class);
+
+# Load example
+ModuleBuilder.forLoad(Refocus.class, RefocusLoadProcessor.class);
+</code></pre>
+<p>This example is based on the &ldquo;<a href="https://github.com/salesforce/pyplyn/tree/master/duct/src/main/java/com/salesforce/pyplyn/duct/etl/transform/standard/SaveMetricMetadata.java">SaveMetricMetadata</a>&rdquo; plugin.</p>
 
 <ol>
 <li>Create the a class file (i.e.: <em>SaveMetricMetadata</em>)</li>
-<li>Create a module class, (i.e.: <em>SaveMetricMetadataModule</em>) </li>
+<li>Implement the required functionality</li>
 <li>Define the Guice binding for your class</li>
 <li>See the &ldquo;<a href="#add-your-modules">Add your modules</a>&rdquo; section on how to initialize your new module in the injector</li>
+<li>(alternatively) Use a shorthand in your bootstrap&rsquo;s <code class="prettyprint">AppBootstrap#modules()</code> override</li>
 </ol>
 
           <h1 id="contributing-to-pyplyn">Contributing to Pyplyn</h1>
