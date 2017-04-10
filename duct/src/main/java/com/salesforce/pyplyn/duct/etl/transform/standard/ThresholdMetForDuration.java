@@ -79,7 +79,11 @@ public class ThresholdMetForDuration implements Transform, Serializable {
      * @param infoDurationMillis Duration after which the status becomes "info"
      */
     @JsonCreator
-    public ThresholdMetForDuration(Double threshold, Type type, Long criticalDurationMillis, Long warnDurationMillis, Long infoDurationMillis) {
+    public ThresholdMetForDuration(@JsonProperty("threshold") Double threshold,
+                                   @JsonProperty("type") Type type,
+                                   @JsonProperty("criticalDurationMillis") Long criticalDurationMillis,
+                                   @JsonProperty("warnDurationMillis") Long warnDurationMillis,
+                                   @JsonProperty("infoDurationMillis") Long infoDurationMillis) {
         this.threshold = threshold;
         this.type = type;
         this.criticalDurationMillis = criticalDurationMillis;
