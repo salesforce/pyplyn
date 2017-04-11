@@ -9,6 +9,7 @@
 package com.salesforce.argus.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.salesforce.pyplyn.cache.Cacheable;
 
@@ -23,6 +24,7 @@ import static com.salesforce.pyplyn.util.CollectionUtils.*;
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
  * @since 3.0
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class MetricResponse implements Cacheable {
     @JsonProperty
     private String scope;

@@ -8,6 +8,7 @@
 
 package com.salesforce.argus.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import static com.fasterxml.jackson.annotation.JsonProperty.Access.WRITE_ONLY;
@@ -26,6 +27,7 @@ import static com.salesforce.pyplyn.util.CollectionUtils.nullableArrayCopy;
  * @author thomas.harris
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class TriggerObject {
 	@JsonProperty(access = WRITE_ONLY)
     private final Long id;

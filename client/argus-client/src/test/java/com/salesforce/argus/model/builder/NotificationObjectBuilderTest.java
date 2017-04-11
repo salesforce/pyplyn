@@ -68,6 +68,7 @@ public class NotificationObjectBuilderTest {
         assertThat(dashboardObject.triggerIds(), equalTo(new Long[]{8L}));
         assertThat(dashboardObject.alertId(), equalTo(9L));
         assertThat(dashboardObject.customText(), equalTo("customText"));
+        assertThat(dashboardObject.severityLevel(), equalTo(10));
         assertThat(dashboardObject.isSRactionable(), equalTo(true));
     }
 
@@ -90,6 +91,7 @@ public class NotificationObjectBuilderTest {
                 .withTriggerIds(new Long[]{8L})
                 .withAlertId(9L)
                 .withCustomText("customText")
+                .withSeverityLevel(10)
                 .withSRactionable(true);
     }
 }

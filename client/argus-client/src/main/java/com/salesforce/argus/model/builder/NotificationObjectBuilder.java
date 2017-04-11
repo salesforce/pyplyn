@@ -32,6 +32,7 @@ public class NotificationObjectBuilder {
     private Long[] triggerIds;
     private Long alertId;
     private String customText;
+    private Integer severityLevel;
     private Boolean SRactionable;
 
 
@@ -60,6 +61,7 @@ public class NotificationObjectBuilder {
         this.alertId = notificationObject.alertId();
         this.customText = notificationObject.customText();
         this.SRactionable = notificationObject.isSRactionable();
+        this.severityLevel = notificationObject.severityLevel();
     }
 
 
@@ -69,7 +71,7 @@ public class NotificationObjectBuilder {
     public NotificationObject build() {
         return new NotificationObject(id, createdById, createdDate, modifiedById, modifiedDate, name, notifierName,
                 subscriptions, metricsToAnnotate, cooldownPeriod, cooldownExpiration, triggerIds, alertId, customText,
-                SRactionable);
+                severityLevel, SRactionable);
     }
 
 
@@ -142,6 +144,11 @@ public class NotificationObjectBuilder {
 
     public NotificationObjectBuilder withCustomText(String customText) {
         this.customText = customText;
+        return this;
+    }
+
+    public NotificationObjectBuilder withSeverityLevel(Integer severityLevel) {
+        this.severityLevel = severityLevel;
         return this;
     }
 

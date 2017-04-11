@@ -9,6 +9,7 @@
 package com.salesforce.argus.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.salesforce.pyplyn.util.CollectionUtils;
@@ -20,6 +21,7 @@ import com.salesforce.pyplyn.util.SensitiveByteArraySerializer;
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
  * @since 3.0
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class AuthRequest {
     @JsonProperty
     private final String username;//NOPMD

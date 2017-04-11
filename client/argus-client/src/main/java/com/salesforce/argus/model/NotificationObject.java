@@ -8,6 +8,7 @@
 
 package com.salesforce.argus.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import static com.fasterxml.jackson.annotation.JsonProperty.Access.WRITE_ONLY;
@@ -22,6 +23,7 @@ import static com.salesforce.pyplyn.util.CollectionUtils.nullableArrayCopy;
  * @author thomas.harris
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class NotificationObject {
     @JsonProperty(access = WRITE_ONLY)
     private final Long id;
@@ -56,7 +58,6 @@ public class NotificationObject {
     @JsonProperty
     private final Long cooldownExpiration;
 
-    // Misspelling is intentional here and needed to match the Argus API.
     @JsonProperty("triggersIds")
     private final Long[] triggerIds;
 
@@ -65,6 +66,9 @@ public class NotificationObject {
 
     @JsonProperty
     private final String customText;
+
+    @JsonProperty
+    private final Integer severityLevel;
 
     @JsonProperty("sractionable")
     private final Boolean SRactionable;
@@ -83,6 +87,7 @@ public class NotificationObject {
                               @JsonProperty("triggersIds") Long[] triggerIds,
                               @JsonProperty("alertId") Long alertId,
                               @JsonProperty("customText") String customText,
+                              @JsonProperty("severityLevel") Integer severityLevel,
                               @JsonProperty("sractionable") Boolean SRactionable) {
         this.id = id;
         this.createdById = createdById;
@@ -98,6 +103,7 @@ public class NotificationObject {
         this.triggerIds = nullableArrayCopy(triggerIds);
         this.alertId = alertId;
         this.customText = customText;
+        this.severityLevel = severityLevel;
         this.SRactionable = SRactionable;
     }
 
@@ -159,6 +165,10 @@ public class NotificationObject {
 
     public String customText() {
         return customText;
+    }
+
+    public Integer severityLevel() {
+        return severityLevel;
     }
 
     public Boolean isSRactionable() {
