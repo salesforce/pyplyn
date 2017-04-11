@@ -27,7 +27,7 @@ import static com.salesforce.pyplyn.util.CollectionUtils.immutableOrEmptyList;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(NON_NULL)
 public class Subject {
-    @JsonProperty
+    @JsonProperty(access = WRITE_ONLY)
     private final String id;
 
     @JsonProperty

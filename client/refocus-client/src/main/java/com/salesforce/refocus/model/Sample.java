@@ -31,7 +31,7 @@ import static java.util.Objects.nonNull;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(NON_NULL)
 public class Sample implements Cacheable {
-    @JsonProperty
+    @JsonProperty(access = WRITE_ONLY)
     private String id;
 
     @JsonProperty

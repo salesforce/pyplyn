@@ -16,6 +16,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
+import static com.fasterxml.jackson.annotation.JsonProperty.Access.WRITE_ONLY;
 import static com.salesforce.pyplyn.util.CollectionUtils.immutableOrEmptyList;
 import static com.salesforce.pyplyn.util.CollectionUtils.nullableArrayCopy;
 
@@ -28,7 +29,7 @@ import static com.salesforce.pyplyn.util.CollectionUtils.nullableArrayCopy;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(NON_NULL)
 public class Aspect {
-    @JsonProperty
+    @JsonProperty(access = WRITE_ONLY)
     private final String id;
 
     @JsonProperty
