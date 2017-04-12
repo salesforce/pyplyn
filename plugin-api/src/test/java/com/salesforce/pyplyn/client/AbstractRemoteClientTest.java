@@ -10,10 +10,12 @@ package com.salesforce.pyplyn.client;
 
 import com.salesforce.pyplyn.configuration.AbstractConnectorImpl;
 import okhttp3.Headers;
+import okhttp3.Request;
 import okhttp3.ResponseBody;
 import okio.BufferedSource;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.slf4j.Logger;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import retrofit2.Call;
@@ -37,6 +39,10 @@ import static org.testng.Assert.fail;
 public class AbstractRemoteClientTest {
     AbstractConnectorImpl connector;
     AbstractRemoteClientImpl client;
+    Call<String> call;
+
+    @Mock
+    Logger logger;
 
     @Mock
     AbstractRemoteClientImpl.RetroService svc;
@@ -45,21 +51,31 @@ public class AbstractRemoteClientTest {
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
 
+        // ARRANGE
         connector = spy(new AbstractConnectorImpl("connector"));
         doReturn("http://localhost:8080/").when(connector).endpoint();
-        client = spy(new AbstractRemoteClientImpl(connector, AbstractRemoteClientImpl.RetroService.class, 10L, 10L, 10L)); // Findbugs: PRMC_POSSIBLY_REDUNDANT_METHOD_CALLS - IGNORE
+        client = spy(new AbstractRemoteClientImpl(connector, AbstractRemoteClientImpl.RetroService.class, 10L, 10L, 10L, logger));
 
-        doReturn(svc).when(client).svc(); // FindBugs: RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT - IGNORE
+        doReturn(svc).when(client).svc();
+
+        // build a dummy request object
+        Request.Builder builder = new Request.Builder();
+        builder.url("http://tests/");
+        builder.method("MOCK", null);
+        Request request = builder.build();
+
+        // prepare a call mock
+        @SuppressWarnings("unchecked")
+        Call<String> call = (Call<String>) mock(Call.class);
+        doReturn(call).when(svc).get();
+        doReturn(request).when(call).request();
+        this.call = call;
     }
 
 
     @Test
     public void testExecuteAndRetrieveBodySuccess() throws Exception {
         // ARRANGE
-        @SuppressWarnings("unchecked")
-        Call<String> call = (Call<String>)mock(Call.class);
-        doReturn(call).when(svc).get();
-
         Response<String> failure = createSuccessfulResponse();
         doReturn(failure).when(call).execute();
 
@@ -74,10 +90,6 @@ public class AbstractRemoteClientTest {
     @Test(expectedExceptions = UnauthorizedException.class)
     public void testExecuteAndRetrieveBodyAndFailUnauthorized() throws Exception {
         // ARRANGE
-        @SuppressWarnings("unchecked")
-        Call<String> call = (Call<String>)mock(Call.class);
-        doReturn(call).when(svc).get();
-
         Response<String> failure = createFailedResponse(401);
         doReturn(failure).when(call).execute();
 
@@ -89,10 +101,6 @@ public class AbstractRemoteClientTest {
     @Test
     public void testExecuteAndRetrieveBodyAndFailOtherError() throws Exception {
         // ARRANGE
-        @SuppressWarnings("unchecked")
-        Call<String> call = (Call<String>)mock(Call.class);
-        doReturn(call).when(svc).get();
-
         Response<String> failure = createFailedResponse(500);
         doReturn(failure).when(call).execute();
 
@@ -108,9 +116,6 @@ public class AbstractRemoteClientTest {
     public void testExecuteAndRetrieveBodyCannotReadBody() throws Exception {
         // ARRANGE
         @SuppressWarnings("unchecked")
-        Call<String> call = (Call<String>)mock(Call.class);
-        doReturn(call).when(svc).get();
-
         Response<String> failure = createFailedUnreadableResponse(500);
         doReturn(failure).when(call).execute();
 
@@ -126,10 +131,6 @@ public class AbstractRemoteClientTest {
     @Test
     public void testExecuteAndRetrieveBodyAndFailUnauthorizedCannotReadBody() throws Exception {
         // ARRANGE
-        @SuppressWarnings("unchecked")
-        Call<String> call = (Call<String>)mock(Call.class);
-        doReturn(call).when(svc).get();
-
         Response<String> failure = createFailedUnreadableResponse(401);
         doReturn(failure).when(call).execute();
 
@@ -147,10 +148,6 @@ public class AbstractRemoteClientTest {
     @Test
     public void testExecuteAndRetrieveHeaders() throws Exception {
         // ARRANGE
-        @SuppressWarnings("unchecked")
-        Call<String> call = (Call<String>)mock(Call.class);
-        doReturn(call).when(svc).get();
-
         Response<String> failure = createSuccessfulResponseWithHeaders();
         doReturn(failure).when(call).execute();
 
@@ -170,7 +167,7 @@ public class AbstractRemoteClientTest {
         doReturn(8901).when(connector).proxyPort();
 
         // ACT
-        client = new AbstractRemoteClientImpl(connector, AbstractRemoteClientImpl.RetroService.class, 10L, 10L, 10L); // Findbugs: PRMC_POSSIBLY_REDUNDANT_METHOD_CALLS - IGNORE
+        client = new AbstractRemoteClientImpl(connector, AbstractRemoteClientImpl.RetroService.class, 10L, 10L, 10L, logger);
         Call<String> remoteCall = client.svc().get();
 
         try {

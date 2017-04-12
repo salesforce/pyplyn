@@ -25,6 +25,8 @@ import com.salesforce.pyplyn.processor.AbstractMeteredExtractProcessor;
 import com.salesforce.refocus.RefocusClient;
 import com.salesforce.refocus.model.Sample;
 import com.salesforce.refocus.model.builder.SampleBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.text.ParseException;
 import java.time.ZoneOffset;
@@ -50,7 +52,9 @@ import static java.util.Objects.nonNull;
  */
 @Singleton
 public class RefocusExtractProcessor extends AbstractMeteredExtractProcessor<Refocus> implements AuthenticatedEndpointProvider<RefocusClient> {
+    private static final Logger logger = LoggerFactory.getLogger(RefocusExtractProcessor.class);
     public static final String RESPONSE_TIMEOUT = "Timeout";
+
     private final RemoteClientFactory<RefocusClient> refocusClientFactory;
     private final CacheFactory cacheFactory;
     private final ConcurrentHashMap<RefocusClient, ConcurrentCacheMap<Sample>> clientToCacheMap = new ConcurrentHashMap<>();
@@ -250,6 +254,11 @@ public class RefocusExtractProcessor extends AbstractMeteredExtractProcessor<Ref
     @Override
     protected String meterName() {
         return "Refocus";
+    }
+
+    @Override
+    protected Logger logger() {
+        return logger;
     }
 
     @Override

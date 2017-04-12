@@ -14,6 +14,7 @@ import com.salesforce.pyplyn.client.UnauthorizedException;
 import com.salesforce.pyplyn.configuration.AbstractConnector;
 import okhttp3.Headers;
 import okhttp3.MediaType;
+import okhttp3.Request;
 import okhttp3.ResponseBody;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -47,9 +48,10 @@ public class ArgusClientTest {
     private AbstractConnector connector;
 
     ArgusClient argus;
+	Request request;
 
 
-    @BeforeMethod
+	@BeforeMethod
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
 
@@ -58,7 +60,13 @@ public class ArgusClientTest {
 
         argus = spy(new ArgusClient(connector));
         doReturn(svc).when(argus).svc(); // FindBugs: RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT - IGNORE
-    }
+
+		// build a dummy request object
+		Request.Builder builder = new Request.Builder();
+		builder.url("http://tests/");
+		builder.method("MOCK", null);
+		request = builder.build();
+	}
 
     @Test
     public void auth() throws Exception {
@@ -69,7 +77,8 @@ public class ArgusClientTest {
         @SuppressWarnings("unchecked")
         Call<ResponseBody> responseCall = (Call<ResponseBody>)mock(Call.class);
         doReturn(response).when(responseCall).execute();
-        doReturn(responseCall).when(svc).auth(any());
+		doReturn(request).when(responseCall).request();
+		doReturn(responseCall).when(svc).auth(any());
 
         // ACT
         argus.auth();
@@ -88,6 +97,7 @@ public class ArgusClientTest {
 		@SuppressWarnings("unchecked")
 		Call<ResponseBody> responseCall = (Call<ResponseBody>)mock(Call.class);
 		doReturn(failedResponse).when(responseCall).execute();
+		doReturn(request).when(responseCall).request();
 		doReturn(responseCall).when(svc).auth(any());
 
 		// ACT
@@ -109,7 +119,8 @@ public class ArgusClientTest {
         @SuppressWarnings("unchecked")
         Call<List<MetricResponse>> responseCall = (Call<List<MetricResponse>>)mock(Call.class);
         doReturn(response).when(responseCall).execute();
-        doReturn(responseCall).when(svc).getMetrics(any(), any());
+		doReturn(request).when(responseCall).request();
+		doReturn(responseCall).when(svc).getMetrics(any(), any());
 
         // ACT
         List<MetricResponse> getMetrics = argus.getMetrics(Collections.singletonList("metric"));
@@ -134,7 +145,8 @@ public class ArgusClientTest {
     	@SuppressWarnings("unchecked")
 		Call<AlertObject>responseCall = (Call<AlertObject>)mock(Call.class);
     	doReturn(response).when(responseCall).execute();
-    	doReturn(responseCall).when(svc).createAlert(any(), any());
+		doReturn(request).when(responseCall).request();
+		doReturn(responseCall).when(svc).createAlert(any(), any());
     	
     	// ASSERT
     	AlertObject alert = argus.createAlert(alertObject);
@@ -154,7 +166,8 @@ public class ArgusClientTest {
     	@SuppressWarnings("unchecked")
 		Call<AlertObject>responseCall = (Call<AlertObject>)mock(Call.class);
     	doReturn(response).when(responseCall).execute();
-    	doReturn(responseCall).when(svc).updateAlert(any(), anyLong(), any());
+		doReturn(request).when(responseCall).request();
+		doReturn(responseCall).when(svc).updateAlert(any(), anyLong(), any());
     	
     	// ASSERT
     	AlertObject alert = argus.updateAlert(alertObject);
@@ -172,7 +185,8 @@ public class ArgusClientTest {
     	@SuppressWarnings("unchecked")
         Call<List<AlertObject>> responseCall = (Call<List<AlertObject>>)mock(Call.class);
         doReturn(response).when(responseCall).execute();
-        doReturn(responseCall).when(svc).getAlertsByOwner(any(), anyString());
+		doReturn(request).when(responseCall).request();
+		doReturn(responseCall).when(svc).getAlertsByOwner(any(), anyString());
         
         // ASSERT
         List<AlertObject> alerts = argus.loadAlertsByOwner(ownerName);
@@ -189,7 +203,8 @@ public class ArgusClientTest {
     	@SuppressWarnings("unchecked")
 		Call<Void>responseCall = (Call<Void>)mock(Call.class);
     	doReturn(response).when(responseCall).execute();
-    	doReturn(responseCall).when(svc).deleteAlert(any(), anyLong());
+		doReturn(request).when(responseCall).request();
+		doReturn(responseCall).when(svc).deleteAlert(any(), anyLong());
     	
     	// ASSERT
     	argus.deleteAlert(alertId);
@@ -209,7 +224,8 @@ public class ArgusClientTest {
     	@SuppressWarnings("unchecked")
 		Call<List<TriggerObject>>responseCall = (Call<List<TriggerObject>>)mock(Call.class);
     	doReturn(response).when(responseCall).execute();
-    	doReturn(responseCall).when(svc).getTriggersForAlert(any(), anyLong());
+		doReturn(request).when(responseCall).request();
+		doReturn(responseCall).when(svc).getTriggersForAlert(any(), anyLong());
     	
     	// ASSERT
     	List<TriggerObject>triggerList = argus.loadTriggersForAlert(id);
@@ -230,7 +246,8 @@ public class ArgusClientTest {
     	@SuppressWarnings("unchecked")
 		Call<List<TriggerObject>>responseCall = (Call<List<TriggerObject>>)mock(Call.class);
     	doReturn(response).when(responseCall).execute();
-    	doReturn(responseCall).when(svc).createTrigger(any(), anyLong(), any());
+		doReturn(request).when(responseCall).request();
+		doReturn(responseCall).when(svc).createTrigger(any(), anyLong(), any());
     	
     	// ASSERT
     	List<TriggerObject>triggerList = argus.createTrigger(alertId, triggerObj);
@@ -251,7 +268,8 @@ public class ArgusClientTest {
     	@SuppressWarnings("unchecked")
 		Call<TriggerObject>responseCall = (Call<TriggerObject>)mock(Call.class);
     	doReturn(response).when(responseCall).execute();
-    	doReturn(responseCall).when(svc).updateTrigger(any(), anyLong(), anyLong(), any());
+		doReturn(request).when(responseCall).request();
+		doReturn(responseCall).when(svc).updateTrigger(any(), anyLong(), anyLong(), any());
     	
     	// ASSERT
     	TriggerObject triggerList = argus.updateTrigger(alertId, triggerObj);
@@ -270,7 +288,8 @@ public class ArgusClientTest {
     	@SuppressWarnings("unchecked")
 		Call<Void>responseCall = (Call<Void>)mock(Call.class);
     	doReturn(response).when(responseCall).execute();
-    	doReturn(responseCall).when(svc).deleteTrigger(any(), anyLong(), anyLong());
+		doReturn(request).when(responseCall).request();
+		doReturn(responseCall).when(svc).deleteTrigger(any(), anyLong(), anyLong());
     	
     	// ASSERT
     	argus.deleteTrigger(alertId, triggerId);
@@ -290,7 +309,8 @@ public class ArgusClientTest {
     	@SuppressWarnings("unchecked")
 		Call<NotificationObject>responseCall = (Call<NotificationObject>)mock(Call.class);
     	doReturn(response).when(responseCall).execute();
-    	doReturn(responseCall).when(svc).getNotificationsForAlert(any(), anyLong());
+		doReturn(request).when(responseCall).request();
+		doReturn(responseCall).when(svc).getNotificationsForAlert(any(), anyLong());
     	
     	// ASSERT
     	List<NotificationObject> notificationList = argus.getNotification(alertId, notificationId);
@@ -309,7 +329,8 @@ public class ArgusClientTest {
     	@SuppressWarnings("unchecked")
 		Call<NotificationObject>responseCall = (Call<NotificationObject>)mock(Call.class);
     	doReturn(response).when(responseCall).execute();
-    	doReturn(responseCall).when(svc).getNotificationsForAlert(any(), anyLong());
+		doReturn(request).when(responseCall).request();
+		doReturn(responseCall).when(svc).getNotificationsForAlert(any(), anyLong());
     	
     	// ASSERT
     	List<NotificationObject> notificationList = argus.getNotificationsForAlert(alertId);
@@ -328,7 +349,8 @@ public class ArgusClientTest {
     	@SuppressWarnings("unchecked")
 		Call<NotificationObject>responseCall = (Call<NotificationObject>)mock(Call.class);
     	doReturn(response).when(responseCall).execute();
-    	doReturn(responseCall).when(svc).createNotification(any(), anyLong(), any());
+		doReturn(request).when(responseCall).request();
+		doReturn(responseCall).when(svc).createNotification(any(), anyLong(), any());
     	
     	// ASSERT
     	List<NotificationObject> notificationList = argus.createNotification(alertId, notificationObj);
@@ -349,7 +371,8 @@ public class ArgusClientTest {
     	@SuppressWarnings("unchecked")
 		Call<NotificationObject>responseCall = (Call<NotificationObject>)mock(Call.class);
     	doReturn(response).when(responseCall).execute();
-    	doReturn(responseCall).when(svc).updateNotification(any(), anyLong(), anyLong(), any());
+		doReturn(request).when(responseCall).request();
+		doReturn(responseCall).when(svc).updateNotification(any(), anyLong(), anyLong(), any());
     	
     	// ASSERT
     	NotificationObject notification = argus.updateNotification(alertId, notificationId, notificationObj);
@@ -371,7 +394,8 @@ public class ArgusClientTest {
     	@SuppressWarnings("unchecked")
 		Call<NotificationObject>responseCall = (Call<NotificationObject>)mock(Call.class);
     	doReturn(response).when(responseCall).execute();
-    	doReturn(responseCall).when(svc).deleteNotification(any(), anyLong(), anyLong());
+		doReturn(request).when(responseCall).request();
+		doReturn(responseCall).when(svc).deleteNotification(any(), anyLong(), anyLong());
     	
     	// ASSERT
     	argus.deleteNotification(alertId, notificationId);
@@ -392,7 +416,8 @@ public class ArgusClientTest {
     	@SuppressWarnings("unchecked")
 		Call<NotificationObject>responseCall = (Call<NotificationObject>)mock(Call.class);
     	doReturn(response).when(responseCall).execute();
-    	doReturn(responseCall).when(svc).attachTriggerToNotification(any(), anyLong(), anyLong(), anyLong());
+		doReturn(request).when(responseCall).request();
+		doReturn(responseCall).when(svc).attachTriggerToNotification(any(), anyLong(), anyLong(), anyLong());
     	
     	// ASSERT
     	TriggerObject notification = argus.attachTriggerToNotification(alertId, notificationIds[0], triggerId);
@@ -415,7 +440,8 @@ public class ArgusClientTest {
     	@SuppressWarnings("unchecked")
 		Call<NotificationObject>responseCall = (Call<NotificationObject>)mock(Call.class);
     	doReturn(response).when(responseCall).execute();
-    	doReturn(responseCall).when(svc).removeTriggerFromNotification(any(), anyLong(), anyLong(), anyLong());
+		doReturn(request).when(responseCall).request();
+		doReturn(responseCall).when(svc).removeTriggerFromNotification(any(), anyLong(), anyLong(), anyLong());
     	
     	// ASSERT
     	argus.removeTriggerFromNotification(alertId, notificationIds[0], triggerId);
@@ -433,7 +459,8 @@ public class ArgusClientTest {
     	@SuppressWarnings("unchecked")
 		Call<NotificationObject>responseCall = (Call<NotificationObject>)mock(Call.class);
     	doReturn(response).when(responseCall).execute();
-    	doReturn(responseCall).when(svc).getAllDashboards(any());
+		doReturn(request).when(responseCall).request();
+		doReturn(responseCall).when(svc).getAllDashboards(any());
     	
     	// ASSERT
     	List<DashboardObject> dashboards = argus.getAllDashboards();
@@ -452,7 +479,8 @@ public class ArgusClientTest {
     	@SuppressWarnings("unchecked")
 		Call<List<DashboardObject>>responseCall = (Call<List<DashboardObject>>)mock(Call.class);
     	doReturn(response).when(responseCall).execute();
-    	doReturn(responseCall).when(svc).getDashboardByName(any(), anyString(), anyString());
+		doReturn(request).when(responseCall).request();
+		doReturn(responseCall).when(svc).getDashboardByName(any(), anyString(), anyString());
     	
     	// ASSERT
     	DashboardObject dashboard = argus.getDashboardByName(owner, name);
@@ -472,7 +500,8 @@ public class ArgusClientTest {
     	@SuppressWarnings("unchecked")
 		Call<DashboardObject>responseCall = (Call<DashboardObject>)mock(Call.class);
     	doReturn(response).when(responseCall).execute();
-    	doReturn(responseCall).when(svc).createDashboard(any(), any());
+		doReturn(request).when(responseCall).request();
+		doReturn(responseCall).when(svc).createDashboard(any(), any());
     	
     	// ASSERT
     	DashboardObject dashboard = argus.createDashboard(dashboardObj);
@@ -493,7 +522,8 @@ public class ArgusClientTest {
     	@SuppressWarnings("unchecked")
 		Call<DashboardObject>responseCall = (Call<DashboardObject>)mock(Call.class);
     	doReturn(response).when(responseCall).execute();
-    	doReturn(responseCall).when(svc).updateDashboard(any(), anyLong(), any());
+		doReturn(request).when(responseCall).request();
+		doReturn(responseCall).when(svc).updateDashboard(any(), anyLong(), any());
     	
     	// ASSERT
     	DashboardObject dashboard = argus.updateDashboard(dashboardId, dashboardObj);
@@ -515,7 +545,8 @@ public class ArgusClientTest {
     	@SuppressWarnings("unchecked")
 		Call<DashboardObject>responseCall = (Call<DashboardObject>)mock(Call.class);
     	doReturn(response).when(responseCall).execute();
-    	doReturn(responseCall).when(svc).deleteDashboard(any(), anyLong());
+		doReturn(request).when(responseCall).request();
+		doReturn(responseCall).when(svc).deleteDashboard(any(), anyLong());
     	
     	// ASSERT
     	argus.deleteDashboard(dashboardId);
@@ -533,7 +564,8 @@ public class ArgusClientTest {
     	@SuppressWarnings("unchecked")
 		Call<DashboardObject>responseCall = (Call<DashboardObject>)mock(Call.class);
     	doReturn(response).when(responseCall).execute();
-    	doReturn(responseCall).when(svc).getDashboardById(any(), anyLong());
+		doReturn(request).when(responseCall).request();
+		doReturn(responseCall).when(svc).getDashboardById(any(), anyLong());
     	
     	// ASSERT
     	DashboardObject dashboard = argus.getDashboardById(dashboardId);
@@ -549,7 +581,8 @@ public class ArgusClientTest {
         @SuppressWarnings("unchecked")
         Call<ResponseBody> responseCall = (Call<ResponseBody>)mock(Call.class);
         doReturn(response).when(responseCall).execute();
-        doReturn(responseCall).when(svc).auth(any());
+		doReturn(request).when(responseCall).request();
+		doReturn(responseCall).when(svc).auth(any());
 
         // ACT
         argus.auth();
@@ -565,7 +598,8 @@ public class ArgusClientTest {
         @SuppressWarnings("unchecked")
         Call<ResponseBody> responseCall = (Call<ResponseBody>)mock(Call.class);
         doReturn(response).when(responseCall).execute();
-        doReturn(responseCall).when(svc).auth(any());
+		doReturn(request).when(responseCall).request();
+		doReturn(responseCall).when(svc).auth(any());
 
         // ACT
         boolean authResponse = argus.auth();

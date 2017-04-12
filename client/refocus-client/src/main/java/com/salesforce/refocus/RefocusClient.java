@@ -63,11 +63,19 @@ public class RefocusClient extends AbstractRemoteClient<RefocusService> {
     }
 
     /**
-     * Returns true if the current client is authenticated against its endpoint
+     * @return true if the current client is authenticated against its endpoint
      */
     @Override
     public boolean isAuthenticated() {
         return nonNull(authorizationHeader);
+    }
+
+    /**
+     * @return the current class' {@link Logger} object, required by its supertype
+     */
+    @Override
+    protected Logger logger() {
+        return logger;
     }
 
     /**

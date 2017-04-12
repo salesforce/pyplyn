@@ -15,6 +15,7 @@ import com.salesforce.refocus.model.builder.AspectBuilder;
 import com.salesforce.refocus.model.builder.SampleBuilder;
 import com.salesforce.refocus.model.builder.SubjectBuilder;
 import okhttp3.MediaType;
+import okhttp3.Request;
 import okhttp3.ResponseBody;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -44,7 +45,11 @@ import static org.mockito.Mockito.*;
  * @since 1.0
  */
 public class RefocusClientTest {
-    List<Sample> samples = Collections.emptyList();
+    private final List<String> fields = Arrays.asList("id", "name", "isPublished");
+    private List<Sample> samples;
+    private Sample sample;
+    private Request request;
+    private Subject subject;
 
     @Mock
     private RefocusService svc;
@@ -54,10 +59,6 @@ public class RefocusClientTest {
 
     private RefocusClient refocus;
 
-    private Subject subject;
-
-    private Sample sample;
-
     @BeforeMethod
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
@@ -66,19 +67,31 @@ public class RefocusClientTest {
         doReturn("http://localhost/").when(connector).endpoint();
 
         refocus = spy(new RefocusClient(connector));
-        doReturn(svc).when(refocus).svc(); // FindBugs: RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT - IGNORE
-        
+        doReturn(svc).when(refocus).svc();
+
+        // init a subject
         subject = new SubjectBuilder()
                 .withId("id")
                 .withParentId("parentId")
-                .withName("subject")
+                .withName("name")
                 .withDescription("description")
                 .withPublished(Boolean.TRUE)
                 .withSamples(samples)
                 .withRelatedLinks(Collections.singletonList(new Link("name", "url")))
                 .build();
 
+        // init the samples list
+        samples = new ArrayList<>();
+
+        // init a sample
         sample = new SampleBuilder().withId("id").withName("name").withValue("value").build();
+
+        // build a dummy request object
+        Request.Builder builder = new Request.Builder();
+        builder.url("http://tests/");
+        builder.method("MOCK", null);
+        request = builder.build();
+
     }
 
     @Test
@@ -104,6 +117,7 @@ public class RefocusClientTest {
         @SuppressWarnings("unchecked")
         Call<AuthResponse> responseCall = (Call<AuthResponse>)mock(Call.class);
         doReturn(response).when(responseCall).execute();
+        doReturn(request).when(responseCall).request();
         doReturn(responseCall).when(svc).authenticate(any());
 
         doReturn("username").when(connector).username();
@@ -127,6 +141,7 @@ public class RefocusClientTest {
         @SuppressWarnings("unchecked")
         Call<ResponseBody> responseCall = (Call<ResponseBody>)mock(Call.class);
         doReturn(failedResponse).when(responseCall).execute();
+        doReturn(request).when(responseCall).request();
         doReturn(responseCall).when(svc).authenticate(any());
 
         doReturn("username").when(connector).username();
@@ -151,6 +166,7 @@ public class RefocusClientTest {
         @SuppressWarnings("unchecked")
         Call<ResponseBody> responseCall = (Call<ResponseBody>)mock(Call.class);
         doReturn(response).when(responseCall).execute();
+        doReturn(request).when(responseCall).request();
         doReturn(responseCall).when(svc).upsertSamplesBulk(any(), any());
 
         // ACT
@@ -163,7 +179,7 @@ public class RefocusClientTest {
     @Test(expectedExceptions = NullPointerException.class)
     public void upsertSamplesFailNPESample() throws Exception {
         // AA
-        upsertSamplesFailWithSample(null); // FindBugs/NP_NULL_PARAM_DEREF_ALL_TARGETS_DANGEROUS
+        upsertSamplesFailWithSample(null);
     }
 
     @Test
@@ -184,6 +200,7 @@ public class RefocusClientTest {
         @SuppressWarnings("unchecked")
         Call<ResponseBody> responseCall = (Call<ResponseBody>)mock(Call.class);
         doReturn(response).when(responseCall).execute();
+        doReturn(request).when(responseCall).request();
         doReturn(responseCall).when(svc).upsertSamplesBulk(any(), any());
 
         // ACT
@@ -193,8 +210,6 @@ public class RefocusClientTest {
     @Test
     public void retrieveSubjects() throws Exception {
         // ARRANGE
-        List<String> fields = Arrays.asList("id", "name", "isPublished");
-
         List<Subject> responseData = Collections.singletonList(subject);
 
         Response<List<Subject>> response = Response.success(responseData);
@@ -202,6 +217,7 @@ public class RefocusClientTest {
         @SuppressWarnings("unchecked")
         Call<List<Subject>> responseCall = (Call<List<Subject>>)mock(Call.class);
         doReturn(response).when(responseCall).execute();
+        doReturn(request).when(responseCall).request();
         doReturn(responseCall).when(svc).getSubjects(any(), any());
 
         // ACT
@@ -209,21 +225,20 @@ public class RefocusClientTest {
 
         // ASSERT
         assertThat(subjects.size(), equalTo(1));
-        assertThat(subjects.get(0).name(), equalTo("subject"));
+        assertThat(subjects.get(0).name(), equalTo("name"));
         assertThat(subjects.get(0).isPublished(), equalTo(true));
     }
 
     @Test
     public void retrieveSubjectsFailure() throws Exception {
         // ARRANGE
-        List<String> fields = Arrays.asList("id", "name", "isPublished");
-
         ResponseBody errorBody = ResponseBody.create(MediaType.parse(""), "FAIL");
         Response<List<Subject>> response = Response.error(400, errorBody);
 
         @SuppressWarnings("unchecked")
         Call<List<Subject>> responseCall = (Call<List<Subject>>)mock(Call.class);
         doReturn(response).when(responseCall).execute();
+        doReturn(request).when(responseCall).request();
         doReturn(responseCall).when(svc).getSubjects(any(), any());
 
         // ACT
@@ -236,69 +251,57 @@ public class RefocusClientTest {
     @Test
     public void getSample() throws Exception {
         // ARRANGE
-        String name = "cceDevils";
-        String value = "sampleValue";
-        String id = "123456";
-        List<String> fields = Arrays.asList("id", "name", "isPublished");
-        Sample sample = new SampleBuilder().withName(name).withValue(value).withId(id).build();
         Response<Sample> response = Response.success(sample);
 
         @SuppressWarnings("unchecked")
         Call<ResponseBody> responseCall = (Call<ResponseBody>) mock(Call.class);
         doReturn(response).when(responseCall).execute();
+        doReturn(request).when(responseCall).request();
         doReturn(responseCall).when(svc).getSample(any(), any(), anyList());
 
         // ACT
-        Sample result = refocus.getSample(name, fields);
+        Sample result = refocus.getSample("name", fields);
 
         // ASSERT
-        assertThat(result.name(), is(name));
-        assertThat(result.value(), is(value));
-        assertThat(result.id(), is(id));
+        assertThat(result.name(), is("name"));
+        assertThat(result.value(), is("value"));
+        assertThat(result.id(), is("id"));
     }
 
     @Test
     public void getSamples() throws Exception {
         // ARRANGE
-        String name = "cceDevils";
-        String value = "sampleValue";
-        String id = "123456";
-        Sample sample = new SampleBuilder().withName(name).withValue(value).withId(id).build();
         Response<List<Sample>> response = Response.success(Collections.singletonList(sample));
 
         @SuppressWarnings("unchecked")
         Call<ResponseBody> responseCall = (Call<ResponseBody>) mock(Call.class);
         doReturn(response).when(responseCall).execute();
+        doReturn(request).when(responseCall).request();
         doReturn(responseCall).when(svc).getSample(any(), anyString());
 
         // ACT
-        List<Sample> results = refocus.getSamples(name);
+        List<Sample> results = refocus.getSamples("name");
 
         // ASSERT
         assertThat(results, hasSize(1));
-        assertThat(results.get(0).name(), is(name));
-        assertThat(results.get(0).value(), is(value));
-        assertThat(results.get(0).id(), is(id));
+        assertThat(results.get(0).name(), is("name"));
+        assertThat(results.get(0).value(), is("value"));
+        assertThat(results.get(0).id(), is("id"));
     }
 
     @Test
     public void upsertSamplesBulk() throws Exception {
     	// ARRANGE
-    	String name = "cceDevils";
-    	String value = "sampleValue";
-    	String id = "123456";
-    	List<Sample>sampleList = new ArrayList<Sample>();
-        Sample sample = new SampleBuilder().withName(name).withValue(value).withId(id).build();
-        sampleList.add(sample);
         Response<List<Sample>> response = Response.success(Collections.singletonList(sample));
 
         @SuppressWarnings("unchecked")
         Call<List<Sample>> responseCall = (Call<List<Sample>>)mock(Call.class);
         doReturn(response).when(responseCall).execute();
+        doReturn(request).when(responseCall).request();
         doReturn(responseCall).when(svc).upsertSamplesBulk(any(), any());
 
         // ACT
-        boolean result = refocus.upsertSamplesBulk(sampleList);
+        boolean result = refocus.upsertSamplesBulk(Collections.singletonList(sample));
 
         // ASSERT
         assertThat(result, is(true));
@@ -307,33 +310,30 @@ public class RefocusClientTest {
     @Test
     public void deleteSample() throws Exception {
     	// ARRANGE
-    	String key = "cceDevils";
-    	String name = "cceDevilsSample";
-    	String id = "123456";
-        Sample sample = new SampleBuilder().withName(name).withId(id).build();
         Response<Sample> response = Response.success(sample);
 
         @SuppressWarnings("unchecked")
         Call<Sample> responseCall = (Call<Sample>)mock(Call.class);
         doReturn(response).when(responseCall).execute();
+        doReturn(request).when(responseCall).request();
         doReturn(responseCall).when(svc).deleteSample(any(), anyString());
 
         // ACT
-        refocus.deleteSample(key);
+        refocus.deleteSample("id");
         
         // ASSERT
-        verify(svc).deleteSample(any(), anyString());
+        verify(svc).deleteSample(null, "id");
     }
     
     @Test
     public void getSubjects() throws Exception {
     	// ARRANGE
-        List<String> fields = Arrays.asList("id", "subject", "isPublished");
         Response<List<Subject>> response = Response.success(Collections.singletonList(subject));
 
         @SuppressWarnings("unchecked")
         Call<List<Subject>> responseCall = (Call<List<Subject>>)mock(Call.class);
         doReturn(response).when(responseCall).execute();
+        doReturn(request).when(responseCall).request();
         doReturn(responseCall).when(svc).getSubjects(any(), any());
 
         // ACT
@@ -341,7 +341,7 @@ public class RefocusClientTest {
 
         // ASSERT
         assertThat(subjects.size(), equalTo(1));
-        assertThat(subjects.get(0).name(), is(fields.get(1)));
+        assertThat(subjects.get(0).name(), is("name"));
         assertThat(subjects.get(0).isPublished(), is(true));
     }
 
@@ -356,6 +356,7 @@ public class RefocusClientTest {
         @SuppressWarnings("unchecked")
         Call<Subject> responseCall = (Call<Subject>)mock(Call.class);
         doReturn(response).when(responseCall).execute();
+        doReturn(request).when(responseCall).request();
         doReturn(responseCall).when(svc).getSubject(any(), anyString(), anyList());
 
         // ACT
@@ -363,7 +364,7 @@ public class RefocusClientTest {
 
         // ASSERT
         assertThat(result, is(not(nullValue())));
-        assertThat(result.name(), equalTo("subject"));
+        assertThat(result.name(), equalTo("name"));
         assertThat(result.absolutePath(), is(nullValue()));
     }
     
@@ -375,14 +376,15 @@ public class RefocusClientTest {
         @SuppressWarnings("unchecked")
         Call<Subject> responseCall = (Call<Subject>)mock(Call.class);
         doReturn(response).when(responseCall).execute();
+        doReturn(request).when(responseCall).request();
         doReturn(responseCall).when(svc).getSubjectHierarchy(any(), anyString(), anyString());
 
         // ACT
-        Subject result = refocus.getSubjectHierarchy("subject", "OK");
+        Subject result = refocus.getSubjectHierarchy("name", "OK");
 
         // ASSERT
         assertThat(result, is(not(nullValue())));
-        assertThat(result.name(), equalTo("subject"));
+        assertThat(result.name(), equalTo("name"));
         assertThat(result.id(), is("id"));
     }
 
@@ -395,6 +397,7 @@ public class RefocusClientTest {
         @SuppressWarnings("unchecked")
         Call<Subject> responseCall = (Call<Subject>)mock(Call.class);
         doReturn(response).when(responseCall).execute();
+        doReturn(request).when(responseCall).request();
         doReturn(responseCall).when(svc).getSubject(any(), anyString(), anyList());
 
         // ACT
@@ -413,6 +416,7 @@ public class RefocusClientTest {
         @SuppressWarnings("unchecked")
         Call<Subject> responseCall = (Call<Subject>)mock(Call.class);
         doReturn(response).when(responseCall).execute();
+        doReturn(request).when(responseCall).request();
         doReturn(responseCall).when(svc).postSubject(any(), any());
 
         // ACT
@@ -420,7 +424,7 @@ public class RefocusClientTest {
 
         // ASSERT
         assertThat(result, is(not(nullValue())));
-        assertThat(result.name(), equalTo("subject"));
+        assertThat(result.name(), equalTo("name"));
         assertThat(result.isPublished(), equalTo(true));
     }
 
@@ -432,6 +436,7 @@ public class RefocusClientTest {
         @SuppressWarnings("unchecked")
         Call<Subject> responseCall = (Call<Subject>)mock(Call.class);
         doReturn(response).when(responseCall).execute();
+        doReturn(request).when(responseCall).request();
         doReturn(responseCall).when(svc).postSubject(any(), any());
 
         // ACT
@@ -444,7 +449,7 @@ public class RefocusClientTest {
     @Test(expectedExceptions = NullPointerException.class)
     public void postSubjectFailNPE() throws Exception {
         // ACT
-        refocus.postSubject(null); // FindBugs/NP_NULL_PARAM_DEREF_ALL_TARGETS_DANGEROUS
+        refocus.postSubject(null);
     }
 
 
@@ -456,6 +461,7 @@ public class RefocusClientTest {
         @SuppressWarnings("unchecked")
         Call<Subject> responseCall = (Call<Subject>)mock(Call.class);
         doReturn(response).when(responseCall).execute();
+        doReturn(request).when(responseCall).request();
         doReturn(responseCall).when(svc).patchSubject(any(), anyString(), any());
 
         // ACT
@@ -463,7 +469,7 @@ public class RefocusClientTest {
 
         // ASSERT
         assertThat(result, is(not(nullValue())));
-        assertThat(result.name(), equalTo("subject"));
+        assertThat(result.name(), equalTo("name"));
     }
 
 
@@ -476,6 +482,7 @@ public class RefocusClientTest {
         @SuppressWarnings("unchecked")
         Call<Subject> responseCall = (Call<Subject>)mock(Call.class);
         doReturn(response).when(responseCall).execute();
+        doReturn(request).when(responseCall).request();
         doReturn(responseCall).when(svc).patchSubject(any(), any(), any());
 
         // ACT
@@ -488,83 +495,81 @@ public class RefocusClientTest {
     @Test(expectedExceptions = NullPointerException.class)
     public void patchSubjectFailNPE() throws Exception {
         // ACT
-        refocus.patchSubject(null); // FindBugs/NP_NULL_PARAM_DEREF_ALL_TARGETS_DANGEROUS
+        refocus.patchSubject(null);
     }
     
     @Test
     public void getAspects() throws Exception {
     	// ARRANGE
-    	String name = "cceDevils";
-    	List<String> fields = new ArrayList<String>();
-    	Aspect aspect = new AspectBuilder().withName(name).build();
+    	Aspect aspect = new AspectBuilder().withName("name").build();
     	Response<List<Aspect>>response = Response.success(Collections.singletonList(aspect));
     	
     	// ACT
     	@SuppressWarnings("unchecked")
 		Call<Aspect>responseCall = (Call<Aspect>)mock(Call.class);
     	doReturn(response).when(responseCall).execute();
-    	doReturn(responseCall).when(svc).getAspects(any(), any());
+        doReturn(request).when(responseCall).request();
+        doReturn(responseCall).when(svc).getAspects(any(), any());
     	
     	List<Aspect>results = refocus.getAspects(fields);
     	
     	// ASSERT
-    	assertThat(results.get(0).name(), is(name));
+    	assertThat(results.get(0).name(), is("name"));
     }
     
     @Test
     public void getAspect() throws Exception {
     	// ARRANGE
-    	String name = "cceDevils";
-    	List<String> fields = new ArrayList<String>();
-    	Aspect aspect = new AspectBuilder().withName(name).build();
+    	Aspect aspect = new AspectBuilder().withName("name").build();
     	Response<Aspect>response = Response.success(aspect);
     	
     	// ACT
     	@SuppressWarnings("unchecked")
 		Call<Aspect>responseCall = (Call<Aspect>)mock(Call.class);
     	doReturn(response).when(responseCall).execute();
-    	doReturn(responseCall).when(svc).getAspect(any(), anyString(), anyList());
+        doReturn(request).when(responseCall).request();
+        doReturn(responseCall).when(svc).getAspect(any(), anyString(), anyList());
     	
-    	Aspect result = refocus.getAspect(name, fields);
+    	Aspect result = refocus.getAspect("name", fields);
     	
     	// ASSERT
-    	assertThat(result.name(), is(name));
+    	assertThat(result.name(), is("name"));
     }
     
     @Test
     public void postAspect() throws Exception {
     	// ARRANGE
-    	String name = "cceDevils";
-    	Aspect aspect = new AspectBuilder().withName(name).build();
+    	Aspect aspect = new AspectBuilder().withName("name").build();
     	Response<Aspect>response = Response.success(aspect);
     	
     	// ACT
     	@SuppressWarnings("unchecked")
 		Call<Aspect>responseCall = (Call<Aspect>)mock(Call.class);
     	doReturn(response).when(responseCall).execute();
-    	doReturn(responseCall).when(svc).postAspect(any(), any());
+        doReturn(request).when(responseCall).request();
+        doReturn(responseCall).when(svc).postAspect(any(), any());
     	
     	Aspect result = refocus.postAspect(aspect);
     	
     	// ASSERT
-    	assertThat(result.name(), is(name));
+    	assertThat(result.name(), is("name"));
     }
     
     @Test
     public void patchAspect() throws Exception {
-    	String name = "cceDevils";
-    	Aspect aspect = new AspectBuilder().withName(name).build();
+    	Aspect aspect = new AspectBuilder().withName("name").build();
     	Response<Aspect>response = Response.success(aspect);
     	
     	// ACT
     	@SuppressWarnings("unchecked")
 		Call<Aspect>responseCall = (Call<Aspect>)mock(Call.class);
     	doReturn(response).when(responseCall).execute();
-    	doReturn(responseCall).when(svc).patchAspect(any(), anyString(), any());
+        doReturn(request).when(responseCall).request();
+        doReturn(responseCall).when(svc).patchAspect(any(), anyString(), any());
     	
     	Aspect result = refocus.patchAspect(aspect);
     	
     	// ASSERT
-    	assertThat(result.name(), is(name));
+    	assertThat(result.name(), is("name"));
     }
 }

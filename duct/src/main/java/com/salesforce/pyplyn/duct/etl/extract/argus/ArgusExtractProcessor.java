@@ -25,6 +25,8 @@ import com.salesforce.pyplyn.duct.providers.client.RemoteClientFactory;
 import com.salesforce.pyplyn.model.TransformationResult;
 import com.salesforce.pyplyn.model.builder.TransformationResultBuilder;
 import com.salesforce.pyplyn.processor.AbstractMeteredExtractProcessor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.text.ParseException;
 import java.time.Instant;
@@ -48,6 +50,8 @@ import static java.util.Objects.nonNull;
  */
 @Singleton
 public class ArgusExtractProcessor extends AbstractMeteredExtractProcessor<Argus> implements AuthenticatedEndpointProvider<ArgusClient> {
+    private static final Logger logger = LoggerFactory.getLogger(ArgusExtractProcessor.class);
+
     private final RemoteClientFactory<ArgusClient> argusClientFactory;
     private final CacheFactory cacheFactory;
     private final ConcurrentHashMap<ArgusClient, ConcurrentCacheMap<MetricResponse>> clientToCacheMap = new ConcurrentHashMap<>();
@@ -321,6 +325,11 @@ public class ArgusExtractProcessor extends AbstractMeteredExtractProcessor<Argus
     @Override
     protected String meterName() {
         return "Argus";
+    }
+
+    @Override
+    protected Logger logger() {
+        return logger;
     }
 
     @Override

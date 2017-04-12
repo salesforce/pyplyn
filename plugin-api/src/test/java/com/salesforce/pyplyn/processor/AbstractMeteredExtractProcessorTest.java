@@ -12,6 +12,11 @@ import com.codahale.metrics.Meter;
 import com.salesforce.pyplyn.model.ExtractImpl;
 import com.salesforce.pyplyn.model.TransformationResult;
 import com.salesforce.pyplyn.status.SystemStatus;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.util.Collection;
@@ -32,10 +37,22 @@ import static org.mockito.Mockito.*;
  * @since 3.0
  */
 public class AbstractMeteredExtractProcessorTest {
+    @Mock
+    private Logger logger;
+
+    private AbstractMeteredExtractProcessorImpl processor;
+
+    @BeforeMethod
+    public void setUp() throws Exception {
+        MockitoAnnotations.initMocks(this);
+
+        // ARRANGE
+        processor = spy(new AbstractMeteredExtractProcessorImpl(this.logger));
+    }
+
     @Test
     public void testProcessOneElement() throws Exception {
         // ARRANGE
-        AbstractMeteredExtractProcessorImpl processor = new AbstractMeteredExtractProcessorImpl();
         ExtractImpl oneElementToProcess = new ExtractImpl("id");
 
         // ACT
@@ -49,9 +66,6 @@ public class AbstractMeteredExtractProcessorTest {
 
     @Test
     public void testProcessNoElementsShouldReturnEmptyList() throws Exception {
-        // ARRANGE
-        AbstractMeteredExtractProcessorImpl processor = new AbstractMeteredExtractProcessorImpl();
-
         // ACT
         List<List<TransformationResult>> processed = processor.execute();
         Optional<TransformationResult> result = processed.stream().flatMap(Collection::stream).findAny();
@@ -67,8 +81,6 @@ public class AbstractMeteredExtractProcessorTest {
 
         Meter meter = mock(Meter.class);
         doReturn(meter).when(systemStatus).meter(anyString(), any());
-
-        AbstractMeteredExtractProcessorImpl processor = spy(new AbstractMeteredExtractProcessorImpl());
         processor.setSystemStatus(systemStatus);
 
 
@@ -88,6 +100,12 @@ public class AbstractMeteredExtractProcessorTest {
      * Implementation class
      */
     private static class AbstractMeteredExtractProcessorImpl extends AbstractMeteredExtractProcessor<ExtractImpl> {
+        final Logger logger;
+
+        public AbstractMeteredExtractProcessorImpl(Logger logger) {
+            this.logger = logger;
+        }
+
         @Override
         public List<List<TransformationResult>> process(List<ExtractImpl> datasource) {
             return Collections.singletonList(
@@ -104,6 +122,11 @@ public class AbstractMeteredExtractProcessorTest {
         @Override
         protected String meterName() {
             return AbstractMeteredExtractProcessorImpl.class.getSimpleName();
+        }
+
+        @Override
+        protected Logger logger() {
+            return logger;
         }
 
         @Override

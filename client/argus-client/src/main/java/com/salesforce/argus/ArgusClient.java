@@ -86,6 +86,14 @@ public class ArgusClient extends AbstractRemoteClient<ArgusService> {
     }
 
     /**
+     * @return the current class' {@link Logger} object, required by its supertype
+     */
+    @Override
+    protected Logger logger() {
+        return logger;
+    }
+
+    /**
      * Retrieve metrics for a list of expressions
      *
      * @param expressions the list of expressions to retrieve

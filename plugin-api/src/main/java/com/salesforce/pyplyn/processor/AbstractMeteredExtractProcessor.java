@@ -31,7 +31,6 @@ import org.slf4j.LoggerFactory;
  * @since 3.0
  */
 public abstract class AbstractMeteredExtractProcessor<T extends Extract> implements ExtractProcessor<T> {
-    protected static final Logger logger = LoggerFactory.getLogger(AbstractMeteredExtractProcessor.class);
     protected SystemStatus systemStatus;
 
     /**
@@ -41,6 +40,13 @@ public abstract class AbstractMeteredExtractProcessor<T extends Extract> impleme
      * @return the name used by the implementation of this class
      */
     protected abstract String meterName();
+
+    /**
+     * Override this method and return the implementing class' logger, to make the messages contextually relevant
+     *
+     * @return logger to use for reporting errors
+     */
+    protected abstract Logger logger();
 
     /**
      * Call this method when the operation has succeeded
@@ -83,7 +89,8 @@ public abstract class AbstractMeteredExtractProcessor<T extends Extract> impleme
             // log auth failure if this exception type was thrown
             authenticationFailure();
 
-            logger.error("Unexpected authorization failure for endpoint " + endpointId, e);
+            logger().error("Unexpected authorization failure for endpoint {}: {}", endpointId, e.getMessage());
+            logger().debug("Unexpected authorization failure for endpoint " + endpointId + " [stacktrace]: ", e);
             return null;
         }
     }

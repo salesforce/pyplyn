@@ -11,6 +11,7 @@ package com.salesforce.pyplyn.client;
 import com.salesforce.pyplyn.cache.Cacheable;
 import com.salesforce.pyplyn.configuration.AbstractConnector;
 import okhttp3.Headers;
+import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +35,6 @@ import java.util.concurrent.TimeUnit;
  * @since 3.0
  */
 public abstract class AbstractRemoteClient<S> implements Cacheable {
-    private static final Logger logger = LoggerFactory.getLogger(AbstractRemoteClient.class);
     private static int UNAUTHORIZED = 401;
     private static int ERR_CODES = 400;
 
@@ -60,6 +60,13 @@ public abstract class AbstractRemoteClient<S> implements Cacheable {
      * @throws UnauthorizedException thrown if authentication failed (i.e.: invalid credentials, endpoint inaccessible, etc.)
      */
     protected abstract boolean auth() throws UnauthorizedException;
+
+    /**
+     * Override this method and return the implementing class' logger, to make the messages contextually relevant
+     *
+     * @return logger to use for reporting errors
+     */
+    protected abstract Logger logger();
 
     /**
      * Class constructor that allows setting timeout parameters
@@ -158,12 +165,15 @@ public abstract class AbstractRemoteClient<S> implements Cacheable {
      * @throws UnauthorizedException if the endpoint is not authenticated
      */
     private <T> Response<T> executeCallInternal(Call<T> call) throws UnauthorizedException {
+        final HttpUrl requestUrl = call.request().url();
+        final String requestMethod = call.request().method();
+
         try {
             Response<T> response = call.execute();
 
             // success
             if(response.code() < ERR_CODES && response.isSuccessful()) {
-                logger.info("Successful API operation: {}", response.body());
+                logger().info("Successful remote call {} {}; response={}", requestMethod, requestUrl, response.body());
                 return response;
             }
 
@@ -174,11 +184,12 @@ public abstract class AbstractRemoteClient<S> implements Cacheable {
 
             // log any failures
             final String errorBody = response.errorBody().string();
-            logger.error("Unsuccessful API operation: {}", errorBody);
+            logger().info("Unsuccessful remote call {} {}; response={}", requestMethod, requestUrl, errorBody);
 
         } catch (IOException e) {
+            logger().error("Error during remote call {} {}: {}", requestMethod, requestUrl, e.getMessage());
+            logger().debug("Error during remote call " + requestMethod + " " + requestUrl + " [stacktrace]: ", e);
             call.cancel();
-            logger.error("IOException occurred executing API call", e);
         }
 
         return null;
@@ -186,18 +197,24 @@ public abstract class AbstractRemoteClient<S> implements Cacheable {
 
     /**
      * Generates a standardized exception string from details passed in a {@link Response} object
+     *
+     * <p/>In case an {@link IOException} is thrown when constructing the response, it will be sent
+     *   to the specified {@link Logger}
      */
     static String generateExceptionDetails(Response response) {
+        String method = response.raw().request().method();
+        HttpUrl url = response.raw().request().url();
+        int code = response.code();
+        String message = response.message();
+
         String errorBody;
         try {
-            errorBody = "\n\n" + response.errorBody().string();
-
+            errorBody = response.errorBody().string();
         } catch (IOException e) {
-            errorBody = "";
-            logger.warn("IOException occurred retrieving response", e);
+            errorBody = "IOException while trying to retrieve error body: " + e.getMessage();
         }
 
-        return response.code() + "/" + response.message() + errorBody;
+        return String.format("Remote call failed %s %s [%d/%s]: %s", method, url, code, message, errorBody);
     }
 
     /**
