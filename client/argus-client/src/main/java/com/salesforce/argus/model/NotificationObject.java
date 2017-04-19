@@ -9,8 +9,10 @@
 package com.salesforce.argus.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 import static com.fasterxml.jackson.annotation.JsonProperty.Access.WRITE_ONLY;
 import static com.salesforce.pyplyn.util.CollectionUtils.nullableArrayCopy;
 
@@ -24,6 +26,7 @@ import static com.salesforce.pyplyn.util.CollectionUtils.nullableArrayCopy;
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
+@JsonInclude(NON_NULL)
 public class NotificationObject {
     @JsonProperty(access = WRITE_ONLY)
     private final Long id;

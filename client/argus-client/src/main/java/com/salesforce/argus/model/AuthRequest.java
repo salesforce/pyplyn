@@ -10,10 +10,13 @@ package com.salesforce.argus.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.salesforce.pyplyn.util.CollectionUtils;
 import com.salesforce.pyplyn.util.SensitiveByteArraySerializer;
+
+import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 
 /**
  * Auth request model
@@ -22,13 +25,14 @@ import com.salesforce.pyplyn.util.SensitiveByteArraySerializer;
  * @since 3.0
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
+@JsonInclude(NON_NULL)
 public class AuthRequest {
     @JsonProperty
-    private final String username;//NOPMD
+    private final String username;
 
     @JsonProperty
     @JsonSerialize(using=SensitiveByteArraySerializer.class)
-    private final byte[] password;//NOPMD
+    private final byte[] password;
 
     /**
      * Constructs an Auth Request
