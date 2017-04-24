@@ -6,9 +6,8 @@
  *    or https://opensource.org/licenses/BSD-3-Clause
  */
 
-package com.salesforce.pyplyn.duct.etl.transform.threshold;
+package com.salesforce.pyplyn.duct.etl.transform.standard;
 
-import com.salesforce.pyplyn.duct.etl.transform.standard.Threshold;
 import com.salesforce.pyplyn.model.TransformationResult;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;

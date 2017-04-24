@@ -63,7 +63,7 @@ public class ConfigurationsTestHelper {
         SaveMetricMetadata saveMetricMetadata = new SaveMetricMetadata();
         Threshold threshold = new Threshold(metricName, 1000d, 100d, 10d, Threshold.Type.GREATER_THAN);
         InfoStatus infoStatus = new InfoStatus();
-        HighestValue highestValue = new HighestValue(HighestValue.Display.ORIGINAL_VALUE);
+        HighestValue highestValue = new HighestValue(HighestValue.Display.ORIGINAL_VALUE, HighestValue.Display.ORIGINAL_TIMESTAMP);
         return new Transform[]{lastDatapoint, saveMetricMetadata, threshold, infoStatus, highestValue};
     }
 }

@@ -89,5 +89,6 @@ public class MetricDuctTest {
         assertThat(result.metadata().messages(), hasItems("metric-ok=3.00", "metric-warn=100.00"));
         assertThat(result.metadata().messages(), hasItem(containsString("WARN threshold hit by metric-warn")));
         assertThat(result.metadata().messages(), hasItem(containsString("value=100.00 GREATER_THAN 100.00")));
+        assertThat(result.metadata().messages(), hasItem(containsString(now.toString())));
     }
 }
