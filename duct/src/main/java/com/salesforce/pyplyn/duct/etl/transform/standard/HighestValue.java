@@ -93,7 +93,7 @@ public class HighestValue implements Transform, Serializable {
      */
     public enum Display{
         ORIGINAL_VALUE,
-        ORIGINAL_TIMESTAMP;
+        ORIGINAL_TIMESTAMP
     }
 
     /**
