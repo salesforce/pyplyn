@@ -10,11 +10,7 @@ package com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test;
 
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.Timer;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.inject.AbstractModule;
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-import com.google.inject.TypeLiteral;
+import com.google.inject.*;
 import com.hazelcast.core.IMap;
 import com.salesforce.argus.ArgusClient;
 import com.salesforce.argus.model.MetricResponse;
@@ -42,7 +38,6 @@ import com.salesforce.pyplyn.duct.etl.extract.refocus.RefocusExtractProcessor;
 import com.salesforce.pyplyn.duct.etl.load.refocus.RefocusLoadProcessor;
 import com.salesforce.pyplyn.duct.etl.transform.standard.*;
 import com.salesforce.pyplyn.duct.providers.client.RemoteClientFactory;
-import com.salesforce.pyplyn.duct.providers.jackson.ObjectMapperProvider;
 import com.salesforce.pyplyn.duct.systemstatus.ConsoleOutputConsumer;
 import com.salesforce.pyplyn.duct.systemstatus.SystemStatusRunnable;
 import com.salesforce.pyplyn.model.ETLMetadata;
@@ -51,8 +46,6 @@ import com.salesforce.pyplyn.model.TransformationResult;
 import com.salesforce.pyplyn.status.SystemStatus;
 import com.salesforce.pyplyn.status.SystemStatusConsumer;
 import com.salesforce.pyplyn.util.MultibinderFactory;
-import com.salesforce.pyplyn.util.ObjectMapperWrapper;
-import com.salesforce.pyplyn.util.SerializationHelper;
 import com.salesforce.refocus.RefocusClient;
 import com.salesforce.refocus.model.Sample;
 import org.mockito.Mock;
@@ -189,8 +182,13 @@ public class AppBootstrapFixtures {
         // init latches
         AppBootstrapLatches.init(withLatches);
 
+        // add mocked dependencies and configuration model deserialization modules
+        List<Module> modules = new ArrayList<>();
+        modules.add(new MockedDependenciesModule());
+        modules.addAll(AppBootstrap.modelDeserializationModules());
+
         // creates the injector and the MetricDuct app object
-        injector = Guice.createInjector(new MockedDependenciesModule());
+        injector = Guice.createInjector(modules);
         app = spy(injector.getInstance(MetricDuct.class).setConfigurationProvider(configurationSetProvider));
 
         // initializes MetricDuct latches and other fixtures
@@ -548,7 +546,6 @@ public class AppBootstrapFixtures {
 
     /**
      * Initializes all default components with mocks
-     * <p/> Does not mock the serialization helper nor the transform functions
      */
     private class MockedDependenciesModule extends AbstractModule {
         @Override
@@ -559,10 +556,6 @@ public class AppBootstrapFixtures {
             // app connectors
             bind(AppConnector.class).toInstance(appConnector);
             MultibinderFactory.appConnectors(binder()).addBinding().toInstance(connectors);
-
-            // Jackson mappers (depends on MultibinderFactory.extractDatasources, MultibinderFactory.transformFunctions, MultibinderFactory.loadDestinations)
-            bind(ObjectMapper.class).toProvider(ObjectMapperProvider.class);
-            bind(SerializationHelper.class).to(ObjectMapperWrapper.class).asEagerSingleton();
 
             // System Status
             bind(SystemStatus.class).toInstance(systemStatus);
@@ -581,22 +574,12 @@ public class AppBootstrapFixtures {
             bind(new TypeLiteral<RemoteClientFactory<RefocusClient>>() {}).toInstance(refocusClientFactory);
 
             // Argus Extract
-            MultibinderFactory.extractDatasources(binder()).addBinding().toInstance(Argus.class);
             MultibinderFactory.extractProcessors(binder()).addBinding().toInstance(argusExtractProcessor);
 
             // Refocus Extract
-            MultibinderFactory.extractDatasources(binder()).addBinding().toInstance(Refocus.class);
             MultibinderFactory.extractProcessors(binder()).addBinding().toInstance(refocusExtractProcessor);
 
-            // Transforms
-            MultibinderFactory.transformFunctions(binder()).addBinding().toInstance(HighestValue.class);
-            MultibinderFactory.transformFunctions(binder()).addBinding().toInstance(LastDatapoint.class);
-            MultibinderFactory.transformFunctions(binder()).addBinding().toInstance(SaveMetricMetadata.class);
-            MultibinderFactory.transformFunctions(binder()).addBinding().toInstance(Threshold.class);
-            MultibinderFactory.transformFunctions(binder()).addBinding().toInstance(InfoStatus.class);
-
             // Refocus Load
-            MultibinderFactory.loadDestinations(binder()).addBinding().toInstance(com.salesforce.pyplyn.duct.etl.load.refocus.Refocus.class);
             MultibinderFactory.loadProcessors(binder()).addBinding().toInstance(refocusLoadProcessor);
 
             // Configurations

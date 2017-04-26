@@ -16,7 +16,7 @@ import com.salesforce.pyplyn.configuration.UpdatableConfigurationSetProvider;
 import com.salesforce.pyplyn.duct.appconfig.AppConfig;
 import com.salesforce.pyplyn.duct.appconfig.AppConfigModule;
 import com.salesforce.pyplyn.duct.connector.AppConnectorModule;
-import com.salesforce.pyplyn.duct.etl.configuration.ConfigurationModule;
+import com.salesforce.pyplyn.duct.etl.configuration.ConfigurationProvider;
 import com.salesforce.pyplyn.duct.etl.configuration.ConfigurationWrapper;
 import com.salesforce.pyplyn.duct.etl.configuration.DistributedConfigurationProvider;
 import com.salesforce.pyplyn.duct.etl.configuration.SinglePartitionConfigurationProvider;
@@ -30,6 +30,11 @@ import com.salesforce.pyplyn.duct.providers.client.ArgusClientModule;
 import com.salesforce.pyplyn.duct.providers.client.RefocusClientModule;
 import com.salesforce.pyplyn.duct.providers.jackson.JacksonSerializationInitModule;
 import com.salesforce.pyplyn.duct.systemstatus.SystemStatusModule;
+import com.salesforce.pyplyn.model.Extract;
+import com.salesforce.pyplyn.model.Load;
+import com.salesforce.pyplyn.model.Transform;
+import com.salesforce.pyplyn.processor.ExtractProcessor;
+import com.salesforce.pyplyn.processor.LoadProcessor;
 import com.salesforce.pyplyn.status.SystemStatus;
 import com.salesforce.pyplyn.util.ModuleBuilder;
 
@@ -84,38 +89,20 @@ public class AppBootstrap {
 
 
     /**
-     * Override this method to include additional modules in Guice
-     *
-     * @return list that will be appended to the defaultModules() list and then used to initialize the Guice injector
-     */
-    public List<Module> modules() {
-        return Collections.emptyList();
-    }
-
-
-    /**
-     * Defines the default modules used by Duct
+     * Returns all the modules required to be able to deserialize configurations
+     * <p/>  Any modules defined in this method will be included by {@link AppBootstrap#modules()} before initializing the injector
      * <p/>
-     * <p/>Making this private was a conscious choice to limit the possibility of changing this program's expected (standard) behavior.
+     * <p/>  The reason for this separation is to allow easy initialization of {@link Configuration} serializers in tests and other projects that need to easily read Pyplyn configurations
      * <p/>
-     * <p/>Extending plugins should add functionality, and not replace it, guaranteeing, as much as possible,
-     *   deterministic functionality.
+     * <p/><strong>NOTE: If you want to define new models and processors, it is important you follow these guidelines:</strong>
+     * <p/> - Use {@link AppBootstrap#modelDeserializationModules()} for {@link Extract}, {@link Transform}, and {@link Load} models
+     * <p/> - Use {@link AppBootstrap#modules()} for {@link ExtractProcessor}s, and {@link LoadProcessor}s
      */
-    private List<Module> defaultModules() {
+    public static List<Module> modelDeserializationModules() {
         return Collections.unmodifiableList(Arrays.asList(
-                // App config
-                new AppConfigModule(configFile),
-                new AppConnectorModule(),
-                new JacksonSerializationInitModule(),
-                new SystemStatusModule(),
-
-                // remote clients
-                new ArgusClientModule(),
-                new RefocusClientModule(),
-
                 // Extract
-                ModuleBuilder.forExtract(Argus.class, ArgusExtractProcessor.class),
-                ModuleBuilder.forExtract(Refocus.class, RefocusExtractProcessor.class),
+                ModuleBuilder.forExtract(Argus.class),
+                ModuleBuilder.forExtract(Refocus.class),
 
                 // Transform
                 ModuleBuilder.forTransform(HighestValue.class),
@@ -126,11 +113,46 @@ public class AppBootstrap {
                 ModuleBuilder.forTransform(InfoStatus.class),
 
                 // Load
-                ModuleBuilder.forLoad(com.salesforce.pyplyn.duct.etl.load.refocus.Refocus.class, RefocusLoadProcessor.class),
+                ModuleBuilder.forLoad(com.salesforce.pyplyn.duct.etl.load.refocus.Refocus.class),
 
-                // ETL configuration parsing
-                new ConfigurationModule()
+                // Deserialization module
+                new JacksonSerializationInitModule()
         ));
+    }
+
+    /**
+     * Returns all the modules used to configure Pyplyn
+     * <p/>
+     * <p/>NOTE 1: Override this method to add, replace, or remove modules
+     * <p/>
+     * <p/><strong>NOTE 2: If you want to define new models and processors, it is important you follow these guidelines:</strong>
+     * <p/> - Use {@link AppBootstrap#modelDeserializationModules()} for {@link Extract}, {@link Transform}, and {@link Load} models
+     * <p/> - Use {@link AppBootstrap#modules()} for {@link ExtractProcessor}s, and {@link LoadProcessor}s
+     */
+    public List<Module> modules() {
+        List<Module> defaultModules = new ArrayList<>();
+
+        // App config
+        defaultModules.add(new AppConfigModule(configFile));
+        defaultModules.add(new AppConnectorModule());
+        defaultModules.add(new SystemStatusModule());
+
+        // remote clients
+        defaultModules.add(new ArgusClientModule());
+        defaultModules.add(new RefocusClientModule());
+
+        // processors
+        defaultModules.add(ModuleBuilder.forExtractProcessor(ArgusExtractProcessor.class));
+        defaultModules.add(ModuleBuilder.forExtractProcessor(RefocusExtractProcessor.class));
+        defaultModules.add(ModuleBuilder.forLoadProcessor(RefocusLoadProcessor.class));
+
+        // configuration modules
+        defaultModules.addAll(modelDeserializationModules());
+
+        // Enables injection of Set<Configuration> objects
+        defaultModules.add(ModuleBuilder.forConfigurationProvider(ConfigurationProvider.class));
+
+        return Collections.unmodifiableList(defaultModules);
     }
 
 
@@ -142,7 +164,7 @@ public class AppBootstrap {
         guardInitialized();
 
         // initialize injector, using configFile, modules(), and defaultModules()
-        injector = Guice.createInjector(initializeModules());
+        injector = Guice.createInjector(modules());
 
         // mark bootstrap complete, if injector was created
         initialized = true;
@@ -234,17 +256,6 @@ public class AppBootstrap {
         guardUninitialized();
 
         return injector.getInstance(MetricDuct.class).setConfigurationProvider(configurationProvider());
-    }
-
-
-    /**
-     * Creates a new list of modules that is to be passed to the Guice injector
-     */
-    private List<Module> initializeModules() {
-        // combine defaultModules() and modules() to provide the final list used to initialize Guice
-        List<Module> modules = new ArrayList<>(defaultModules());
-        modules.addAll(modules());
-        return Collections.unmodifiableList(modules);
     }
 
 

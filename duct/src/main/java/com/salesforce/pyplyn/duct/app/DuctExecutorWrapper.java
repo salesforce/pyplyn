@@ -24,7 +24,6 @@ import java.util.concurrent.TimeUnit;
  */
 public class DuctExecutorWrapper {
     private static final Logger logger = LoggerFactory.getLogger(DuctExecutorWrapper.class);
-    private static final long INITIAL_DELAY_SECONDS = 5;
     private ScheduledExecutorService executor = Executors.newScheduledThreadPool(3);
 
     /**
@@ -49,8 +48,8 @@ public class DuctExecutorWrapper {
      */
     public void schedule(Runnable command) {
         // schedule task (usually a long-running process)
-        logger.info("Starting main execution in {}s", INITIAL_DELAY_SECONDS);
-        executor.schedule(command, INITIAL_DELAY_SECONDS, TimeUnit.SECONDS);
+        logger.info("Starting main execution...");
+        executor.execute(command);
 
         try {
             // await for all scheduled tasks to complete

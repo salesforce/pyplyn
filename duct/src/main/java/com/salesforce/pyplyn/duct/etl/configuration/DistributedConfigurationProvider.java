@@ -28,6 +28,7 @@ import java.util.Map;
 public class DistributedConfigurationProvider extends SinglePartitionConfigurationProvider {
     private static final String CONFIGURATIONS_MAP = "configurations";
     private final Cluster cluster;
+    private boolean initialized;
 
     @Inject
     public DistributedConfigurationProvider(ConfigurationProvider provider, Cluster cluster, SystemStatus systemStatus) {
@@ -49,6 +50,16 @@ public class DistributedConfigurationProvider extends SinglePartitionConfigurati
         } else {
             logger.info("Skipping configuration update on this node (not master)");
         }
+    }
+
+    @Override
+    public boolean isInitialized() {
+        // only check the locally assigned keys, until some are assigned, after which point we can consider the node initialized
+        if (!initialized) {
+            initialized = retrieveLocalNodeConfigurations().size() > 0;
+        }
+
+        return initialized;
     }
 
     /**

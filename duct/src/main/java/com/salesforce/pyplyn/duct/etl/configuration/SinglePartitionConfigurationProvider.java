@@ -20,8 +20,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -42,10 +44,11 @@ public class SinglePartitionConfigurationProvider implements UpdatableConfigurat
     protected static final Logger logger = LoggerFactory.getLogger(SinglePartitionConfigurationProvider.class);
     private static final String PROCESS_NAME = "ConfigurationProvider";
     private final Lock updateLock = new ReentrantLock();
+    private boolean initialized;
+
     protected final ConfigurationProvider provider;
     private final SystemStatus systemStatus;
     protected Map<Configuration, ConfigurationWrapper> configurations = new HashMap<>();
-
 
     /**
      * Default constructor
@@ -62,7 +65,7 @@ public class SinglePartitionConfigurationProvider implements UpdatableConfigurat
      * <p/>This implementation acquires a lock to guard against multiple threads attempting to update at the same time.
      */
     @Override
-    public void updateConfigurations() {
+    public final void updateConfigurations() {
         try {
             // attempt to acquire a lock and update the list of configurations
             logger.info("Attempting configuration update");
@@ -87,6 +90,11 @@ public class SinglePartitionConfigurationProvider implements UpdatableConfigurat
                     }
 
                 } finally {
+                    // setting the initialized flag after first run
+                    if (!initialized) {
+                        initialized = true;
+                    }
+
                     updateLock.unlock();
                 }
 
@@ -106,7 +114,7 @@ public class SinglePartitionConfigurationProvider implements UpdatableConfigurat
      */
     @Override
     public Set<ConfigurationWrapper> get() {
-        return retrieveLocalNodeConfigurations().values().stream().collect(Collectors.toSet());
+        return new HashSet<>(retrieveLocalNodeConfigurations().values());
     }
 
     /**
@@ -117,6 +125,13 @@ public class SinglePartitionConfigurationProvider implements UpdatableConfigurat
         updateConfigurations();
     }
 
+    /**
+     * @return true if the configurations were read at least once
+     */
+    @Override
+    public boolean isInitialized() {
+        return initialized;
+    }
 
     /**
      * Clears map of any left values and restores old entries from a backup

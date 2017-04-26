@@ -28,4 +28,10 @@ public interface UpdatableConfigurationSetProvider<T> extends Provider<Set<T>>, 
      * Updates the configuration set from the specified configuration {@link Provider}
      */
     void updateConfigurations();
+
+    /**
+     * Should return true if a configuration set is ready for processing
+     * <p/>  This should only return false until the provider runs for the first time
+     */
+    boolean isInitialized();
 }

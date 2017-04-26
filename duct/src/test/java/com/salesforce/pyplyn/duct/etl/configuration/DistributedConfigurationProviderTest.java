@@ -74,6 +74,7 @@ public class DistributedConfigurationProviderTest {
     public void testClusterDoesNotUpdateConfigurationsOnSlaveNodes() throws Exception {
         // ARRANGE
         fixtures.clusterMasterNode(false)
+                .clusterReturns()
                 .realDistributedConfigProvider()
                 .freeze();
 
@@ -83,6 +84,6 @@ public class DistributedConfigurationProviderTest {
         provider.run();
 
         // ASSERT
-        verify(provider, times(0)).updateConfigurations();
+        assertThat(provider.isInitialized(), equalTo(false));
     }
 }

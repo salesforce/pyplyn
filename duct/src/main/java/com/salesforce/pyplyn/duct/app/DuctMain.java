@@ -8,8 +8,10 @@
 
 package com.salesforce.pyplyn.duct.app;
 
+import com.salesforce.pyplyn.configuration.UpdatableConfigurationSetProvider;
 import com.salesforce.pyplyn.duct.appconfig.AppConfig;
 import com.salesforce.pyplyn.duct.appconfig.ConfigParseException;
+import com.salesforce.pyplyn.duct.etl.configuration.ConfigurationWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,23 +75,29 @@ public final class DuctMain {
 
 
             // create executor object and allow it to receive the shutdown signal
-            DuctExecutorWrapper executor = new DuctExecutorWrapper();
-            executor.registerForShutdown(appBootstrap.shutdownHook());
+            DuctExecutorWrapper ductExecutor = new DuctExecutorWrapper();
+            ductExecutor.registerForShutdown(appBootstrap.shutdownHook());
 
             AppConfig appConfig = appBootstrap.appConfig();
 
             // schedule the configuration provider update process and execute immediately with initialDelay=0
             long updateInterval = appConfig.global().updateConfigurationIntervalMillis();
-            executor.scheduleAtFixedRate(appBootstrap.configurationProvider(), 0, updateInterval, TimeUnit.MILLISECONDS);
+            UpdatableConfigurationSetProvider<ConfigurationWrapper> configurationProvider = appBootstrap.configurationProvider();
+            ductExecutor.scheduleAtFixedRate(configurationProvider, 0, updateInterval, TimeUnit.MILLISECONDS);
 
             // schedule the system status task (if enabled)
             if (nonNull(appConfig.alert()) && appConfig.alert().isEnabled()) {
                 Long interval = appConfig.alert().checkIntervalMillis();
-                executor.scheduleAtFixedRate(appBootstrap.systemStatus(), interval, interval, TimeUnit.MILLISECONDS);
+                ductExecutor.scheduleAtFixedRate(appBootstrap.systemStatus(), interval, interval, TimeUnit.MILLISECONDS);
+            }
+
+            // wait until configurations are ready for processing
+            while (!configurationProvider.isInitialized()) {
+                Thread.sleep(100);
             }
 
             // execute app; this operation will block until program completion
-            executor.schedule(app);
+            ductExecutor.schedule(app);
 
         } catch (ConfigParseException e) {
             // nothing to do, allow the program to exit gracefully
