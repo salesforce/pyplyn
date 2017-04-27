@@ -12,13 +12,16 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.collect.Iterables;
 import com.salesforce.pyplyn.cache.Cacheable;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.SortedMap;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 import static com.salesforce.pyplyn.util.CollectionUtils.*;
+import static java.util.Objects.nonNull;
 
 /**
  * Metric response model
@@ -67,6 +70,9 @@ public class MetricResponse implements Cacheable {
         this.datapoints = immutableSortedMapOrNull(datapoints);
     }
 
+
+    /* Getters */
+
     public String scope() {
         return scope;
     }
@@ -98,5 +104,26 @@ public class MetricResponse implements Cacheable {
     @Override
     public String cacheKey() {
         return metric;
+    }
+
+    /**
+     * Generates a "name"=value string; the total number of retrieved datapoints will be printed
+     * <p/>  if a datapoint map is defined, and it is not empty, the last value will also be printed
+     */
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder().append('"').append(metric).append('"');
+
+        // print information about the datapoints (if data is available)
+        if (nonNull(datapoints)) {
+            if (!datapoints.isEmpty()) {
+                String lastValue = Iterables.getLast(datapoints.values());
+                sb.append('=').append(lastValue);
+            }
+
+            sb.append(" (").append(datapoints.size()).append(" total data points)");
+        }
+
+        return sb.toString();
     }
 }

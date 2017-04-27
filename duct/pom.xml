@@ -60,7 +60,6 @@
             <plugin>
                 <artifactId>maven-resources-plugin</artifactId>
                 <executions>
-
                     <execution>
                         <id>create-version-file</id>
                         <phase>validate</phase>
