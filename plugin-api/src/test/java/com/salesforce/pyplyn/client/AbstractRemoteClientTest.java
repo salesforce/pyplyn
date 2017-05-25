@@ -54,7 +54,8 @@ public class AbstractRemoteClientTest {
         // ARRANGE
         connector = spy(new AbstractConnectorImpl("connector"));
         doReturn("http://localhost:8080/").when(connector).endpoint();
-        client = spy(new AbstractRemoteClientImpl(connector, AbstractRemoteClientImpl.RetroService.class, 10L, 10L, 10L, logger));
+        client = spy(new AbstractRemoteClientImpl(connector, AbstractRemoteClientImpl.RetroService.class,
+                connector.connectTimeout(), connector.readTimeout(), connector.writeTimeout(), logger));
 
         doReturn(svc).when(client).svc();
 

@@ -59,6 +59,21 @@ public abstract class AbstractConnector {
     public abstract int proxyPort();
 
     /**
+     * How long to wait for connections
+     */
+    public abstract long connectTimeout();
+
+    /**
+     * How long to wait for reads
+     */
+    public abstract long readTimeout();
+
+    /**
+     * How long to wait for writes
+     */
+    public abstract long writeTimeout();
+
+    /**
      * Helper method that determines if a valid proxy configuration was specified
      *
      * @return true if the Connector has valid proxy settings

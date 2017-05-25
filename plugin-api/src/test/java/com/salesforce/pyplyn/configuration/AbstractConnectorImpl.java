@@ -50,4 +50,19 @@ public class AbstractConnectorImpl extends AbstractConnector {
     public int proxyPort () {
         return 0;
     }
+
+    @Override
+    public long connectTimeout() {
+        return 10L;
+    }
+
+    @Override
+    public long readTimeout() {
+        return 10L;
+    }
+
+    @Override
+    public long writeTimeout() {
+        return 10L;
+    }
 }

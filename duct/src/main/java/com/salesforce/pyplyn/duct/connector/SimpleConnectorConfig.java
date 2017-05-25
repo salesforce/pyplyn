@@ -13,6 +13,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.salesforce.pyplyn.configuration.AbstractConnector;
 
+import java.util.Optional;
+
 /**
  * File-based connector implementation
  * <p/>
@@ -40,6 +42,16 @@ public class SimpleConnectorConfig extends AbstractConnector {
 
     @JsonProperty
     protected Integer proxyPort;
+
+    @JsonProperty
+    protected Long connectTimeout;
+
+    @JsonProperty
+    protected Long readTimeout;
+
+    @JsonProperty
+    protected Long writeTimeout;
+
 
     /**
      * Holds a reference to where this connector was loaded from, to allow retrieving the password whenever we require it
@@ -78,6 +90,20 @@ public class SimpleConnectorConfig extends AbstractConnector {
         return proxyPort;
     }
 
+    @Override
+    public long connectTimeout() {
+        return Optional.ofNullable(connectTimeout).orElse(10L);
+    }
+
+    @Override
+    public long readTimeout() {
+        return Optional.ofNullable(readTimeout).orElse(10L);
+    }
+
+    @Override
+    public long writeTimeout() {
+        return Optional.ofNullable(writeTimeout).orElse(10L);
+    }
 
     /**
      * Sets the source connector to use when retrieving the password

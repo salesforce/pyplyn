@@ -35,31 +35,30 @@ public class RefocusClient extends AbstractRemoteClient<RefocusService> {
     private static final Logger logger = LoggerFactory.getLogger(RefocusClient.class);
     private final AbstractConnector connector;
 
-    /* Http client timeouts (in seconds) */
-    private static final long DEFAULT_CONNECT_TIMEOUT = 30L;
-    private static final long DEFAULT_READ_TIMEOUT = 10L;
-    private static final long DEFAULT_WRITE_TIMEOUT = 10L;
-
     // authorization header used for all calls
     private static final String HEADER_PREFIX = "";
     private String authorizationHeader;
 
 
     /**
-     * Class constructor that allows setting connection params
-     */
-    public RefocusClient(AbstractConnector connector, Class<RefocusService> cls, Long connectTimeout, Long readTimeout, Long writeTimeout) {
-        super(connector, cls, connectTimeout, readTimeout, writeTimeout);
-        this.connector = connector;
-    }
-
-    /**
-     * Class constructor
+     * Default simplified constructor that uses the specified connection defaults
      *
      * @param connector The Refocus API endpoint to use in calls
      */
     public RefocusClient(AbstractConnector connector) {
-        this(connector, RefocusService.class, DEFAULT_CONNECT_TIMEOUT, DEFAULT_READ_TIMEOUT, DEFAULT_WRITE_TIMEOUT);
+        this(connector, RefocusService.class, connector.connectTimeout(), connector.readTimeout(), connector.writeTimeout());
+    }
+
+    /**
+     * Class constructor that allows setting connection params
+     *
+     * @param connectTimeout How long to wait for connections to be established
+     * @param readTimeout How long to wait for reads
+     * @param writeTimeout How long to wait for writes
+     */
+    private RefocusClient(AbstractConnector connector, Class<RefocusService> cls, Long connectTimeout, Long readTimeout, Long writeTimeout) {
+        super(connector, cls, connectTimeout, readTimeout, writeTimeout);
+        this.connector = connector;
     }
 
     /**

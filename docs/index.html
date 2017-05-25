@@ -218,38 +218,52 @@ mkdir ~/pyplyn-config/configurations
 <blockquote>
 <p>3. Configure <em>connectors.json</em></p>
 </blockquote>
+
+<p>See below a few options; you can specify as many as you need, as long as the <strong>id</strong>s are unique!</p>
 <pre class="highlight json"><code><span class="w">  </span><span class="p">[</span><span class="w">
     </span><span class="p">{</span><span class="w">
-      </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"refocus-default"</span><span class="p">,</span><span class="w">
+      </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"refocus-without-authentication"</span><span class="p">,</span><span class="w">
       </span><span class="nt">"endpoint"</span><span class="p">:</span><span class="w"> </span><span class="s2">"https://url-to-your-refocus-instance/v1/"</span><span class="p">,</span><span class="w">
       </span><span class="nt">"username"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">
       </span><span class="nt">"password"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">
       </span><span class="nt">"proxyHost"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">
-      </span><span class="nt">"proxyPort"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="w">
+      </span><span class="nt">"proxyPort"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">
+      </span><span class="nt">"connectTimeout"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">
+      </span><span class="nt">"readTimeout"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">
+      </span><span class="nt">"writeTimeout"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="w">
     </span><span class="p">},</span><span class="w">
     </span><span class="p">{</span><span class="w">
       </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"refocus-user-and-pass"</span><span class="p">,</span><span class="w">
       </span><span class="nt">"endpoint"</span><span class="p">:</span><span class="w"> </span><span class="s2">"https://url-to-your-refocus-instance/v1/"</span><span class="p">,</span><span class="w">
       </span><span class="nt">"username"</span><span class="p">:</span><span class="w"> </span><span class="s2">"username"</span><span class="p">,</span><span class="w">
-      </span><span class="nt">"password"</span><span class="p">:</span><span class="w"> </span><span class="s2">"base64(pass)"</span><span class="p">,</span><span class="w">
+      </span><span class="nt">"password"</span><span class="p">:</span><span class="w"> </span><span class="s2">"passsword-base64-encoded"</span><span class="p">,</span><span class="w">
       </span><span class="nt">"proxyHost"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">
-      </span><span class="nt">"proxyPort"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="w">
+      </span><span class="nt">"proxyPort"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">
+      </span><span class="nt">"connectTimeout"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">
+      </span><span class="nt">"readTimeout"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">
+      </span><span class="nt">"writeTimeout"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="w">
     </span><span class="p">},</span><span class="w">
     </span><span class="p">{</span><span class="w">
       </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"refocus-token"</span><span class="p">,</span><span class="w">
       </span><span class="nt">"endpoint"</span><span class="p">:</span><span class="w"> </span><span class="s2">"https://url-to-your-refocus-instance/v1/"</span><span class="p">,</span><span class="w">
       </span><span class="nt">"username"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">
-      </span><span class="nt">"password"</span><span class="p">:</span><span class="w"> </span><span class="s2">"base64(refocus-token)"</span><span class="p">,</span><span class="w">
+      </span><span class="nt">"password"</span><span class="p">:</span><span class="w"> </span><span class="s2">"refocus-token-base64-encoded"</span><span class="p">,</span><span class="w">
       </span><span class="nt">"proxyHost"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">
-      </span><span class="nt">"proxyPort"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="w">
+      </span><span class="nt">"proxyPort"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">
+      </span><span class="nt">"connectTimeout"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">
+      </span><span class="nt">"readTimeout"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">
+      </span><span class="nt">"writeTimeout"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="w">
     </span><span class="p">},</span><span class="w">
     </span><span class="p">{</span><span class="w">
       </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"argus"</span><span class="p">,</span><span class="w">
       </span><span class="nt">"endpoint"</span><span class="p">:</span><span class="w"> </span><span class="s2">"https://url-to-your-argus-instance/argusws/"</span><span class="p">,</span><span class="w">
       </span><span class="nt">"username"</span><span class="p">:</span><span class="w"> </span><span class="s2">"username"</span><span class="p">,</span><span class="w">
-      </span><span class="nt">"password"</span><span class="p">:</span><span class="w"> </span><span class="s2">"base64(pass)"</span><span class="p">,</span><span class="w">
+      </span><span class="nt">"password"</span><span class="p">:</span><span class="w"> </span><span class="s2">"password-base64-encoded"</span><span class="p">,</span><span class="w">
       </span><span class="nt">"proxyHost"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">
-      </span><span class="nt">"proxyPort"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="w">
+      </span><span class="nt">"proxyPort"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">
+      </span><span class="nt">"connectTimeout"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">
+      </span><span class="nt">"readTimeout"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">
+      </span><span class="nt">"writeTimeout"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="w">
     </span><span class="p">}</span><span class="w">
   </span><span class="p">]</span><span class="w">
 </span></code></pre>
@@ -282,7 +296,7 @@ mkdir ~/pyplyn-config/configurations
 <tr>
 <td>password</td>
 <td>optional</td>
-<td>password required for authenticating to this endpoint, or null if not required; this string should always be BASE64-encoded when specified in the <em>connectors.json</em> file</td>
+<td>password required for authenticating to this endpoint, or null if not required; this string <strong>should always be BASE64-MIME-encoded</strong> when specified in the <em>connectors.json</em> file</td>
 </tr>
 <tr>
 <td>proxyHost</td>
@@ -294,12 +308,31 @@ mkdir ~/pyplyn-config/configurations
 <td>optional</td>
 <td>the port the proxy listens on, or null if not used</td>
 </tr>
+<tr>
+<td>connectTimeout</td>
+<td>optional</td>
+<td>How long to wait for connections to initialize; defaults to 10 seconds</td>
+</tr>
+<tr>
+<td>readTimeout</td>
+<td>optional</td>
+<td>How long to wait for reads from the endpoint; defaults to 10 seconds</td>
+</tr>
+<tr>
+<td>writeTimeout</td>
+<td>optional</td>
+<td>How long to wait for writes from the endpoint; defaults to 10 seconds</td>
+</tr>
 </tbody></table>
 
 <aside class="notice">You don&rsquo;t need to define all four connectors from our example.  If you want to write a configuration that extracts data from Refocus, transforms it and then pushes it back, only need to define a single Refocus connector section, depending on the method you are using for authenticating.
 </aside>
 
-<aside class="warn">You need to use the MIME base64-variant when encoding your passwords (padding character &rsquo;=&rsquo;) !</aside>
+<aside class="warning"><strong>Remember:</strong> You need to use <strong>BASE64-MIME</strong> to encode all password and token strings!</aside>
+
+<p>One possibility to encode with BASE64-MIME is with the following command: <code class="prettyprint">perl -e &#39;use MIME::Base64; print encode_base64(&quot;PASSWORD&quot;);&#39;</code>.</p>
+
+<p><br/></p>
 
 <p>Read more about <a href="https://salesforce.github.io/refocus/docs/10-security.html">Refocus&rsquo; security options</a> and choose either user/password or token-based authentication. If you&rsquo;re using the token-based auth, the correct way to specify it in <em>connectors.json</em> is to pass <em>username</em> as <strong><em>null</em></strong> and <em>password</em> as the <a href="https://www.base64encode.org/">BASE64 encoded</a> value of the token string obtained from the <em>&hellip;/tokens/new</em> endpoint of Refocus.</p>
 

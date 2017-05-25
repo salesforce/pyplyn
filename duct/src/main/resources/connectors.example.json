@@ -5,6 +5,9 @@
     "username": "username",
     "password": "password",
     "proxyHost": "proxy-host-and-port-below-or-null-both",
-    "proxyPort": null
+    "proxyPort": null,
+    "connectTimeout": 10,
+    "readTimeout": 10,
+    "writeTimeout": 10
   }
 ]

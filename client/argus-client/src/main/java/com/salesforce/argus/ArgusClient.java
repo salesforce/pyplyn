@@ -35,25 +35,24 @@ public class ArgusClient extends AbstractRemoteClient<ArgusService> {
     private final AbstractConnector connector;
     private String cookie;
 
-    /* Http client timeouts (in seconds) */
-    private static final long DEFAULT_CONNECT_TIMEOUT = 60L;
-    private static final long DEFAULT_READ_TIMEOUT = 300L;
-    private static final long DEFAULT_WRITE_TIMEOUT = 60L;
-
 
     /**
-     * Default simplified constructor that specifies connection param defaults
+     * Default simplified constructor that uses the specified connection defaults
      *
      * @param connector The Argus endpoint to use in all the calls made by this collector
      */
     public ArgusClient(AbstractConnector connector) {
-        this(connector, ArgusService.class, DEFAULT_CONNECT_TIMEOUT, DEFAULT_READ_TIMEOUT, DEFAULT_WRITE_TIMEOUT);
+        this(connector, ArgusService.class, connector.connectTimeout(), connector.readTimeout(), connector.writeTimeout());
     }
 
     /**
      * Class constructor that allows setting connection params
+     *
+     * @param connectTimeout How long to wait for connections to be established
+     * @param readTimeout How long to wait for reads
+     * @param writeTimeout How long to wait for writes
      */
-    public ArgusClient(AbstractConnector connector, Class<ArgusService> cls, Long connectTimeout, Long readTimeout, Long writeTimeout) {
+    private ArgusClient(AbstractConnector connector, Class<ArgusService> cls, Long connectTimeout, Long readTimeout, Long writeTimeout) {
         super(connector, cls, connectTimeout, readTimeout, writeTimeout);
         this.connector = connector;
     }
