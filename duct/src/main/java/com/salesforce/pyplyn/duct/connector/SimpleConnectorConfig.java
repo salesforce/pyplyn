@@ -87,7 +87,7 @@ public class SimpleConnectorConfig extends AbstractConnector {
 
     @Override
     public int proxyPort() {
-        return proxyPort;
+        return Optional.ofNullable(proxyPort).orElse(-1);
     }
 
     @Override

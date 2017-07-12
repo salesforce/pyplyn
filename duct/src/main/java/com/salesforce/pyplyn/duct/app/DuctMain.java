@@ -8,13 +8,20 @@
 
 package com.salesforce.pyplyn.duct.app;
 
-import com.salesforce.pyplyn.configuration.UpdatableConfigurationSetProvider;
+import com.google.inject.Key;
+import com.salesforce.pyplyn.configuration.Configuration;
 import com.salesforce.pyplyn.duct.appconfig.AppConfig;
 import com.salesforce.pyplyn.duct.appconfig.ConfigParseException;
-import com.salesforce.pyplyn.duct.etl.configuration.ConfigurationWrapper;
+import com.salesforce.pyplyn.duct.etl.configuration.ConfigurationUpdateManager;
+import com.salesforce.pyplyn.duct.etl.configuration.TaskManager;
+import com.salesforce.pyplyn.status.SystemStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import static com.salesforce.pyplyn.duct.appconfig.AppConfigFileLoader.loadFromCLI;
@@ -27,7 +34,10 @@ import static java.util.Objects.nonNull;
  */
 public final class DuctMain {
     private static final Logger logger = LoggerFactory.getLogger(DuctMain.class);
-    private static String programName = "duct";
+    private static String programName = "pyplyn";
+
+    private static final Long SHUTDOWN_TIMEOUT_MILLIS = 10000L;
+
 
     /**
      * Main class should not be instantiated
@@ -64,46 +74,80 @@ public final class DuctMain {
      * @param <T> Class type of the AppBoostrap object to use
      */
     public static <T extends AppBootstrap> void execute(Class<T> cls, String... args) {
+        final Instant START_TIME = Instant.now();
         try {
             // get config file path
             String configFile = loadFromCLI(programName, args);
 
-
             // bootstrap and create an app object
             T appBootstrap = cls.getConstructor(String.class).newInstance(configFile);
-            MetricDuct app = appBootstrap.app();
+            appBootstrap.bootstrap();
+
+            // init components
+            ShutdownHook shutdownHook = appBootstrap.injector().getInstance(ShutdownHook.class);
+            ConfigurationUpdateManager configurationManager = appBootstrap.injector().getInstance(ConfigurationUpdateManager.class);
+            SystemStatus systemStatus = appBootstrap.injector().getInstance(SystemStatus.class);
+            TaskManager<Configuration> taskManager = appBootstrap.injector().getInstance(new Key<TaskManager<Configuration>>() {});
+
+            // register executor for shutdown
+            final ScheduledExecutorService executor = Executors.newScheduledThreadPool(3);
+            try {
+                shutdownHook.registerExecutor(executor);
+
+                AppConfig appConfig = appBootstrap.injector().getInstance(AppConfig.class);
 
 
-            // create executor object and allow it to receive the shutdown signal
-            DuctExecutorWrapper ductExecutor = new DuctExecutorWrapper();
-            ductExecutor.registerForShutdown(appBootstrap.shutdownHook());
+                // if executing in runOnce mode, wait until all configurations are processed and shut down
+                if (appConfig.global().runOnce()) {
+                    runOnceMode(executor, configurationManager, taskManager, shutdownHook);
+                } else {
+                    runAsService(executor, appConfig, configurationManager, systemStatus);
+                }
 
-            AppConfig appConfig = appBootstrap.appConfig();
+                // await termination and shutdown executor
+                shutdownHook.awaitShutdown();
+                shutdownHook.awaitExecutorsTermination(SHUTDOWN_TIMEOUT_MILLIS);
 
-            // schedule the configuration provider update process and execute immediately with initialDelay=0
-            long updateInterval = appConfig.global().updateConfigurationIntervalMillis();
-            UpdatableConfigurationSetProvider<ConfigurationWrapper> configurationProvider = appBootstrap.configurationProvider();
-            ductExecutor.scheduleAtFixedRate(configurationProvider, 0, updateInterval, TimeUnit.MILLISECONDS);
-
-            // schedule the system status task (if enabled)
-            if (nonNull(appConfig.alert()) && appConfig.alert().isEnabled()) {
-                Long interval = appConfig.alert().checkIntervalMillis();
-                ductExecutor.scheduleAtFixedRate(appBootstrap.systemStatus(), interval, interval, TimeUnit.MILLISECONDS);
+            } finally {
+                // ensure that we shut down the executor creating by this method; in most cases this should be a no-op
+                ShutdownHook.awaitExecutorTermination(executor, SHUTDOWN_TIMEOUT_MILLIS);
             }
-
-            // wait until configurations are ready for processing
-            while (!configurationProvider.isInitialized()) {
-                Thread.sleep(100);
-            }
-
-            // execute app; this operation will block until program completion
-            ductExecutor.schedule(app);
 
         } catch (ConfigParseException e) {
             // nothing to do, allow the program to exit gracefully
 
         } catch (Exception e) {
             logger.error("Unexpected exception", e);
+
+        } finally {
+            logger.info("Stopping {} after {}s", programName, Duration.between(START_TIME, Instant.now()).getSeconds());
+        }
+    }
+
+    /**
+     * Only executes once then shuts down
+     */
+    private static void runOnceMode(ScheduledExecutorService EXECUTOR, ConfigurationUpdateManager configurationManager, TaskManager<Configuration> taskManager, ShutdownHook shutdownHook) throws InterruptedException {
+        // execute service once
+        EXECUTOR.execute(configurationManager);
+
+        // wait until all tasks complete and shutdown
+        configurationManager.awaitUntilConfigured();
+        taskManager.awaitUntilFinished();
+        shutdownHook.shutdown();
+    }
+
+    /**
+     * Runs the program as a service
+     */
+    private static void runAsService(ScheduledExecutorService EXECUTOR, AppConfig appConfig, ConfigurationUpdateManager configurationManager, SystemStatus systemStatus) {
+        // schedule service and execute immediately with initialDelay=0
+        EXECUTOR.scheduleAtFixedRate(configurationManager, 0, appConfig.global().updateConfigurationIntervalMillis(), TimeUnit.MILLISECONDS);
+
+        // schedule the system status task (if enabled)
+        if (nonNull(appConfig.alert()) && appConfig.alert().isEnabled()) {
+            Long interval = appConfig.alert().checkIntervalMillis();
+            EXECUTOR.scheduleAtFixedRate(systemStatus, interval, interval, TimeUnit.MILLISECONDS);
         }
     }
 }

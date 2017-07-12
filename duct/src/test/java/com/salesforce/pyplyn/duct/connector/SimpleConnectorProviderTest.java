@@ -16,7 +16,7 @@ import org.testng.annotations.Test;
 
 import java.util.List;
 
-import static org.hamcrest.MatcherAssert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
 /**
@@ -39,7 +39,7 @@ public class SimpleConnectorProviderTest {
         // ARRANGE
         fixtures.appConfigMocks()
                 .connectorsPath(SimpleConnectorConfigTest.ONE_CONNECTOR);
-        Injector injector = fixtures.freeze().injector();
+        Injector injector = fixtures.initializeFixtures().injector();
         SimpleConnectorProvider provider = injector.getProvider(SimpleConnectorProvider.class).get();
 
         // ACT
@@ -53,7 +53,7 @@ public class SimpleConnectorProviderTest {
     @Test
     public void testProviderReturnsEmptyListWithoutPath() throws Exception {
         // ARRANGE
-        Injector injector = fixtures.freeze().injector();
+        Injector injector = fixtures.initializeFixtures().injector();
         SimpleConnectorProvider provider = injector.getProvider(SimpleConnectorProvider.class).get();
 
         // ACT

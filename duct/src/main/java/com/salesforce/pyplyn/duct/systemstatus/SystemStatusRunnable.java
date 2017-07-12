@@ -87,7 +87,7 @@ public class SystemStatusRunnable implements SystemStatus {
      */
     @Inject
     public void register(Set<SystemStatusConsumer> statusConsumers) {
-        statusConsumers.forEach(this.consumers::add);
+        this.consumers.addAll(statusConsumers);
     }
 
     /**

@@ -17,7 +17,7 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import static com.salesforce.pyplyn.duct.connector.SimpleConnectorConfigTest.ONE_CONNECTOR;
-import static org.hamcrest.MatcherAssert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsNull.notNullValue;
 
 /**
@@ -40,7 +40,7 @@ public class JsonConfigDeserializeTest {
     @Test
     public void testDeserializeConfiguration() throws Exception {
         // ARRANGE
-        Injector injector = fixtures.freeze().injector();
+        Injector injector = fixtures.initializeFixtures().injector();
         serializer = injector.getProvider(SerializationHelper.class).get();
 
         // ACT
@@ -53,7 +53,7 @@ public class JsonConfigDeserializeTest {
     @Test
     public void testDeserializeConnector() throws Exception {
         // ARRANGE
-        Injector injector = fixtures.freeze().injector();
+        Injector injector = fixtures.initializeFixtures().injector();
         serializer = injector.getProvider(SerializationHelper.class).get();
 
         // ACT

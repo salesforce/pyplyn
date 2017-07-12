@@ -9,7 +9,6 @@
 package com.salesforce.pyplyn.duct.providers.client;
 
 import com.google.inject.AbstractModule;
-import com.google.inject.Scopes;
 import com.google.inject.TypeLiteral;
 import com.salesforce.refocus.RefocusClient;
 
@@ -24,8 +23,5 @@ public class RefocusClientModule extends AbstractModule {
     protected void configure() {
         // allows injection of the RefocusClient.class
         bind(new TypeLiteral<Class<RefocusClient>>(){}).toInstance(RefocusClient.class);
-
-        // allows injection of the Refocus RemoteClient factory
-        bind(new TypeLiteral<RemoteClientFactory<RefocusClient>>(){}).in(Scopes.SINGLETON);
     }
 }

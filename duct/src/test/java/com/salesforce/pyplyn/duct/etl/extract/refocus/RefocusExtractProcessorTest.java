@@ -9,8 +9,8 @@
 package com.salesforce.pyplyn.duct.etl.extract.refocus;
 
 import com.salesforce.pyplyn.client.UnauthorizedException;
-import com.salesforce.pyplyn.duct.app.MetricDuct;
 import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapFixtures;
+import com.salesforce.pyplyn.duct.etl.configuration.ConfigurationUpdateManager;
 import com.salesforce.pyplyn.model.TransformationResult;
 import com.salesforce.pyplyn.status.MeterType;
 import com.salesforce.refocus.model.Sample;
@@ -24,10 +24,10 @@ import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
 
-import static org.hamcrest.MatcherAssert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -55,15 +55,17 @@ public class RefocusExtractProcessorTest {
                 .runOnce();
 
         fixtures.oneRefocusToRefocusConfiguration()
-                .refocusClientCanNotAuth()
                 .callRealRefocusExtractProcessor()
-                .freeze();
+                .refocusClientCanNotAuth()
+                .initializeFixtures();
 
-        // init app and register executor for shutdown
-        MetricDuct app = fixtures.app();
+        // init app
+        ConfigurationUpdateManager manager = fixtures.configurationManager();
 
         // ACT
-        app.run();
+        manager.run();
+        fixtures.awaitUntilAllTasksHaveBeenProcessed(true);
+
 
         // ASSERT
         // since we had no real client, expecting RefocusExtractProcessor to have logged a failure
@@ -86,13 +88,16 @@ public class RefocusExtractProcessorTest {
         fixtures.oneRefocusToRefocusConfigurationWithDefaultValue(1.2d)
                 .callRealRefocusExtractProcessor()
                 .refocusClientReturns(Collections.singletonList(timedOutValue))
-                .freeze();
+                .initializeFixtures();
 
-        // init app and register executor for shutdown
-        MetricDuct app = fixtures.app();
+        // init app
+        ConfigurationUpdateManager manager = fixtures.configurationManager();
+
 
         // ACT
-        app.run();
+        manager.run();
+        fixtures.awaitUntilAllTasksHaveBeenProcessed(true);
+
 
         // ASSERT
         // since we had no real client, expecting RefocusExtractProcessor to have logged a failure
@@ -101,7 +106,7 @@ public class RefocusExtractProcessorTest {
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<List<TransformationResult>> dataCaptor = ArgumentCaptor.forClass(List.class);
-        verify(fixtures.refocusLoadProcessor()).execute(dataCaptor.capture(), any());
+        verify(fixtures.refocusLoadProcessor()).executeAsync(dataCaptor.capture(), any());
 
         List<TransformationResult> data = dataCaptor.getValue();
         assertThat(data, hasSize(1));
@@ -131,14 +136,17 @@ public class RefocusExtractProcessorTest {
                 .realSampleCache()
                 .callRealRefocusExtractProcessor()
                 .refocusClientReturns(Collections.singletonList(sample))
-                .freeze();
+                .initializeFixtures();
 
-        // init app and register executor for shutdown
-        MetricDuct app = fixtures.app();
-        app.run();
+        // init app
+        ConfigurationUpdateManager manager = fixtures.configurationManager();
+        manager.run();
+        fixtures.awaitUntilAllTasksHaveBeenProcessed(false);
 
         // ACT
-        app.run();
+        manager = fixtures.initConfigurationManager().configurationManager();
+        manager.run();
+        fixtures.awaitUntilAllTasksHaveBeenProcessed(true);
 
         // ASSERT
         // since we had no real client, expecting RefocusExtractProcessor to have logged a failure
@@ -165,13 +173,16 @@ public class RefocusExtractProcessorTest {
                 .realSampleCache()
                 .callRealRefocusExtractProcessor()
                 .refocusClientReturns(Collections.singletonList(sample))
-                .freeze();
+                .initializeFixtures();
 
-        // init app and register executor for shutdown
-        MetricDuct app = fixtures.app();
+        // init app
+        ConfigurationUpdateManager manager = fixtures.configurationManager();
+
 
         // ACT
-        app.run();
+        manager.run();
+        fixtures.awaitUntilAllTasksHaveBeenProcessed(true);
+
 
         // ASSERT
         // since we had no real client, expecting RefocusExtractProcessor to have logged a failure
@@ -225,13 +236,16 @@ public class RefocusExtractProcessorTest {
         fixtures.oneRefocusToRefocusConfiguration()
                 .callRealRefocusExtractProcessor()
                 .refocusClientThrowsExceptionOnGetSample()
-                .freeze();
+                .initializeFixtures();
 
-        // init app and register executor for shutdown
-        MetricDuct app = fixtures.app();
+        // init app
+        ConfigurationUpdateManager manager = fixtures.configurationManager();
+
 
         // ACT
-        app.run();
+        manager.run();
+        fixtures.awaitUntilAllTasksHaveBeenProcessed(true);
+
 
         // ASSERT
         // since we had no real client, expecting RefocusExtractProcessor to have logged a failure
@@ -241,7 +255,7 @@ public class RefocusExtractProcessorTest {
     /**
      * Executes a test that assumes a failure when a bad sample is returned from the Endpoint
      */
-    private void assertFailureWithSample(Sample badSample) throws UnauthorizedException {
+    private void assertFailureWithSample(Sample badSample) throws UnauthorizedException, InterruptedException {
         // ARRANGE
         // bootstrap
         fixtures.appConfigMocks()
@@ -250,13 +264,16 @@ public class RefocusExtractProcessorTest {
         fixtures.oneRefocusToRefocusConfiguration()
                 .callRealRefocusExtractProcessor()
                 .refocusClientReturns(Collections.singletonList(badSample))
-                .freeze();
+                .initializeFixtures();
 
-        // init app and register executor for shutdown
-        MetricDuct app = fixtures.app();
+        // init app
+        ConfigurationUpdateManager manager = fixtures.configurationManager();
+
 
         // ACT
-        app.run();
+        manager.run();
+        fixtures.awaitUntilAllTasksHaveBeenProcessed(true);
+
 
         // ASSERT
         // since we had no real client, expecting RefocusExtractProcessor to have logged a failure

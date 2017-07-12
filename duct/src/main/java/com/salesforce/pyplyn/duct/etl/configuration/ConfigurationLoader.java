@@ -9,7 +9,6 @@
 package com.salesforce.pyplyn.duct.etl.configuration;
 
 import com.google.inject.Inject;
-import com.google.inject.Provider;
 import com.salesforce.pyplyn.configuration.Configuration;
 import com.salesforce.pyplyn.duct.app.BootstrapException;
 import com.salesforce.pyplyn.duct.appconfig.AppConfig;
@@ -23,7 +22,7 @@ import java.util.Set;
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
  * @since 3.0
  */
-public class ConfigurationProvider implements Provider<Set<Configuration>> {
+public class ConfigurationLoader {
     private final AppConfig appConfig;
     private final ConfigurationIntake intake;
 
@@ -35,7 +34,7 @@ public class ConfigurationProvider implements Provider<Set<Configuration>> {
      * @param intake Configuration intake that can read all configurations files at the specified path in the config object
      */
     @Inject
-    public ConfigurationProvider(AppConfig appConfig, ConfigurationIntake intake) {
+    public ConfigurationLoader(AppConfig appConfig, ConfigurationIntake intake) {
         this.appConfig = appConfig;
         this.intake = intake;
     }
@@ -43,13 +42,12 @@ public class ConfigurationProvider implements Provider<Set<Configuration>> {
     /**
      * @return a list containing all configurations defined in all files
      */
-    @Override
-    public Set<Configuration> get() {
+    public Set<Configuration> load() {
         // read all configurations
         try {
             try {
                 // read all files from config path
-                return intake.parseAll(intake.listOfConfigurations(appConfig.global().configurationsPath()));
+                return intake.parseAll(intake.getAllConfigurationsFromDisk(appConfig.global().configurationsPath()));
 
             } catch (IOException e) {
                 // being unable to read the configuration files is an unrecoverable exception

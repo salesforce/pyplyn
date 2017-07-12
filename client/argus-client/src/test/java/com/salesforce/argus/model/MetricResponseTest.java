@@ -11,8 +11,8 @@ package com.salesforce.argus.model;
 import com.salesforce.argus.model.builder.MetricResponseBuilderTest;
 import org.testng.annotations.Test;
 
-import static org.hamcrest.MatcherAssert.*;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 
 /**
  * Test class

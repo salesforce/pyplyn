@@ -17,18 +17,16 @@ import java.util.Set;
 
 import static com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.ConfigurationsTestHelper.createCustomConfiguration;
 import static com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.ConfigurationsTestHelper.createFullConfiguration;
-import static org.hamcrest.MatcherAssert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 
 /**
  * Test class
  *
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
- * @since 3.0
+ * @since 5.0
  */
-public class DistributedConfigurationProviderTest {
+public class LocalNodeConfigurationManagerTest {
     private AppBootstrapFixtures fixtures;
 
     @BeforeMethod
@@ -47,43 +45,49 @@ public class DistributedConfigurationProviderTest {
                 100L, false);
 
         fixtures.configurationProviderReturns(configuration1)
-                .clusterReturns(configuration1)
-                .clusterMasterNode(true)
-                .realDistributedConfigProvider()
-                .freeze();
+                .initializeFixtures();
 
-        DistributedConfigurationProvider provider = (DistributedConfigurationProvider)fixtures.configurationSetProvider();
+        ConfigurationUpdateManager configurationUpdateManager = fixtures.configurationManager();
 
         // ACT
-        provider.run();
-        Set<ConfigurationWrapper> firstSet = provider.get();
+        configurationUpdateManager.run();
+        Set<Configuration> firstSet = configurationUpdateManager.get();
 
         // simulate an update of the configuration set
-        fixtures.configurationProviderReturns(configuration2).clusterReturns(configuration2);
-        provider.updateConfigurations();
-        Set<ConfigurationWrapper> secondSet = provider.get();
+        fixtures.configurationProviderReturns(configuration2);
+        configurationUpdateManager.run();
+        Set<Configuration> secondSet = configurationUpdateManager.get();
 
         // ASSERT
         assertThat(firstSet, hasSize(1));
         assertThat(secondSet, hasSize(1));
-        assertThat(firstSet, not(hasItems(secondSet.toArray(new ConfigurationWrapper[]{}))));
-        verify(provider, times(0)).markFailure();
+        assertThat(firstSet, not(hasItems(secondSet.toArray(new Configuration[]{}))));
+        //verify(configurationUpdateManager, times(0)).markFailure();
     }
 
-    @Test
-    public void testClusterDoesNotUpdateConfigurationsOnSlaveNodes() throws Exception {
-        // ARRANGE
-        fixtures.clusterMasterNode(false)
-                .clusterReturns()
-                .realDistributedConfigProvider()
-                .freeze();
 
-        DistributedConfigurationProvider provider = (DistributedConfigurationProvider)fixtures.configurationSetProvider();
+    @Test
+    public void testUpdateConfigurationsFailure() throws Exception {
+        // ARRANGE
+        Configuration configuration1 = createFullConfiguration(100L, false);
+
+        fixtures.configurationProviderReturns(configuration1)
+                .initializeFixtures();
+
+        ConfigurationUpdateManager configurationUpdateManager = fixtures.configurationManager();
 
         // ACT
-        provider.run();
+        configurationUpdateManager.run();
+        Set<Configuration> firstSet = configurationUpdateManager.get();
+
+        // simulate an update of the configuration set
+        fixtures.configurationProviderThrowsException();
+        configurationUpdateManager.run();
+        Set<Configuration> secondSet = configurationUpdateManager.get();
 
         // ASSERT
-        assertThat(provider.isInitialized(), equalTo(false));
+        assertThat(firstSet, hasSize(1));
+        assertThat("Expecting the old configuration list to be preserved on any failures", secondSet, hasSize(1));
+        //verify(configurationUpdateManager, times(1)).markFailure();
     }
 }

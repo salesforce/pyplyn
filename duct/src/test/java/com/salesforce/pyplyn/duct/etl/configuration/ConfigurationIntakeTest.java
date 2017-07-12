@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Set;
 
 import static com.salesforce.pyplyn.duct.appconfig.AppConfigProviderTest.fixSerializationHelper;
-import static org.hamcrest.MatcherAssert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.testng.Assert.fail;
 
@@ -49,7 +49,7 @@ public class ConfigurationIntakeTest {
         ConfigurationIntake configurationIntake = new ConfigurationIntake(serializationHelper);
 
         // ACT
-        List<String> configurations = configurationIntake.listOfConfigurations(invalidConfigurationsDir);
+        List<String> configurations = configurationIntake.getAllConfigurationsFromDisk(invalidConfigurationsDir);
         Set<Configuration> parsedConfigurations = configurationIntake.parseAll(configurations);
 
         // ASSERT
@@ -73,7 +73,7 @@ public class ConfigurationIntakeTest {
         ConfigurationIntake configurationIntake = new ConfigurationIntake(serializationHelper);
 
         // ACT
-        List<String> configurations = configurationIntake.listOfConfigurations(null);
+        List<String> configurations = configurationIntake.getAllConfigurationsFromDisk(null);
 
         // ASSERT
         assertThat(configurations, empty());
@@ -86,7 +86,7 @@ public class ConfigurationIntakeTest {
         ConfigurationIntake configurationIntake = new ConfigurationIntake(serializationHelper);
 
         // ACT/ASSERT
-        configurationIntake.listOfConfigurations("/invalid/dir/should/throw/IOException");
+        configurationIntake.getAllConfigurationsFromDisk("/invalid/dir/should/throw/IOException");
     }
 
     @Test
@@ -99,10 +99,10 @@ public class ConfigurationIntakeTest {
         ConfigurationIntake configurationIntake = new ConfigurationIntake(serializationHelper);
 
         // ACT
-        ConfigurationProvider configurationProvider = new ConfigurationProvider(fixtures.appConfigMocks().get(), configurationIntake);
+        ConfigurationLoader configurationLoader = new ConfigurationLoader(fixtures.appConfigMocks().get(), configurationIntake);
 
         try {
-            configurationProvider.get();
+            configurationLoader.load();
 
             // ASSERT
             fail("Expecting an exception to be thrown");

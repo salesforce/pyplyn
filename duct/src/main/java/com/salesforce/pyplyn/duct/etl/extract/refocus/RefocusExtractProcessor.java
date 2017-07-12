@@ -5,20 +5,18 @@
  *  For full license text, see the LICENSE.txt file in repo root
  *    or https://opensource.org/licenses/BSD-3-Clause
  */
-
 package com.salesforce.pyplyn.duct.etl.extract.refocus;
 
 import com.codahale.metrics.Timer;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.salesforce.argus.ArgusClient;
 import com.salesforce.pyplyn.cache.Cache;
 import com.salesforce.pyplyn.cache.CacheFactory;
 import com.salesforce.pyplyn.cache.ConcurrentCacheMap;
-import com.salesforce.pyplyn.client.AuthenticatedEndpointProvider;
-import com.salesforce.pyplyn.client.ClientFactory;
 import com.salesforce.pyplyn.client.UnauthorizedException;
 import com.salesforce.pyplyn.duct.app.ShutdownHook;
-import com.salesforce.pyplyn.duct.providers.client.RemoteClientFactory;
+import com.salesforce.pyplyn.duct.connector.AppConnector;
 import com.salesforce.pyplyn.model.TransformationResult;
 import com.salesforce.pyplyn.model.builder.TransformationResultBuilder;
 import com.salesforce.pyplyn.processor.AbstractMeteredExtractProcessor;
@@ -32,10 +30,7 @@ import java.text.ParseException;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeParseException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -51,19 +46,20 @@ import static java.util.Objects.nonNull;
  * @since 3.0
  */
 @Singleton
-public class RefocusExtractProcessor extends AbstractMeteredExtractProcessor<Refocus> implements AuthenticatedEndpointProvider<RefocusClient> {
+public class RefocusExtractProcessor extends AbstractMeteredExtractProcessor<Refocus> {
     private static final Logger logger = LoggerFactory.getLogger(RefocusExtractProcessor.class);
     public static final String RESPONSE_TIMEOUT = "Timeout";
 
-    private final RemoteClientFactory<RefocusClient> refocusClientFactory;
+    private final ConcurrentHashMap<String, RefocusClient> endpoints = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<RefocusClient, ConcurrentCacheMap<Sample>> caches = new ConcurrentHashMap<>();
+
+    private final AppConnector appConnector;
     private final CacheFactory cacheFactory;
-    private final ConcurrentHashMap<RefocusClient, ConcurrentCacheMap<Sample>> clientToCacheMap = new ConcurrentHashMap<>();
     private final ShutdownHook shutdownHook;
 
-
     @Inject
-    public RefocusExtractProcessor(RemoteClientFactory<RefocusClient> refocusClientFactory, CacheFactory cacheFactory, ShutdownHook shutdownHook) {
-        this.refocusClientFactory = refocusClientFactory;
+    public RefocusExtractProcessor(AppConnector appConnector, CacheFactory cacheFactory, ShutdownHook shutdownHook) {
+        this.appConnector = appConnector;
         this.cacheFactory = cacheFactory;
         this.shutdownHook = shutdownHook;
     }
@@ -84,8 +80,8 @@ public class RefocusExtractProcessor extends AbstractMeteredExtractProcessor<Ref
                     final String endpointId = endpointExpressions.getKey();
 
                     // retrieve Refocus client and cache for the specified endpoint
-                    final RefocusClient client = initializeEndpointOrLogFailure(endpointId, this);
-                    final Cache<Sample> endpointCache = getOrInitializeCacheFor(clientToCacheMap, client, cacheFactory);
+                    final RefocusClient client = client(endpointId);
+                    final Cache<Sample> endpointCache = cache(client);
 
                     // stop here if we cannot find an endpoint
                     if (isNull(client)) {
@@ -112,6 +108,10 @@ public class RefocusExtractProcessor extends AbstractMeteredExtractProcessor<Ref
                                         try (Timer.Context context = systemStatus.timer(meterName(), "get-samples." + endpointId).time()) {
                                             // retrive all samples by name
                                             List<Sample> samples = client.getSamples(refocus.name());
+                                            if (samples.isEmpty()) {
+                                                failed();
+                                                return null;
+                                            }
 
                                             // if we are looking to cache these samples, do so
                                             if (refocus.cacheMillis() > 0) {
@@ -241,28 +241,46 @@ public class RefocusExtractProcessor extends AbstractMeteredExtractProcessor<Ref
     }
 
     /**
-     * Datasource type this processor can extract from
+     * Returns a previously initialized client for the specified endpoint
+     *   or initializes one and returns it
      */
+    public RefocusClient client(String endpointId) {
+        return endpoints.computeIfAbsent(endpointId, key -> {
+            RefocusClient client = new RefocusClient(appConnector.get(endpointId));
+            try {
+                client.auth();
+
+                // init cache and processing queue
+                caches.computeIfAbsent(client, k -> cacheFactory.newCache());
+
+                return client;
+
+            } catch (UnauthorizedException e) {
+                // log auth failure if this exception type was thrown
+                authenticationFailure();
+
+                logger.warn("", e);
+                return null;
+            }
+        });
+    }
+
+    /**
+     * @return a {@link Cache} for the corresponding {@link ArgusClient}
+     *         initializes the cache if not previously
+     */
+    public Cache<Sample> cache(RefocusClient client) {
+        return Optional.ofNullable(caches.get(client)).orElseThrow(() ->
+                new IllegalStateException("Cannot proceed with un-initialized cache for " + client.cacheKey()));
+    }
+
     @Override
     public Class<Refocus> filteredType() {
         return Refocus.class;
     }
 
-    /**
-     * Meter name used to track this implementation's system status
-     */
     @Override
     protected String meterName() {
         return "Refocus";
-    }
-
-    @Override
-    protected Logger logger() {
-        return logger;
-    }
-
-    @Override
-    public ClientFactory<RefocusClient> factory() {
-        return refocusClientFactory;
     }
 }

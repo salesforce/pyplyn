@@ -12,14 +12,10 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.salesforce.pyplyn.configuration.Configuration;
-import com.salesforce.pyplyn.configuration.UpdatableConfigurationSetProvider;
-import com.salesforce.pyplyn.duct.appconfig.AppConfig;
 import com.salesforce.pyplyn.duct.appconfig.AppConfigModule;
+import com.salesforce.pyplyn.duct.cluster.ClusterModule;
 import com.salesforce.pyplyn.duct.connector.AppConnectorModule;
-import com.salesforce.pyplyn.duct.etl.configuration.ConfigurationProvider;
-import com.salesforce.pyplyn.duct.etl.configuration.ConfigurationWrapper;
-import com.salesforce.pyplyn.duct.etl.configuration.DistributedConfigurationProvider;
-import com.salesforce.pyplyn.duct.etl.configuration.SinglePartitionConfigurationProvider;
+import com.salesforce.pyplyn.duct.etl.configuration.ConfigurationModule;
 import com.salesforce.pyplyn.duct.etl.extract.argus.Argus;
 import com.salesforce.pyplyn.duct.etl.extract.argus.ArgusExtractProcessor;
 import com.salesforce.pyplyn.duct.etl.extract.refocus.Refocus;
@@ -35,7 +31,6 @@ import com.salesforce.pyplyn.model.Load;
 import com.salesforce.pyplyn.model.Transform;
 import com.salesforce.pyplyn.processor.ExtractProcessor;
 import com.salesforce.pyplyn.processor.LoadProcessor;
-import com.salesforce.pyplyn.status.SystemStatus;
 import com.salesforce.pyplyn.util.ModuleBuilder;
 
 import java.util.ArrayList;
@@ -45,7 +40,6 @@ import java.util.List;
 
 import static com.salesforce.pyplyn.util.SerializationHelper.canRead;
 import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
 
 /**
  * Takes care of initializing the {@link Guice} injector with all the required modules
@@ -150,7 +144,8 @@ public class AppBootstrap {
         defaultModules.addAll(modelDeserializationModules());
 
         // Enables injection of Set<Configuration> objects
-        defaultModules.add(ModuleBuilder.forConfigurationProvider(ConfigurationProvider.class));
+        defaultModules.add(new ClusterModule());
+        defaultModules.add(new ConfigurationModule());
 
         return Collections.unmodifiableList(defaultModules);
     }
@@ -170,10 +165,19 @@ public class AppBootstrap {
         initialized = true;
 
         // register the shutdown hook into the runtime, to allow it to control program flow if interrupted
-        Runtime.getRuntime().addShutdownHook(shutdownHook());
+        Runtime.getRuntime().addShutdownHook(injector.getInstance(ShutdownHook.class));
+
+        // call hook
+        hookAfterBootstrap();
 
         return this;
     }
+
+    /**
+     * Allows extending modules to hook into the bootstrap process, after it has completed
+     * <p/> One use-case for this is to store a reference to the initialized injector
+     */
+    public void hookAfterBootstrap() { }
 
 
     /**
@@ -185,77 +189,6 @@ public class AppBootstrap {
         guardUninitialized();
 
         return injector;
-    }
-
-    /**
-     * Shutdown hook, used to signal to all running processes when they should stop running
-     *
-     * @throws BootstrapException thrown if the bootstrap was not performed or it failed
-     */
-    public ShutdownHook shutdownHook() {
-        guardUninitialized();
-
-        return injector.getInstance(ShutdownHook.class);
-    }
-
-
-    /**
-     * Returns the {@link AppConfig} singleton, initialized after parsing the specified configFile
-     *
-     * @throws BootstrapException thrown if the bootstrap was not performed or it failed
-     */
-    public AppConfig appConfig() {
-        guardUninitialized();
-
-        return injector.getInstance(AppConfig.class);
-    }
-
-
-    /**
-     * SystemStatus thread that monitors the app and provides status updates to registered consumers
-     *
-     * @throws BootstrapException thrown if the bootstrap was not performed or it failed
-     */
-    public SystemStatus systemStatus() {
-        guardUninitialized();
-
-        return injector.getInstance(SystemStatus.class);
-    }
-
-
-    /**
-     * Returns the Configuration provider used to load the Set&lt;{@link Configuration}&gt; partition
-     *   for the current host (returns all configurations if running in single partition mode
-     *
-     * @throws BootstrapException thrown if the bootstrap was not performed or it failed
-     */
-    public UpdatableConfigurationSetProvider<ConfigurationWrapper> configurationProvider() {
-        guardUninitialized();
-
-        if (nonNull(appConfig().hazelcast()) && appConfig().hazelcast().isEnabled()) {
-            return injector.getInstance(DistributedConfigurationProvider.class);
-        } else {
-            return injector.getInstance(SinglePartitionConfigurationProvider.class);
-        }
-    }
-
-
-    /**
-     * Returns a MetricDuct object, ready to execute
-     * <p/>
-     * If the app hasn't been bootstrapped yet, it is handled before {@link MetricDuct} is returned
-     *
-     * @throws BootstrapException thrown if the bootstrap was not performed or it failed
-     */
-    public MetricDuct app() {
-        if (!initialized) {
-            bootstrap();
-        }
-
-        // ensures that the injector was initialized successfully
-        guardUninitialized();
-
-        return injector.getInstance(MetricDuct.class).setConfigurationProvider(configurationProvider());
     }
 
 
@@ -274,7 +207,7 @@ public class AppBootstrap {
     /**
      * Prevents required functionality from executing, if bootstrap was unsuccessful
      *
-     * @throws BootstrapException if app bootstrap was not performed, or in an invalid state
+     * @throws IllegalStateException if app bootstrap was not performed, or in an invalid state
      */
     private void guardUninitialized() {
         if (!initialized || isNull(injector)) {

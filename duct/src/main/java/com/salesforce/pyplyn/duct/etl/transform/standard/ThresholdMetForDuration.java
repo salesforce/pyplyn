@@ -50,7 +50,7 @@ import static com.salesforce.pyplyn.util.FormatUtils.formatNumber;
  */
 public class ThresholdMetForDuration implements Transform, Serializable {
     private static final long serialVersionUID = -4594665847342745577L;
-    private final static String MESSAGE_TEMPLATE = "%s threshold hit by %s, with value=%s %s %.2f, duration longer than %s";
+    private static final String MESSAGE_TEMPLATE = "%s threshold hit by %s, with value=%s %s %.2f, duration longer than %s";
 
 
     @JsonProperty(required=true)

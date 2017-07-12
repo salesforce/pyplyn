@@ -14,8 +14,8 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import static com.salesforce.pyplyn.cache.ConcurrentCacheMapTest.CACHE_KEY;
-import static org.hamcrest.MatcherAssert.*;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.doReturn;
 
 /**
@@ -36,7 +36,7 @@ public class CacheFactoryTest {
         MockitoAnnotations.initMocks(this);
 
         // ARRANGE
-        doReturn(CACHE_KEY).when(expected).cacheKey(); // FindBugs: RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT - IGNORE
+        doReturn(CACHE_KEY).when(expected).cacheKey();
 
         cache = new CacheFactory().newCache();
         cache.cache(expected, 86400);

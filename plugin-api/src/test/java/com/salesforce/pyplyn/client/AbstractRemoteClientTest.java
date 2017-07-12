@@ -25,7 +25,7 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.util.Collections;
 
-import static org.hamcrest.MatcherAssert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.*;
 import static org.testng.Assert.fail;
@@ -54,8 +54,7 @@ public class AbstractRemoteClientTest {
         // ARRANGE
         connector = spy(new AbstractConnectorImpl("connector"));
         doReturn("http://localhost:8080/").when(connector).endpoint();
-        client = spy(new AbstractRemoteClientImpl(connector, AbstractRemoteClientImpl.RetroService.class,
-                connector.connectTimeout(), connector.readTimeout(), connector.writeTimeout(), logger));
+        client = spy(new AbstractRemoteClientImpl(connector, AbstractRemoteClientImpl.RetroService.class, logger));
 
         doReturn(svc).when(client).svc();
 
@@ -142,7 +141,7 @@ public class AbstractRemoteClientTest {
 
         } catch (UnauthorizedException e) {
             // ASSERT
-            assertThat("Response should contain null for message and no error body", e.getMessage(), containsString("401/null"));
+            assertThat("Response should contain null for message and no error body", e.getMessage(), containsString("401/Response.error()"));
         }
     }
 
@@ -166,9 +165,12 @@ public class AbstractRemoteClientTest {
         // ARRANGE
         doReturn("127.0.0.1").when(connector).proxyHost();
         doReturn(8901).when(connector).proxyPort();
+        doReturn(10L).when(connector).connectTimeout();
+        doReturn(10L).when(connector).readTimeout();
+        doReturn(10L).when(connector).writeTimeout();
 
         // ACT
-        client = new AbstractRemoteClientImpl(connector, AbstractRemoteClientImpl.RetroService.class, 10L, 10L, 10L, logger);
+        client = new AbstractRemoteClientImpl(connector, AbstractRemoteClientImpl.RetroService.class, logger);
         Call<String> remoteCall = client.svc().get();
 
         try {

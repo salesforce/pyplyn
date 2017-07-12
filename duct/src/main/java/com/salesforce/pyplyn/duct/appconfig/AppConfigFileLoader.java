@@ -19,7 +19,7 @@ import net.sourceforge.argparse4j.inf.Namespace;
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
  * @since 3.0
  */
-final public class AppConfigFileLoader {
+public final class AppConfigFileLoader {
 
     /**
      * Helper classes should not be instantiated

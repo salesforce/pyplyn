@@ -11,16 +11,16 @@
     <parent>
         <groupId>com.salesforce.pyplyn</groupId>
         <artifactId>pyplyn</artifactId>
-        <version>10.0-SNAPSHOT</version>
+        <version>10.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>duct</artifactId>
-    <version>10.0-SNAPSHOT</version>
+    <version>10.0.0-SNAPSHOT</version>
 
     <properties>
         <main.class>com.salesforce.pyplyn.duct.app.DuctMain</main.class>
-        <final.build.location>${project.parent.build.directory}</final.build.location>
+        <final.build.location>${project.parent.basedir}/target</final.build.location>
         <executable.jar.location>${final.build.location}/pyplyn-${project.version}.jar</executable.jar.location>
     </properties>
 
@@ -167,6 +167,14 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
+        </dependency>
+
+        <!-- RxJava -->
+        <dependency>
+            <groupId>io.reactivex.rxjava2</groupId>
+            <artifactId>rxjava</artifactId>
+            <version>2.1.0</version>
+            <scope>compile</scope>
         </dependency>
 
         <!-- Hazelcast -->

@@ -28,7 +28,7 @@ import java.util.List;
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
  * @since 3.0
  */
-final public class MultibinderFactory {
+public final class MultibinderFactory {
 
     /**
      * Utilities classes should not be instantiated

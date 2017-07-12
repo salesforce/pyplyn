@@ -8,6 +8,7 @@
 
 package com.salesforce.pyplyn.duct.appconfig;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -76,6 +77,11 @@ public class AppConfig {
 
         public long minRepeatIntervalMillis() {
             return minRepeatIntervalMillis;
+        }
+
+        @JsonIgnore
+        public final boolean runOnce() {
+            return minRepeatIntervalMillis() <= 0;
         }
 
         public long updateConfigurationIntervalMillis() {

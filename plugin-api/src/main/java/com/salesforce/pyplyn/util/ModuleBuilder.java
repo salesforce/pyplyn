@@ -9,17 +9,12 @@
 package com.salesforce.pyplyn.util;
 
 import com.google.inject.AbstractModule;
-import com.google.inject.Provider;
 import com.google.inject.Scopes;
-import com.google.inject.TypeLiteral;
-import com.salesforce.pyplyn.configuration.Configuration;
 import com.salesforce.pyplyn.model.Extract;
 import com.salesforce.pyplyn.model.Load;
 import com.salesforce.pyplyn.model.Transform;
 import com.salesforce.pyplyn.processor.ExtractProcessor;
 import com.salesforce.pyplyn.processor.LoadProcessor;
-
-import java.util.Set;
 
 /**
  * Builds {@link com.google.inject.Guice} implementations of {@link AbstractModule} on the fly
@@ -108,23 +103,6 @@ public class ModuleBuilder {
             protected void configure() {
                 // registers the extract processor
                 MultibinderFactory.loadProcessors(binder()).addBinding().to(processor).in(Scopes.SINGLETON);
-            }
-        };
-    }
-
-    /**
-     * Defines bindings for a {@link Set<Configuration>>} {@link Provider}
-     * <p/>Creates a {@link com.google.inject.Guice} module overriding its {@link AbstractModule#configure()} method
-     *
-     * @param providerClass The provider implementation
-     * @param <T>           The provider's class
-     */
-    public static <T extends Provider<Set<Configuration>>> AbstractModule forConfigurationProvider(Class<T> providerClass) {
-        return new AbstractModule() {
-            @Override
-            protected void configure() {
-                // allows Guice to inject a Set<Configuration>, when required
-                bind(new TypeLiteral<Set<Configuration>>() {}).toProvider(providerClass).asEagerSingleton();
             }
         };
     }

@@ -12,8 +12,8 @@ import com.salesforce.pyplyn.configuration.Configuration;
 import org.testng.annotations.Test;
 
 import static com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.ConfigurationsTestHelper.createFullConfiguration;
-import static org.hamcrest.MatcherAssert.*;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 
 /**
  * Class
@@ -30,18 +30,5 @@ public class DuctConfigurationTest {
 
         // ASSERT
         assertThat("Configurations should be equal based on their E/T/L parameters, but not other params", configuration1, equalTo(configuration2));
-    }
-
-
-    @Test
-    public void testConfigurationWrapperDelegatesEquality() throws Exception {
-        // ARRANGE
-        ConfigurationWrapper configuration1 =
-                new ConfigurationWrapper(createFullConfiguration(100L, false), null);
-        ConfigurationWrapper configuration2 =
-                new ConfigurationWrapper(createFullConfiguration(200L, false), null);
-
-        // ASSERT
-        assertThat("Configuration wrappers should delegate equality to their Configuration objects", configuration1, equalTo(configuration2));
     }
 }

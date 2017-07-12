@@ -12,7 +12,7 @@ import org.testng.annotations.Test;
 
 import java.util.*;
 
-import static org.hamcrest.MatcherAssert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.testng.Assert.fail;
 
@@ -207,6 +207,54 @@ public class CollectionUtilsTest {
         attemptModifyMapAndExpectFailure(output, "key2", "val2");
     }
 
+    @Test
+    public void testImmutableOrEmptySet() throws Exception {
+        // ARRANGE
+        Set<String> nullInput = null;
+        Set<String> input = Collections.singleton("key");
+
+        // ACT
+        Set<String> emptyOutput = CollectionUtils.immutableOrEmptySet(nullInput);
+        Set<String> output = CollectionUtils.immutableOrEmptySet(input);
+
+        // ASSERT
+        assertThat(emptyOutput.size(), is(0));
+        assertThat(output.size(), equalTo(input.size()));
+        assertThat(output, not(sameInstance(input)));
+        attemptModifySetAndExpectFailure(output, "key2");
+    }
+
+    @Test
+    public void testImmutableSetOrNull() throws Exception {
+        // ARRANGE
+        Set<String> nullInput = null;
+        Set<String> input = Collections.singleton("key");
+
+        // ACT
+        Set<String> nullOutput = CollectionUtils.immutableSetOrNull(nullInput);
+        Set<String> output = CollectionUtils.immutableSetOrNull(input);
+
+        // ASSERT
+        assertThat(nullOutput, nullValue());
+        assertThat(output.size(), equalTo(input.size()));
+        assertThat(output, not(sameInstance(input)));
+        attemptModifySetAndExpectFailure(output, "key2");
+    }
+
+    @Test
+    public void testImmutableSetDoesNotChangeOnSourceChange() throws Exception {
+        // ARRANGE
+        Set<String> input = new HashSet<>(Collections.singleton("key"));
+
+        // ACT
+        Set<String> output = CollectionUtils.immutableSetOrNull(input);
+        input.add("new_key");
+
+        // ASSERT
+        assertThat(output, not(sameInstance(input)));
+        assertThat(output, not(contains("new_key")));
+    }
+
 
     /**
      * Adds an element in an unodifiable list and expects it to fail
@@ -242,6 +290,19 @@ public class CollectionUtilsTest {
         try {
             map.put(key, val);
             fail("Map should not be modifiable");
+
+        } catch (UnsupportedOperationException e) {
+            // expecting this to be thrown
+        }
+    }
+
+    /**
+     * Puts an element in an unodifiable list and expects it to fail
+     */
+    private <K> void attemptModifySetAndExpectFailure(Set<K> set, K key) {
+        try {
+            set.add(key);
+            fail("Set should not be modifiable");
 
         } catch (UnsupportedOperationException e) {
             // expecting this to be thrown

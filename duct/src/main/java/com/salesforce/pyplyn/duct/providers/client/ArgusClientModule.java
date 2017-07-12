@@ -9,7 +9,6 @@
 package com.salesforce.pyplyn.duct.providers.client;
 
 import com.google.inject.AbstractModule;
-import com.google.inject.Scopes;
 import com.google.inject.TypeLiteral;
 import com.salesforce.argus.ArgusClient;
 
@@ -24,8 +23,5 @@ public class ArgusClientModule extends AbstractModule {
     protected void configure() {
         // allows injection of the ArgusClient.class
         bind(new TypeLiteral<Class<ArgusClient>>(){}).toInstance(ArgusClient.class);
-
-        // allows injection of the Argus RemoteClient factory
-        bind(new TypeLiteral<RemoteClientFactory<ArgusClient>>(){}).in(Scopes.SINGLETON);
     }
 }

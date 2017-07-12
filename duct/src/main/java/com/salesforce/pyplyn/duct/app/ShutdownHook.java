@@ -14,7 +14,9 @@ import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -28,6 +30,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Singleton
 public class ShutdownHook extends Thread {
     private static final Logger logger = LoggerFactory.getLogger(ShutdownHook.class);
+    private static final CountDownLatch SHUTDOWN_LATCH = new CountDownLatch(1);
 
     /**
      * Used to signal the program is shutting down and all listeners should stop doing expensive operations
@@ -50,7 +53,7 @@ public class ShutdownHook extends Thread {
      */
     @Override
     public void run() {
-        logger.warn("Shutting down...");
+        logger.info("Shutting down...");
         shutdown();
     }
 
@@ -64,8 +67,9 @@ public class ShutdownHook extends Thread {
         // run shutdown ops
         operations.forEach(Runnable::run);
 
-        // sets the shutdown flag to true, to allow processes to stop gracefully
+        // set the shutdown flag and latch to allow processes to stop gracefully
         isShutdown.set(true);
+        SHUTDOWN_LATCH.countDown();
     }
 
     /**
@@ -96,5 +100,43 @@ public class ShutdownHook extends Thread {
      */
     public boolean isShutdown() {
         return isShutdown.get();
+    }
+
+    /**
+     * Awaits until the program is ready to shutdown
+     */
+    public void awaitShutdown() throws InterruptedException {
+        SHUTDOWN_LATCH.await();
+    }
+
+    /**
+     * Wait for all executors to complete
+     * <p/>
+     * <p/>Time out after 10s
+     */
+    public void awaitExecutorsTermination(final long timeoutMillis) {
+        executors.forEach(executor -> awaitExecutorTermination(executor, timeoutMillis));
+    }
+
+    /**
+     * Wait for specified executor to complete
+     * @param executor
+     * @param timeoutMillis Number of milliseconds to wait until forcibly shutting down
+     */
+    public static void awaitExecutorTermination(ExecutorService executor, long timeoutMillis) {
+        try {
+            // wait for all executors to complete
+            executor.awaitTermination(timeoutMillis, TimeUnit.MILLISECONDS);
+
+        } catch (InterruptedException e) {
+            // nothing to do, shutting down
+
+        } finally {
+            // shutdown all running processes
+            if (!executor.isTerminated()) {
+                logger.warn("Forcing shutdown for {}", executor);
+                executor.shutdownNow();
+            }
+        }
     }
 }

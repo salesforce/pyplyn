@@ -33,7 +33,6 @@ import static java.util.Objects.nonNull;
  */
 public class RefocusClient extends AbstractRemoteClient<RefocusService> {
     private static final Logger logger = LoggerFactory.getLogger(RefocusClient.class);
-    private final AbstractConnector connector;
 
     // authorization header used for all calls
     private static final String HEADER_PREFIX = "";
@@ -46,19 +45,7 @@ public class RefocusClient extends AbstractRemoteClient<RefocusService> {
      * @param connector The Refocus API endpoint to use in calls
      */
     public RefocusClient(AbstractConnector connector) {
-        this(connector, RefocusService.class, connector.connectTimeout(), connector.readTimeout(), connector.writeTimeout());
-    }
-
-    /**
-     * Class constructor that allows setting connection params
-     *
-     * @param connectTimeout How long to wait for connections to be established
-     * @param readTimeout How long to wait for reads
-     * @param writeTimeout How long to wait for writes
-     */
-    private RefocusClient(AbstractConnector connector, Class<RefocusService> cls, Long connectTimeout, Long readTimeout, Long writeTimeout) {
-        super(connector, cls, connectTimeout, readTimeout, writeTimeout);
-        this.connector = connector;
+        super(connector, RefocusService.class);
     }
 
     /**
@@ -88,9 +75,9 @@ public class RefocusClient extends AbstractRemoteClient<RefocusService> {
     @Override
     public boolean auth() throws UnauthorizedException {
         // if a token is specified (null user, password specified as byte[])
-        byte[] password = connector.password();
+        byte[] password = connector().password();
         try {
-            if (isNull(connector.username()) && nonNull(password)) {
+            if (isNull(connector().username()) && nonNull(password)) {
                 // store it so we can authenticate all calls with it
                 this.authorizationHeader = generateAuthorizationHeader(new String(password, Charset.defaultCharset()));
                 return true;
@@ -98,7 +85,7 @@ public class RefocusClient extends AbstractRemoteClient<RefocusService> {
 
             // otherwise attempt to auth user/pass
             AuthResponse authResponse =
-                    executeAndRetrieveBody(svc().authenticate(new AuthRequest(connector.username(), password)), null);
+                    executeAndRetrieveBody(svc().authenticate(new AuthRequest(connector().username(), password)), null);
 
             // if successful, generate and store the auth header
             if (nonNull(authResponse)) {

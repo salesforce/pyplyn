@@ -1,21 +1,11 @@
-/*
- *  Copyright (c) 2016-2017, Salesforce.com, Inc.
- *  All rights reserved.
- *  Licensed under the BSD 3-Clause license.
- *  For full license text, see the LICENSE.txt file in repo root
- *    or https://opensource.org/licenses/BSD-3-Clause
- */
-
 package com.salesforce.pyplyn.duct.etl.load.refocus;
 
 import com.codahale.metrics.Timer;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.salesforce.pyplyn.client.AuthenticatedEndpointProvider;
-import com.salesforce.pyplyn.client.ClientFactory;
 import com.salesforce.pyplyn.client.UnauthorizedException;
 import com.salesforce.pyplyn.duct.app.ShutdownHook;
-import com.salesforce.pyplyn.duct.providers.client.RemoteClientFactory;
+import com.salesforce.pyplyn.duct.connector.AppConnector;
 import com.salesforce.pyplyn.model.ETLMetadata;
 import com.salesforce.pyplyn.model.TransformationResult;
 import com.salesforce.pyplyn.processor.AbstractMeteredLoadProcessor;
@@ -29,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import static com.salesforce.pyplyn.util.FormatUtils.formatNumber;
@@ -42,36 +33,18 @@ import static java.util.Objects.isNull;
  * @since 3.0
  */
 @Singleton
-public class RefocusLoadProcessor extends AbstractMeteredLoadProcessor<Refocus> implements AuthenticatedEndpointProvider<RefocusClient> {
+public class RefocusLoadProcessor extends AbstractMeteredLoadProcessor<Refocus> {
     private static final Logger logger = LoggerFactory.getLogger(RefocusLoadProcessor.class);
 
-    private final RemoteClientFactory<RefocusClient> refocusClientFactory;
+    private final ConcurrentHashMap<String, RefocusClient> endpoints = new ConcurrentHashMap<>();
+
+    private final AppConnector appConnector;
     private final ShutdownHook shutdownHook;
 
-
     @Inject
-    public RefocusLoadProcessor(RemoteClientFactory<RefocusClient> refocusClientFactory, ShutdownHook shutdownHook) {
-        this.refocusClientFactory = refocusClientFactory;
+    public RefocusLoadProcessor(AppConnector appConnector, ShutdownHook shutdownHook) {
+        this.appConnector = appConnector;
         this.shutdownHook = shutdownHook;
-    }
-
-    /**
-     * Returns the corresponding endpoint by id
-     * <p/>Authenticates the endpoint if necessary.
-     *
-     * @return null if any errors occurred
-     */
-    private RefocusClient getEndpoint(String endpointId) {
-        try {
-            return remoteClient(endpointId);
-
-        } catch (UnauthorizedException e) {
-            // log auth failure if this exception type was thrown
-            authenticationFailure();
-
-            logger.error("", e);
-            return null;
-        }
     }
 
     /**
@@ -91,24 +64,26 @@ public class RefocusLoadProcessor extends AbstractMeteredLoadProcessor<Refocus> 
                 .collect(Collectors.groupingBy(Refocus::endpoint))
 
                 // process each endpoint individually
-                .entrySet().stream()
+                .entrySet().parallelStream()
 
                 .map(destinationEntry -> {
                     // retrieve client endpoint
                     String endpointId = destinationEntry.getKey();
-                    final RefocusClient client = getEndpoint(endpointId);
+                    final List<Refocus> loadDestinations = destinationEntry.getValue();
+
+                    final RefocusClient client = client(endpointId);
                     if (isNull(client)) {
                         // stop here if we couldn't get a client
                         return Boolean.FALSE;
                     }
 
                     // for all expressions belonging to this client
-                    List<Sample> allSamplesForEndpoint = destinationEntry.getValue().stream()
-                            .map(expr -> {
-                                final String sampleName = expr.name();
-                                final List<Link> relatedLinks = expr.relatedLinks();
-                                String defaultMessageCode = expr.defaultMessageCode();
-                                String defaultMessageBody = expr.defaultMessageBody();
+                    List<Sample> allSamplesForEndpoint = loadDestinations.stream()
+                            .map(loadDestination -> {
+                                final String sampleName = loadDestination.name();
+                                final List<Link> relatedLinks = loadDestination.relatedLinks();
+                                String defaultMessageCode = loadDestination.defaultMessageCode();
+                                String defaultMessageBody = loadDestination.defaultMessageBody();
 
                                 return data.stream().map(result -> {
                                     // create message code and body, based on previously defined values
@@ -139,7 +114,7 @@ public class RefocusLoadProcessor extends AbstractMeteredLoadProcessor<Refocus> 
                     try (Timer.Context context = systemStatus.timer(meterName(), "upsert-samples-bulk." + endpointId).time()) {
                         return client.upsertSamplesBulk(allSamplesForEndpoint);
 
-                    // return failure
+                        // return failure
                     } catch (UnauthorizedException e) {
                         logger.error("Could not complete request for {}; failed samples={}", endpointId, allSamplesForEndpoint);
                         return Boolean.FALSE;
@@ -177,24 +152,36 @@ public class RefocusLoadProcessor extends AbstractMeteredLoadProcessor<Refocus> 
         return messages.stream().collect(Collectors.joining("\n"));
     }
 
+
     /**
-     * Destination type this processor can load into
+     * Returns a previously initialized client for the specified endpoint
+     *   or initializes one and returns it
      */
+    public RefocusClient client(String endpointId) {
+        // TODO: move this at interface level and abstract just the factory
+        return endpoints.computeIfAbsent(endpointId, key -> {
+            RefocusClient refocusClient = new RefocusClient(appConnector.get(endpointId));
+            try {
+                refocusClient.auth();
+                return refocusClient;
+
+            } catch (UnauthorizedException e) {
+                // log auth failure if this exception type was thrown
+                authenticationFailure();
+
+                logger.warn("", e);
+                return null;
+            }
+        });
+    }
+
     @Override
     public Class<Refocus> filteredType() {
         return Refocus.class;
     }
 
-    /**
-     * Meter name used to track this implementation's system status
-     */
     @Override
     protected String meterName() {
         return "Refocus";
-    }
-
-    @Override
-    public ClientFactory<RefocusClient> factory() {
-        return refocusClientFactory;
     }
 }

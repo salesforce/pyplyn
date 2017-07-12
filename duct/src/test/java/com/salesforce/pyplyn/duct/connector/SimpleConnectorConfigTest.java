@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Set;
 
 import static com.salesforce.pyplyn.duct.connector.AppConnector.DUPLICATE_CONNECTOR_ERROR;
-import static org.hamcrest.MatcherAssert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.*;
 import static org.testng.Assert.fail;
@@ -48,7 +48,7 @@ public class SimpleConnectorConfigTest {
     @Test
     public void testConnectorFields() throws Exception {
         // ARRANGE
-        Injector injector = fixtures.freeze().injector();
+        Injector injector = fixtures.initializeFixtures().injector();
         SerializationHelper serializer = injector.getProvider(SerializationHelper.class).get();
 
         // ACT
@@ -66,7 +66,7 @@ public class SimpleConnectorConfigTest {
     @Test
     public void testPasswordIsNotCached() throws Exception {
         // ARRANGE
-        Injector injector = fixtures.freeze().injector();
+        Injector injector = fixtures.initializeFixtures().injector();
         SerializationHelper serializer = injector.getProvider(SerializationHelper.class).get();
 
         // ACT
@@ -87,7 +87,7 @@ public class SimpleConnectorConfigTest {
     @Test
     public void testDuplicateConnectors() throws Exception {
         // ARRANGE
-        Injector injector = fixtures.freeze().injector();
+        Injector injector = fixtures.initializeFixtures().injector();
         SerializationHelper serializer = injector.getProvider(SerializationHelper.class).get();
 
         // ACT
@@ -110,7 +110,7 @@ public class SimpleConnectorConfigTest {
     @Test
     public void testAppConnectorCanBeInitialized() throws Exception {
         // ARRANGE
-        Injector injector = fixtures.freeze().injector();
+        Injector injector = fixtures.initializeFixtures().injector();
         SerializationHelper serializer = injector.getProvider(SerializationHelper.class).get();
 
         // ACT

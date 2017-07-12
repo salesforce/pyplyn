@@ -17,7 +17,7 @@ import java.util.Set;
 
 import static com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.ConfigurationsTestHelper.createCustomConfiguration;
 import static com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.ConfigurationsTestHelper.createFullConfiguration;
-import static org.hamcrest.MatcherAssert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -26,9 +26,9 @@ import static org.mockito.Mockito.verify;
  * Test class
  *
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
- * @since 5.0
+ * @since 3.0
  */
-public class SinglePartitionConfigurationProviderTest {
+public class ClusterConfigurationUpdateManagerTest {
     private AppBootstrapFixtures fixtures;
 
     @BeforeMethod
@@ -46,52 +46,43 @@ public class SinglePartitionConfigurationProviderTest {
                 "subject", "aspect",
                 100L, false);
 
-        fixtures.realSinglePartitionConfigProvider()
-                .configurationProviderReturns(configuration1)
-                .freeze();
+        fixtures.configurationProviderReturns(configuration1)
+                .clusterReturns(configuration1)
+                .clusterMasterNode()
+                .initializeFixtures();
 
-        SinglePartitionConfigurationProvider provider = (SinglePartitionConfigurationProvider)fixtures.configurationSetProvider();
+        ConfigurationUpdateManager configurationUpdateManager = fixtures.configurationManager();
 
         // ACT
-        provider.run();
-        Set<ConfigurationWrapper> firstSet = provider.get();
+        configurationUpdateManager.run();
+        Set<Configuration> firstSet = configurationUpdateManager.get();
 
         // simulate an update of the configuration set
-        fixtures.configurationProviderReturns(configuration2);
-        provider.updateConfigurations();
-        Set<ConfigurationWrapper> secondSet = provider.get();
+        fixtures.configurationProviderReturns(configuration2)
+                .clusterReturns(configuration2);
+        configurationUpdateManager.run();
+        Set<Configuration> secondSet = configurationUpdateManager.get();
 
         // ASSERT
         assertThat(firstSet, hasSize(1));
         assertThat(secondSet, hasSize(1));
-        assertThat(firstSet, not(hasItems(secondSet.toArray(new ConfigurationWrapper[]{}))));
-        verify(provider, times(0)).markFailure();
+        assertThat(firstSet, not(hasItems(secondSet.toArray(new Configuration[]{}))));
+        //verify(configurationUpdateManager, times(0)).markFailure();
     }
 
-
     @Test
-    public void testUpdateConfigurationsFailure() throws Exception {
+    public void testClusterDoesNotUpdateConfigurationsOnSlaveNodes() throws Exception {
         // ARRANGE
-        Configuration configuration1 = createFullConfiguration(100L, false);
+        fixtures.clusterReturns()
+                .clusterSlaveNode()
+                .initializeFixtures();
 
-        fixtures.realSinglePartitionConfigProvider()
-                .configurationProviderReturns(configuration1)
-                .freeze();
-
-        SinglePartitionConfigurationProvider provider = (SinglePartitionConfigurationProvider)fixtures.configurationSetProvider();
+        ConfigurationUpdateManager configurationUpdateManager = fixtures.configurationManager();
 
         // ACT
-        provider.run();
-        Set<ConfigurationWrapper> firstSet = provider.get();
-
-        // simulate an update of the configuration set
-        fixtures.configurationProviderThrowsException();
-        provider.updateConfigurations();
-        Set<ConfigurationWrapper> secondSet = provider.get();
+        configurationUpdateManager.run();
 
         // ASSERT
-        verify(provider, times(1)).markFailure();
-        assertThat(firstSet, hasSize(1));
-        assertThat("Expecting the old configuration list to be preserved on any failures", secondSet, hasSize(1));
+        verify(fixtures.configurationLoader(), times(0)).load();
     }
 }

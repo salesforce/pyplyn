@@ -5,7 +5,6 @@
  *  For full license text, see the LICENSE.txt file in repo root
  *    or https://opensource.org/licenses/BSD-3-Clause
  */
-
 package com.salesforce.pyplyn.duct.etl.extract.argus;
 
 import com.codahale.metrics.Timer;
@@ -17,11 +16,9 @@ import com.salesforce.argus.model.MetricResponse;
 import com.salesforce.pyplyn.cache.Cache;
 import com.salesforce.pyplyn.cache.CacheFactory;
 import com.salesforce.pyplyn.cache.ConcurrentCacheMap;
-import com.salesforce.pyplyn.client.AuthenticatedEndpointProvider;
-import com.salesforce.pyplyn.client.ClientFactory;
 import com.salesforce.pyplyn.client.UnauthorizedException;
 import com.salesforce.pyplyn.duct.app.ShutdownHook;
-import com.salesforce.pyplyn.duct.providers.client.RemoteClientFactory;
+import com.salesforce.pyplyn.duct.connector.AppConnector;
 import com.salesforce.pyplyn.model.TransformationResult;
 import com.salesforce.pyplyn.model.builder.TransformationResultBuilder;
 import com.salesforce.pyplyn.processor.AbstractMeteredExtractProcessor;
@@ -49,34 +46,27 @@ import static java.util.Objects.nonNull;
  * @since 3.0
  */
 @Singleton
-public class ArgusExtractProcessor extends AbstractMeteredExtractProcessor<Argus> implements AuthenticatedEndpointProvider<ArgusClient> {
+public class ArgusExtractProcessor extends AbstractMeteredExtractProcessor<Argus> {
     private static final Logger logger = LoggerFactory.getLogger(ArgusExtractProcessor.class);
 
-    private final RemoteClientFactory<ArgusClient> argusClientFactory;
+    private final AppConnector appConnector;
     private final CacheFactory cacheFactory;
-    private final ConcurrentHashMap<ArgusClient, ConcurrentCacheMap<MetricResponse>> clientToCacheMap = new ConcurrentHashMap<>();
     private final ShutdownHook shutdownHook;
 
+    private final Map<String, ArgusClient> endpoints = new ConcurrentHashMap<>();
+    private final Map<ArgusClient, ConcurrentCacheMap<MetricResponse>> caches = new HashMap<>();
 
     @Inject
-    public ArgusExtractProcessor(RemoteClientFactory<ArgusClient> argusClientFactory, CacheFactory cacheFactory, ShutdownHook shutdownHook) {
-        this.argusClientFactory = argusClientFactory;
+    public ArgusExtractProcessor(AppConnector appConnector, CacheFactory cacheFactory, ShutdownHook shutdownHook) {
+        this.appConnector = appConnector;
         this.cacheFactory = cacheFactory;
         this.shutdownHook = shutdownHook;
     }
 
     /**
-     * Datasource type this processor can extract from
+     * @return a list of metrics returned by executing the passed Argus expressions
      */
     @Override
-    public Class<Argus> filteredType() {
-        return Argus.class;
-    }
-
-    /**
-     * Processes a list of Argus expressions and returns their results
-     * @return
-     */
     public List<List<TransformationResult>> process(List<Argus> data) {
         // prepare a map of the datapoints that can be cached
         final Map<String, Integer> cacheSettings = data.stream().filter(argus -> argus.cacheMillis() > 0).collect(Collectors.toMap(Argus::cacheKey, Argus::cacheMillis));
@@ -86,152 +76,152 @@ public class ArgusExtractProcessor extends AbstractMeteredExtractProcessor<Argus
 
         // stream of metrics to be loaded from the endpoints or from cache
         return data.stream()
-                    // separate each metric by endpoint
-                    .collect(Collectors.groupingBy(Argus::endpoint))
+                // separate each metric by endpoint
+                .collect(Collectors.groupingBy(Argus::endpoint))
 
-                    // then process each endpoint in parallel
-                    .entrySet().parallelStream()
+                // then process each endpoint in parallel
+                .entrySet().parallelStream()
 
-                    // process expressions for each endpoint
-                    .map(endpointExpressions -> {
-                        final String endpointId = endpointExpressions.getKey();
+                // process expressions for each endpoint
+                .map(endpointExpressions -> {
+                    final String endpointId = endpointExpressions.getKey();
 
-                        // retrieve Argus client and cache for the specified endpoint
-                        final ArgusClient client = initializeEndpointOrLogFailure(endpointId, this);
-                        final Cache<MetricResponse> endpointCache = getOrInitializeCacheFor(clientToCacheMap, client, cacheFactory);
+                    // retrieve Argus client and cache for the specified endpoint
+                    final ArgusClient client = client(endpointId);
+                    final Cache<MetricResponse> endpointCache = cache(client);
 
-                        // stop here if we cannot initialize an endpoint for this client
-                        if (isNull(client)) {
-                            failed();
+                    // stop here if we cannot initialize an endpoint for this client
+                    if (isNull(client)) {
+                        failed();
+                        return null;
+                    }
+
+                    // first load the cached responses
+                    final List<MetricResponse> cachedResponses = endpointExpressions.getValue().stream()
+                            .map(s -> endpointCache.isCached(s.cacheKey()))
+                            .filter(Objects::nonNull)
+                            .collect(Collectors.toList());
+
+
+                    // prepare Argus expressions as strings
+                    List<String> expressions = endpointExpressions.getValue().stream()
+
+                            // only processes expressions that aren't already cached
+                            .filter(s -> isNull(endpointCache.isCached(s.cacheKey())))
+
+                            // always alias the expression with the expected name,
+                            //   in order to be able to identify it in the response
+                            .map(ArgusExtractProcessor::aliasExpression)
+                            .collect(Collectors.toList());
+
+                    try {
+                        // short circuit if app was shutdown
+                        if (shutdownHook.isShutdown()) {
                             return null;
                         }
 
-                        // first load the cached responses
-                        final List<MetricResponse> cachedResponses = endpointExpressions.getValue().stream()
-                                .map(s -> endpointCache.isCached(s.cacheKey()))
-                                .filter(Objects::nonNull)
-                                .collect(Collectors.toList());
+                        // retrieve metrics from Argus endpoint, only if we have expressions to retrieve
+                        List<MetricResponse> metricResponses;
+                        if (!expressions.isEmpty()) {
+                            try (Timer.Context context = systemStatus.timer(meterName(), "get-metrics." + endpointId).time()) {
+                                metricResponses = client.getMetrics(expressions);
+                            }
 
-
-                        // prepare Argus expressions as strings
-                        List<String> expressions = endpointExpressions.getValue().stream()
-
-                                // only processes expressions that aren't already cached
-                                .filter(s -> isNull(endpointCache.isCached(s.cacheKey())))
-
-                                // always alias the expression with the expected name,
-                                //   in order to be able to identify it in the response
-                                .map(ArgusExtractProcessor::aliasExpression)
-                                .collect(Collectors.toList());
-
-                        try {
-                            // short circuit if app was shutdown
-                            if (shutdownHook.isShutdown()) {
+                            // determine if the retrieval failed; stop here if that's the case
+                            if (isNull(metricResponses)) {
+                                failed();
                                 return null;
                             }
 
-                            // retrieve metrics from Argus endpoint, only if we have expressions to retrieve
-                            List<MetricResponse> metricResponses;
-                            if (!expressions.isEmpty()) {
-                                try (Timer.Context context = systemStatus.timer(meterName(), "get-metrics." + endpointId).time()) {
-                                    metricResponses = client.getMetrics(expressions);
-                                }
-
-                                // determine if the retrieval failed; stop here if that's the case
-                                if (isNull(metricResponses)) {
-                                    failed();
-                                    return null;
-                                }
-
-                                // cache expressions that should be cached, based on their cacheMillis() settings mapped in canCache
-                                metricResponses.stream()
-                                        // we are not caching results with no data
-                                        .filter(ArgusExtractProcessor::responseHasDatapoints)
-                                        .forEach(result -> tryCache(result, client, cacheSettings));
-                            } else {
-                                metricResponses = Collections.emptyList();
-                            }
-
-                            // mark successful operation and continue processing
-                            succeeded();
-
-                            // log cache debugging data
-                            logger.info("{} metrics loaded from cache, {} from endpoint {}",
-                                    cachedResponses.size(), metricResponses.size(), endpointId);
-
-                            // check all metrics with noData and populate with defaults, if required
-                            return Stream.concat(cachedResponses.stream(), metricResponses.stream())
-
-                                    // if there is missing data, add default datapoints
-                                    .map(result -> {
-                                        // nothing to do if the response already has datapoints
-                                        if (responseHasDatapoints(result)) {
-                                            logger.info("Loaded data for {}, endpoint {}", result.metric(), endpointId);
-                                            return mapDatapointsAsResults(result, endpointId);
-                                        }
-
-                                        // if the response does not have any datapoints and a default value was not specified
-                                        Double defaultValue = defaultValueMap.get(result.metric());
-                                        if (isNull(defaultValue)) {
-                                            // log no-data events
-                                            logger.warn("No data for {}, endpoint {}", result.metric(), endpointId);
-                                            noData();
-
-                                            // stop here, cannot create a TransformationResult from no points
-                                            return null;
-                                        }
-
-                                        // creates a default datapoint, based on the specified defaultValueMap
-                                        final Map.Entry<String, String> defaultMetricEntry = createDefaultDatapoint(defaultValue);
-
-                                        // tags the result with a message, to denote that this is a default value and not extracted from the endpoint
-                                        final String defaultValueMessage =
-                                                generateDefaultValueMessage(result.metric(), defaultValue);
-
-                                        // return the default value, tagged with
-                                        return Optional.ofNullable(
-                                                    // attempt to create a result
-                                                    createResult(defaultMetricEntry.getKey(),
-                                                            defaultMetricEntry.getValue(),
-                                                            result.metric(),
-                                                            endpointId))
-
-                                                    // add a default message
-                                                    .map(transResult -> {
-                                                        logger.info("Default data provided for {}={}, endpoint {}", result.metric(), transResult.value(), endpointId);
-                                                        return new TransformationResultBuilder(transResult)
-                                                                .metadata((metadata) -> metadata
-                                                                        .addMessage(defaultValueMessage))
-                                                                .build();
-                                                    })
-
-                                                    // and map to a list, which is the expected return type
-                                                    .map(Collections::singletonList)
-
-                                                    // or return an empty collection, for any failures
-                                                    .orElse(null);
-
-                                    })
-
-                                    // filter out any errors due to no-data or when creating the default response
-                                    .filter(Objects::nonNull)
-
-                                    .collect(Collectors.toList());
-
-                        // catch any endpoint failures
-                        } catch (UnauthorizedException e) {
-                            logger.error("Could not complete request for {}; failed expressions={}; due to {}", endpointId, expressions, e.getMessage());
-                            failed();
+                            // cache expressions that should be cached, based on their cacheMillis() settings mapped in canCache
+                            metricResponses.stream()
+                                    // we are not caching results with no data
+                                    .filter(ArgusExtractProcessor::responseHasDatapoints)
+                                    .forEach(result -> tryCache(result, client, cacheSettings));
+                        } else {
+                            metricResponses = Collections.emptyList();
                         }
 
-                        // if we end up here, it means something failed
-                        return null;
-                    })
+                        // mark successful operation and continue processing
+                        succeeded();
 
-                    // filter failures and return as List<MetricResponse>
-                    .filter(Objects::nonNull)
-                    .flatMap(Collection::stream)
-                    .collect(Collectors.toList());
+                        // log cache debugging data
+                        logger.info("{} metrics loaded from cache, {} from endpoint {}",
+                                cachedResponses.size(), metricResponses.size(), endpointId);
+
+                        // check all metrics with noData and populate with defaults, if required
+                        return Stream.concat(cachedResponses.stream(), metricResponses.stream())
+
+                                // if there is missing data, add default datapoints
+                                .map(result -> {
+                                    // nothing to do if the response already has datapoints
+                                    if (responseHasDatapoints(result)) {
+                                        logger.info("Loaded data for {}, endpoint {}", result.metric(), endpointId);
+                                        return mapDatapointsAsResults(result, endpointId);
+                                    }
+
+                                    // if the response does not have any datapoints and a default value was not specified
+                                    Double defaultValue = defaultValueMap.get(result.metric());
+                                    if (isNull(defaultValue)) {
+                                        // log no-data events
+                                        logger.warn("No data for {}, endpoint {}", result.metric(), endpointId);
+                                        noData();
+
+                                        // stop here, cannot create a TransformationResult from no points
+                                        return null;
+                                    }
+
+                                    // creates a default datapoint, based on the specified defaultValueMap
+                                    final Map.Entry<String, String> defaultMetricEntry = createDefaultDatapoint(defaultValue);
+
+                                    // tags the result with a message, to denote that this is a default value and not extracted from the endpoint
+                                    final String defaultValueMessage =
+                                            generateDefaultValueMessage(result.metric(), defaultValue);
+
+                                    // return the default value, tagged with
+                                    return Optional.ofNullable(
+                                            // attempt to create a result
+                                            createResult(defaultMetricEntry.getKey(),
+                                                    defaultMetricEntry.getValue(),
+                                                    result.metric(),
+                                                    endpointId))
+
+                                            // add a default message
+                                            .map(transResult -> {
+                                                logger.info("Default data provided for {}={}, endpoint {}", result.metric(), transResult.value(), endpointId);
+                                                return new TransformationResultBuilder(transResult)
+                                                        .metadata((metadata) -> metadata
+                                                                .addMessage(defaultValueMessage))
+                                                        .build();
+                                            })
+
+                                            // and map to a list, which is the expected return type
+                                            .map(Collections::singletonList)
+
+                                            // or return an empty collection, for any failures
+                                            .orElse(null);
+
+                                })
+
+                                // filter out any errors due to no-data or when creating the default response
+                                .filter(Objects::nonNull)
+
+                                .collect(Collectors.toList());
+
+                        // catch any endpoint failures
+                    } catch (UnauthorizedException e) {
+                        logger.error("Could not complete request for {}; failed expressions={}; due to {}", endpointId, expressions, e.getMessage());
+                        failed();
+                    }
+
+                    // if we end up here, it means something failed
+                    return null;
+                })
+
+                // filter failures and return as List<MetricResponse>
+                .filter(Objects::nonNull)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -248,6 +238,15 @@ public class ArgusExtractProcessor extends AbstractMeteredExtractProcessor<Argus
 
                 // filter any failures and collect
                 .filter(Objects::nonNull)
+
+                // tag each datapoint with the originating MetricResponse object
+                .map(result -> new TransformationResultBuilder(result)
+                        // TODO: do this for Refocus too, and/or define global flag for skipping this step (non Gadget flows do not need it)
+                        //       alternatively, either specify this flag per configuration (+1) or detect if it will be required (based on some annotation
+                        //       implemented by Transforms - i.e.: @RequiresSourceObject
+                        .metadata((metadata) -> metadata.addSource(metricResponse))
+                        .build())
+
                 .collect(Collectors.toList());
     }
 
@@ -299,7 +298,7 @@ public class ArgusExtractProcessor extends AbstractMeteredExtractProcessor<Argus
             Number parsedNumber = parseNumber(value);
             return new TransformationResult(parsedTime, metric, parsedNumber, parsedNumber);
 
-        } catch (DateTimeParseException|ParseException e) {
+        } catch (DateTimeParseException |ParseException e) {
             logger.warn("No data for {}, endpoint {}; invalid time or value: {}", metric, endpointId, e.getMessage());
             noData();
             return null;
@@ -315,25 +314,52 @@ public class ArgusExtractProcessor extends AbstractMeteredExtractProcessor<Argus
     private void tryCache(MetricResponse metric, ArgusClient client, Map<String, Integer> howLongToCacheFor) {
         if (howLongToCacheFor.containsKey(metric.cacheKey())) {
             // retrieves the MetricResponse cache object and caches the specified metric for the specified duration
-            getOrInitializeCacheFor(clientToCacheMap, client, cacheFactory).cache(metric, howLongToCacheFor.get(metric.cacheKey()));
+            cache(client).cache(metric, howLongToCacheFor.get(metric.cacheKey()));
         }
     }
 
+
     /**
-     * Meter name used to track this implementation's system status
+     * Returns a previously initialized client for the specified endpoint
+     *   or initializes one and returns it
      */
+    public ArgusClient client(String endpointId) {
+        return endpoints.computeIfAbsent(endpointId, key -> {
+            ArgusClient client = new ArgusClient(appConnector.get(endpointId));
+            try {
+                client.auth();
+
+                // init cache and processing queue
+                caches.computeIfAbsent(client, k -> cacheFactory.newCache());
+
+                return client;
+
+            } catch (UnauthorizedException e) {
+                // log auth failure if this exception type was thrown
+                authenticationFailure();
+
+                logger.warn("", e);
+                return null;
+            }
+        });
+    }
+
+    /**
+     * @return a {@link Cache} for the corresponding {@link ArgusClient}
+     * @throws IllegalStateException if a cache does not exist for this client
+     */
+    public Cache<MetricResponse> cache(ArgusClient client) {
+        return Optional.ofNullable(caches.get(client)).orElseThrow(() ->
+                new IllegalStateException("Cannot proceed with un-initialized cache for " + client.cacheKey()));
+    }
+
+    @Override
+    public Class<Argus> filteredType() {
+        return Argus.class;
+    }
+
     @Override
     protected String meterName() {
         return "Argus";
-    }
-
-    @Override
-    protected Logger logger() {
-        return logger;
-    }
-
-    @Override
-    public ClientFactory<ArgusClient> factory() {
-        return argusClientFactory;
     }
 }

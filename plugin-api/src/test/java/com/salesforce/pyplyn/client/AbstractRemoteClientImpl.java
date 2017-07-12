@@ -23,8 +23,8 @@ public class AbstractRemoteClientImpl extends AbstractRemoteClient<AbstractRemot
     private final Logger logger;
     private boolean isAuth;
 
-    public AbstractRemoteClientImpl(AbstractConnector connector, Class<RetroService> cls, Long connectTimeout, Long readTimeout, Long writeTimeout, Logger logger) {
-        super(connector, cls, connectTimeout, readTimeout, writeTimeout);
+    public AbstractRemoteClientImpl(AbstractConnector connector, Class<RetroService> cls, Logger logger) {
+        super(connector, cls);
         this.logger = logger;
     }
 

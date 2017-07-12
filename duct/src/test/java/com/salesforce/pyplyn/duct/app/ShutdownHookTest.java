@@ -11,6 +11,7 @@ package com.salesforce.pyplyn.duct.app;
 import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapFixtures;
 import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapLatches;
 import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.ExecutorTestHelper;
+import com.salesforce.pyplyn.duct.etl.configuration.ConfigurationUpdateManager;
 import com.salesforce.pyplyn.status.MeterType;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
@@ -37,73 +38,78 @@ public class ShutdownHookTest {
         // ARRANGE
         fixtures = new AppBootstrapFixtures();
         executor = ExecutorTestHelper.initSingleThreadExecutor();
+        fixtures.shutdownHook().registerExecutor(executor);
     }
 
     /**
      * Checks that triggering the ShutdownHook will stop an ongoing ETL cycle
      * <p/> and that RefocusLoadProcessor does not post to Refocus endpoint on Shutdown
      */
-    @Test
+    @Test(timeOut = 50000L)
     public void testAppNotPostingResultsToRefocusAfterShuttingDown() throws Exception {
-        // ARRANGE
-        // bootstrap
-        fixtures.realShutdownHook()
-                .enableLatches()
-                .oneArgusToRefocusConfiguration()
-                .returnMockedTransformationResultFromAllExtractProcessors()
-                .simulateRefocusLoadProcessingDelay(100)
-                .freeze();
+        try {
+            // ARRANGE
+            fixtures.enableLatches()
+                    .oneArgusToRefocusConfigurationWithRepeatInterval(100)
+                    .callRealRefocusLoadProcessor()
+                    .initializeFixtures()
+                    .returnMockedTransformationResultFromAllExtractProcessors();
 
-        // init app and register executor for shutdown
-        ShutdownHook shutdownHook = registerExecutorWithShutdownHook();
-        MetricDuct app = fixtures.app();
 
-        // ACT
-        executor.submit(app);
+            // init app and register executor for shutdown
+            ConfigurationUpdateManager manager = fixtures.configurationManager();
 
-        // wait until we are ready to load, shutdown and allow extract processor to run
-        AppBootstrapLatches.beforeLoadProcessorStarts().await();
-        shutdownHook.shutdown();
-        AppBootstrapLatches.holdOffBeforeLoadProcessorStarts().countDown();
+            // ACT
+            executor.submit(manager);
 
-        // wait for shutdown
-        AppBootstrapLatches.appHasShutdown().await();
+            // wait until we are ready to load, shutdown and allow extract processor to run
+            AppBootstrapLatches.beforeLoadProcessorStarts().await();
+            fixtures.shutdownHook().shutdown();
+            AppBootstrapLatches.holdOffBeforeLoadProcessorStarts().countDown();
 
-        // ASSERT
-        // since the load was interrupted, expecting the RefocusLoadProcessor to log a failure
-        verify(fixtures.systemStatus()).meter("Refocus", MeterType.LoadFailure);
+            // wait for shutdown
+            AppBootstrapLatches.appHasShutdown().await();
+
+            // ASSERT
+            // since the load was interrupted, expecting the RefocusLoadProcessor to log a failure
+            verify(fixtures.systemStatus()).meter("Refocus", MeterType.LoadFailure);
+
+        } finally {
+            AppBootstrapLatches.release();
+        }
     }
 
     @Test(timeOut = 5000L)
     public void testArgusNotQueriedIfShuttingDown() throws Exception {
-        // ARRANGE
-        fixtures.realShutdownHook()
-                .enableLatches()
-                .oneArgusToRefocusConfiguration()
-                .callRealArgusExtractProcessor()
-                .freeze();
+        try {
+            // ARRANGE
+            fixtures.enableLatches()
+                    .oneArgusToRefocusConfigurationWithRepeatInterval(100)
+                    .callRealArgusExtractProcessor()
+                    .initializeFixtures();
 
-        // register executor with ShutdownHook
-        ShutdownHook shutdownHook = registerExecutorWithShutdownHook();
-        MetricDuct app = fixtures.app();
+            // register executor with ShutdownHook
+            ConfigurationUpdateManager manager = fixtures.configurationManager();
 
-        // ACT
+            // ACT
+            executor.submit(manager);
 
-        // start app
-        executor.submit(app);
+            // wait until we're ready to extract, then shutdown
+            AppBootstrapLatches.beforeExtractProcessorStarts().await();
+            fixtures.shutdownHook().shutdown();
+            AppBootstrapLatches.holdOffBeforeExtractProcessorStarts().countDown();
 
-        // wait until we're ready to extract, then shutdown
-        AppBootstrapLatches.beforeExtractProcessorStarts().await();
-        shutdownHook.shutdown();
-        AppBootstrapLatches.holdOffBeforeExtractProcessorStarts().countDown();
+            // wait for shutdown
+            AppBootstrapLatches.appHasShutdown().await();
 
-        // wait for shutdown
-        AppBootstrapLatches.appHasShutdown().await();
+            // ASSERT
+            // expecting no failures or successes to be logged when the app was shutdown
+            verify(fixtures.systemStatus(), times(0)).meter("Argus", MeterType.ExtractFailure);
+            verify(fixtures.systemStatus(), times(0)).meter("Argus", MeterType.ExtractSuccess);
 
-        // ASSERT
-        // expecting no failures or successes to be logged when the app was shutdown
-        verify(fixtures.systemStatus(), times(0)).meter("Argus", MeterType.ExtractFailure);
-        verify(fixtures.systemStatus(), times(0)).meter("Argus", MeterType.ExtractSuccess);
+        } finally {
+            AppBootstrapLatches.release();
+        }
     }
 
 
@@ -112,45 +118,40 @@ public class ShutdownHookTest {
      */
     @Test(timeOut = 5000L)
     public void testRefocusNotQueriedIfShuttingDown() throws Exception {
-        // ARRANGE
-        // bootstrap
-        fixtures.realShutdownHook()
-                .enableLatches()
-                .oneRefocusToRefocusConfiguration()
-                .callRealRefocusExtractProcessor()
-                .freeze();
+        try {
+            // ARRANGE
+            // bootstrap
+            fixtures.enableLatches()
+                    .oneRefocusToRefocusConfigurationWithRepeatInterval(100)
+                    .callRealRefocusExtractProcessor()
+                    .initializeFixtures();
 
-        // init app and register executor for shutdown
-        ShutdownHook shutdownHook = registerExecutorWithShutdownHook();
-        MetricDuct app = fixtures.app();
+            // init app and register executor for shutdown
+            ConfigurationUpdateManager manager = fixtures.configurationManager();
 
-        // ACT
-        executor.submit(app);
+            // ACT
+            executor.submit(manager);
 
-        // wait until we are ready to start, shutdown and allow extract processor to run
-        AppBootstrapLatches.beforeExtractProcessorStarts().await();
-        shutdownHook.shutdown();
-        AppBootstrapLatches.holdOffBeforeExtractProcessorStarts().countDown();
+            // wait until we are ready to start, shutdown and allow extract processor to run
+            AppBootstrapLatches.beforeExtractProcessorStarts().await();
+            fixtures.shutdownHook().shutdown();
+            AppBootstrapLatches.holdOffBeforeExtractProcessorStarts().countDown();
 
-        // wait for shutdown
-        AppBootstrapLatches.appHasShutdown().await();
+            // wait for shutdown
+            AppBootstrapLatches.appHasShutdown().await();
 
-        // ASSERT
-        // since the extract was interrupted, expecting the timer surrounding RefocusClient#getSamples(String) to not be executed
-        verify(fixtures.systemStatus(), times(0)).timer("Refocus", "get-sample." + AppBootstrapFixtures.MOCK_CONNECTOR_NAME);
+            // ASSERT
+            // since the extract was interrupted, expecting the timer surrounding RefocusClient#getSamples(String) to not be executed
+            verify(fixtures.systemStatus(), times(0)).timer("Refocus", "get-sample." + AppBootstrapFixtures.MOCK_CONNECTOR_NAME);
+
+        } finally {
+            AppBootstrapLatches.release();
+        }
     }
 
     @AfterMethod
     public void tearDown() throws Exception {
         // if an executor was started, shut it down
         ExecutorTestHelper.shutdown(executor);
-    }
-
-    /**
-     * Registers the test executor for shutdown (similar to what DuctExecutorWrapper does
-     */
-    private ShutdownHook registerExecutorWithShutdownHook() {
-        fixtures.shutdownHook().registerExecutor(executor);
-        return fixtures.shutdownHook();
     }
 }

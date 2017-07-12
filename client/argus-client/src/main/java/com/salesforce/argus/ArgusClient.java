@@ -32,29 +32,16 @@ import static java.util.Objects.nonNull;
  */
 public class ArgusClient extends AbstractRemoteClient<ArgusService> {
     private static final Logger logger = LoggerFactory.getLogger(ArgusClient.class);
-    private final AbstractConnector connector;
     private String cookie;
 
 
     /**
-     * Default simplified constructor that uses the specified connection defaults
+     * Default constructor
      *
      * @param connector The Argus endpoint to use in all the calls made by this collector
      */
     public ArgusClient(AbstractConnector connector) {
-        this(connector, ArgusService.class, connector.connectTimeout(), connector.readTimeout(), connector.writeTimeout());
-    }
-
-    /**
-     * Class constructor that allows setting connection params
-     *
-     * @param connectTimeout How long to wait for connections to be established
-     * @param readTimeout How long to wait for reads
-     * @param writeTimeout How long to wait for writes
-     */
-    private ArgusClient(AbstractConnector connector, Class<ArgusService> cls, Long connectTimeout, Long readTimeout, Long writeTimeout) {
-        super(connector, cls, connectTimeout, readTimeout, writeTimeout);
-        this.connector = connector;
+        super(connector, ArgusService.class);
     }
 
     /**
@@ -65,7 +52,7 @@ public class ArgusClient extends AbstractRemoteClient<ArgusService> {
      */
     @Override
     public boolean auth() throws UnauthorizedException {
-        return Optional.ofNullable(executeAndRetrieveHeaders(svc().auth(new AuthRequest(connector.username(), connector.password()))))
+        return Optional.ofNullable(executeAndRetrieveHeaders(svc().auth(new AuthRequest(connector().username(), connector().password()))))
                 .map(headers -> {
                     logger.info("Successfully logged in");
                     storeAuthenticationCookie(headers.get("Set-Cookie"));

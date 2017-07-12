@@ -16,7 +16,6 @@ import com.google.common.collect.Iterables;
 import com.salesforce.pyplyn.cache.Cacheable;
 
 import java.util.Map;
-import java.util.Optional;
 import java.util.SortedMap;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;

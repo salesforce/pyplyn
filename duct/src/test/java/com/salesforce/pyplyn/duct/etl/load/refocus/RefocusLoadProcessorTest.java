@@ -8,8 +8,8 @@
 
 package com.salesforce.pyplyn.duct.etl.load.refocus;
 
-import com.salesforce.pyplyn.duct.app.MetricDuct;
 import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapFixtures;
+import com.salesforce.pyplyn.duct.etl.configuration.ConfigurationUpdateManager;
 import com.salesforce.pyplyn.status.MeterType;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -44,13 +44,16 @@ public class RefocusLoadProcessorTest {
                 .returnMockedTransformationResultFromAllExtractProcessors()
                 .callRealRefocusLoadProcessor()
                 .refocusClientCanNotAuth()
-                .freeze();
+                .initializeFixtures();
 
-        // init app and register executor for shutdown
-        MetricDuct app = fixtures.app();
+        // init app
+        ConfigurationUpdateManager manager = fixtures.configurationManager();
+
 
         // ACT
-        app.run();
+        manager.run();
+        fixtures.awaitUntilAllTasksHaveBeenProcessed(true);
+
 
         // ASSERT
         // since we had no real client, expecting ArgusExtractProcessor to have logged a failure

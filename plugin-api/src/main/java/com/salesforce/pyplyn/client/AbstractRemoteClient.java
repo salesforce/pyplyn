@@ -8,6 +8,7 @@
 
 package com.salesforce.pyplyn.client;
 
+import com.google.common.base.Preconditions;
 import com.salesforce.pyplyn.cache.Cacheable;
 import com.salesforce.pyplyn.configuration.AbstractConnector;
 import okhttp3.Headers;
@@ -38,9 +39,9 @@ public abstract class AbstractRemoteClient<S> implements Cacheable {
     private static int ERR_CODES = 400;
 
     /**
-     * Unique identifier used to discern the corresponding client to use for this endpoint
+     * Reference to the connector used by the current instance
      */
-    private final String endpointId;
+    private final AbstractConnector connector;
 
     /**
      * The service object performing remote API operations
@@ -70,19 +71,21 @@ public abstract class AbstractRemoteClient<S> implements Cacheable {
     /**
      * Class constructor that allows setting timeout parameters
      */
-    public AbstractRemoteClient(AbstractConnector connector, Class<S> cls, Long connectTimeout, Long readTimeout, Long writeTimeout) {
+    public AbstractRemoteClient(AbstractConnector connector, Class<S> cls) {
+        Preconditions.checkNotNull(connector, "Passed connector is null for " + this.getClass().getSimpleName());
+
         // Extended timeouts are needed to deal with extremely slow response times for some Argus API endpoints.
         OkHttpClient client;
 
         // set HTTP proxy, if configured
         if (connector.isProxyEnabled()) {
-            client = httpClientBuilder(connectTimeout, readTimeout, writeTimeout).proxy(createProxy(connector)).build();
+            client = httpClientBuilder(connector).proxy(createProxy(connector)).build();
         } else {
-            client = httpClientBuilder(connectTimeout, readTimeout, writeTimeout).build();
+            client = httpClientBuilder(connector).build();
         }
 
         // build the retrofit service implementation, using a specified client and relying on Jackson serialization/deserialization
-        this.endpointId = connector.connectorId();
+        this.connector = connector;
         this.svc = new Retrofit.Builder()
                 .baseUrl(connector.endpoint())
                 .client(client)
@@ -101,11 +104,11 @@ public abstract class AbstractRemoteClient<S> implements Cacheable {
     /**
      * Initializes an {@link OkHttpClient.Builder} object, with the specified timeouts
      */
-    private OkHttpClient.Builder httpClientBuilder(Long connectTimeout, Long readTimeout, Long writeTimeout) {
+    private static OkHttpClient.Builder httpClientBuilder(AbstractConnector connector) {
         return new OkHttpClient().newBuilder()
-                    .connectTimeout(connectTimeout, TimeUnit.SECONDS)
-                    .readTimeout(readTimeout, TimeUnit.SECONDS)
-                    .writeTimeout(writeTimeout, TimeUnit.SECONDS);
+                    .connectTimeout(connector.connectTimeout(), TimeUnit.SECONDS)
+                    .readTimeout(connector.readTimeout(), TimeUnit.SECONDS)
+                    .writeTimeout(connector.writeTimeout(), TimeUnit.SECONDS);
     }
 
     /**
@@ -217,11 +220,18 @@ public abstract class AbstractRemoteClient<S> implements Cacheable {
     }
 
     /**
+     * @return connector used by the current instance
+     */
+    public final AbstractConnector connector() {
+        return connector;
+    }
+
+    /**
      * Specifying the endpoint id as cache key should suffice for most implementations
      *   since connector endpoint ids are implicitly unique
      */
     @Override
     public String cacheKey() {
-        return endpointId;
+        return connector.connectorId();
     }
 }

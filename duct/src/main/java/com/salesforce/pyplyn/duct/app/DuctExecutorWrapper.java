@@ -23,7 +23,6 @@ import java.util.concurrent.TimeUnit;
  * <p/>Using this class makes sense when having a long-running task to execute and that also require a monitoring thread to run
  */
 public class DuctExecutorWrapper {
-    private static final Logger logger = LoggerFactory.getLogger(DuctExecutorWrapper.class);
     private ScheduledExecutorService executor = Executors.newScheduledThreadPool(3);
 
     /**
@@ -39,25 +38,10 @@ public class DuctExecutorWrapper {
     }
 
     /**
-     * Executes the command with an initial 5 second delay
-     *   and awaits for all tasks to complete
-     * <p/>
-     * <p/>The delay is to give the configuration provider a chance to parse all the defined configurations
-     *
-     * @param command the task to schedule
+     * Immediately executes a process
      */
-    public void schedule(Runnable command) {
-        // schedule task (usually a long-running process)
-        logger.info("Starting main execution...");
+    public void execute(Runnable command) {
         executor.execute(command);
-
-        try {
-            // await for all scheduled tasks to complete
-            executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-
-        } catch (InterruptedException e) {
-            logger.warn("Interrupted", e);
-        }
     }
 
     /**

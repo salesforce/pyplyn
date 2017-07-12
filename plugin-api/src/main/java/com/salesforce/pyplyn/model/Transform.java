@@ -9,12 +9,14 @@
 package com.salesforce.pyplyn.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.reactivex.Flowable;
+import io.reactivex.Scheduler;
 
 import java.io.Serializable;
 import java.util.List;
 
 /**
- * Transform function interface
+ * Transforms interface
  * <p/>
  * <p/>All types that represent "transforms" should inherit this interface.
  * <p/>
@@ -28,5 +30,20 @@ import java.util.List;
  */
 @JsonIgnoreProperties("name")
 public interface Transform extends Serializable {
+
+    /**
+     * This method should implement the desired transformation and return the processed results
+     */
     List<List<TransformationResult>> apply(List<List<TransformationResult>> input);
+
+    /**
+     * Async transformation
+     * <p/>
+     * <p/> {@link Transform}s are observed on the specified {@link Scheduler}
+     */
+    default Flowable<List<List<TransformationResult>>> applyAsync(List<List<TransformationResult>> input, Scheduler scheduler) {
+        return Flowable.just(input)
+                .observeOn(scheduler)
+                .map(this::apply);
+    }
 }

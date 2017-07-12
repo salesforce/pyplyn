@@ -24,14 +24,16 @@ public class ETLMetadata {
     private final String messageCode;
     private final List<String> messages;
     private final Map<String, String> tags;
+    private final Object source;
 
     /**
      * Class constructor
      */
-    public ETLMetadata(String messageCode, List<String> messages, Map<String, String> tags) {
+    public ETLMetadata(String messageCode, List<String> messages, Map<String, String> tags, Object source) {
         this.messageCode = messageCode;
         this.messages = Collections.unmodifiableList(messages);
         this.tags = Collections.unmodifiableMap(tags);
+        this.source = source;
     }
 
     /**
@@ -53,5 +55,12 @@ public class ETLMetadata {
      */
     public Map<String, String> tags() {
         return tags;
+    }
+
+    /**
+     * @return the source data used to generate this datapoint
+     */
+    public Object source() {
+        return source;
     }
 }

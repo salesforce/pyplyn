@@ -26,6 +26,7 @@ public class ETLMetadataBuilder {
     private String messageCode;
     private List<String> messages;
     private Map<String, String> tags;
+    private Object source;
 
 
     /**
@@ -100,10 +101,15 @@ public class ETLMetadataBuilder {
         return this;
     }
 
+    public ETLMetadataBuilder addSource(Object source) {
+        this.source = source;
+        return this;
+    }
+
     /**
      * @return an immutable ETL metadata object
      */
     public ETLMetadata build() {
-        return new ETLMetadata(messageCode, messages, tags);
+        return new ETLMetadata(messageCode, messages, tags, source);
     }
 }

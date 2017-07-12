@@ -52,7 +52,7 @@ public class ConfigurationIntake {
      * @return List of all configuration files
      * @throws IOException on any errors when deserializing {@link Configuration}s
      */
-    public List<String> listOfConfigurations(String dir) throws IOException {
+    public List<String> getAllConfigurationsFromDisk(String dir) throws IOException {
         // nothing to do if configuration not passed
         if (isNull(dir)) {
             logger.warn("Null configuration dir passed, returning empty configuration list");

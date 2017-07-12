@@ -16,7 +16,7 @@ import org.testng.annotations.Test;
 
 import java.io.IOException;
 
-import static org.hamcrest.MatcherAssert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
 /**
@@ -76,7 +76,7 @@ public class AppConfigProviderTest {
      * Creates a fixture for {@link SerializationHelper}
      */
     public static SerializationHelper fixSerializationHelper(AppBootstrapFixtures fixtures) {
-        Injector injector = fixtures.freeze().injector();
+        Injector injector = fixtures.initializeFixtures().injector();
         return injector.getInstance(SerializationHelper.class);
     }
 }

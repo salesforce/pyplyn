@@ -9,14 +9,9 @@
 package com.salesforce.pyplyn.processor;
 
 import com.google.inject.Inject;
-import com.salesforce.pyplyn.client.AbstractRemoteClient;
-import com.salesforce.pyplyn.client.AuthenticatedEndpointProvider;
-import com.salesforce.pyplyn.client.UnauthorizedException;
 import com.salesforce.pyplyn.model.Extract;
 import com.salesforce.pyplyn.status.MeterType;
 import com.salesforce.pyplyn.status.SystemStatus;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 
 /**
@@ -40,13 +35,6 @@ public abstract class AbstractMeteredExtractProcessor<T extends Extract> impleme
      * @return the name used by the implementation of this class
      */
     protected abstract String meterName();
-
-    /**
-     * Override this method and return the implementing class' logger, to make the messages contextually relevant
-     *
-     * @return logger to use for reporting errors
-     */
-    protected abstract Logger logger();
 
     /**
      * Call this method when the operation has succeeded
@@ -74,25 +62,6 @@ public abstract class AbstractMeteredExtractProcessor<T extends Extract> impleme
      */
     protected void authenticationFailure() {
         systemStatus.meter(meterName(), MeterType.AuthenticationFailure).mark();
-    }
-
-    /**
-     * Returns the desired endpoint from the provider object, by id
-     *
-     * @return null if any errors occurred; also marks the authentication-failure and logs the exception
-     */
-    protected <T extends AbstractRemoteClient> T initializeEndpointOrLogFailure(String endpointId, AuthenticatedEndpointProvider<T> provider) {
-        try {
-            return provider.remoteClient(endpointId);
-
-        } catch (UnauthorizedException e) {
-            // log auth failure if this exception type was thrown
-            authenticationFailure();
-
-            logger().error("Unexpected authorization failure for endpoint {}: {}", endpointId, e.getMessage());
-            logger().debug("Unexpected authorization failure for endpoint " + endpointId + " [stacktrace]: ", e);
-            return null;
-        }
     }
 
     /**

@@ -11,8 +11,9 @@ package com.salesforce.pyplyn.duct.etl.extract.argus;
 import com.salesforce.argus.model.MetricResponse;
 import com.salesforce.argus.model.builder.MetricResponseBuilder;
 import com.salesforce.pyplyn.client.UnauthorizedException;
-import com.salesforce.pyplyn.duct.app.MetricDuct;
 import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapFixtures;
+import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapLatches;
+import com.salesforce.pyplyn.duct.etl.configuration.ConfigurationUpdateManager;
 import com.salesforce.pyplyn.model.TransformationResult;
 import com.salesforce.pyplyn.status.MeterType;
 import org.mockito.ArgumentCaptor;
@@ -24,10 +25,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.TreeMap;
 
-import static org.hamcrest.MatcherAssert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -54,15 +55,18 @@ public class ArgusExtractProcessorTest {
                 .runOnce();
 
         fixtures.oneArgusToRefocusConfiguration()
-                .argusClientCanNotAuth()
                 .callRealArgusExtractProcessor()
-                .freeze();
+                .argusClientCanNotAuth()
+                .initializeFixtures();
 
-        // init app and register executor for shutdown
-        MetricDuct app = fixtures.app();
+        // init app
+        ConfigurationUpdateManager manager = fixtures.configurationManager();
+
 
         // ACT
-        app.run();
+        manager.run();
+        fixtures.awaitUntilAllTasksHaveBeenProcessed(true);
+
 
         // ASSERT
         // since we had no real client, expecting ArgusExtractProcessor to have logged a failure
@@ -81,16 +85,17 @@ public class ArgusExtractProcessorTest {
         fixtures.appConfigMocks()
                 .runOnce();
 
-        fixtures.oneArgusToRefocusConfigurationWithDefaultValue(1.2d)
+        fixtures.oneArgusToRefocusConfigurationWithDefaultValueAndRepeatInterval(1.2d, 100)
                 .callRealArgusExtractProcessor()
                 .argusClientReturns(Collections.singletonList(response))
-                .freeze();
+                .initializeFixtures();
 
-        // init app and register executor for shutdown
-        MetricDuct app = fixtures.app();
+        ConfigurationUpdateManager manager = fixtures.configurationManager();
+
 
         // ACT
-        app.run();
+        manager.run();
+        fixtures.awaitUntilAllTasksHaveBeenProcessed(true);
 
         // ASSERT
         verify(fixtures.systemStatus(), times(1)).meter("Argus", MeterType.ExtractSuccess);
@@ -99,7 +104,7 @@ public class ArgusExtractProcessorTest {
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<List<TransformationResult>> dataCaptor = ArgumentCaptor.forClass(List.class);
-        verify(fixtures.refocusLoadProcessor()).execute(dataCaptor.capture(), any());
+        verify(fixtures.refocusLoadProcessor()).executeAsync(dataCaptor.capture(), any());
 
         List<TransformationResult> data = dataCaptor.getValue();
         assertThat(data, hasSize(1));
@@ -128,14 +133,18 @@ public class ArgusExtractProcessorTest {
                 .realMetricResponseCache()
                 .callRealArgusExtractProcessor()
                 .argusClientReturns(Collections.singletonList(response))
-                .freeze();
+                .initializeFixtures();
 
-        // init app and register executor for shutdown
-        MetricDuct app = fixtures.app();
-        app.run();
+        // init app
+        ConfigurationUpdateManager manager = fixtures.configurationManager();
+        manager.run();
+        fixtures.awaitUntilAllTasksHaveBeenProcessed(false);
+
 
         // ACT
-        app.run();
+        manager = fixtures.initConfigurationManager().configurationManager();
+        manager.run();
+        fixtures.awaitUntilAllTasksHaveBeenProcessed(true);
 
         // ASSERT
         verify(fixtures.systemStatus(), times(2)).meter("Argus", MeterType.ExtractSuccess);
@@ -152,25 +161,38 @@ public class ArgusExtractProcessorTest {
                 .build();
 
         // bootstrap
-        fixtures.appConfigMocks()
-                .runOnce();
+        try {
+            fixtures.enableLatches()
+                    .oneArgusToRefocusConfigurationWithCacheAndRepeatInterval(100)
+                    .realMetricResponseCache()
+                    .argusClientReturns(Collections.singletonList(response))
+                    .callRealArgusExtractProcessor()
+                    .initializeFixtures();
 
-        fixtures.oneArgusToRefocusConfigurationWithCache()
-                .realMetricResponseCache()
-                .callRealArgusExtractProcessor()
-                .argusClientReturns(Collections.singletonList(response))
-                .freeze();
+            // init app
+            ConfigurationUpdateManager manager = fixtures.configurationManager();
 
-        // init app and register executor for shutdown
-        MetricDuct app = fixtures.app();
 
-        // ACT
-        app.run();
+            // ACT
+            manager.run();
+            AppBootstrapLatches.holdOffBeforeExtractProcessorStarts().countDown();
 
-        // ASSERT
-        verify(fixtures.systemStatus(), times(1)).meter("Argus", MeterType.ExtractSuccess);
-        verify(fixtures.metricResponseCache(), times(2)).isCached("argus-metric");
-        verify(fixtures.metricResponseCache(), times(0)).cache(any(), anyLong());
+            // shutdown
+            AppBootstrapLatches.holdOffUntilExtractProcessorFinishes().await();
+            fixtures.shutdownHook().shutdown();
+
+            // wait for shutdown
+            AppBootstrapLatches.appHasShutdown().await();
+
+
+            // ASSERT
+            verify(fixtures.systemStatus(), times(1)).meter("Argus", MeterType.ExtractSuccess);
+            verify(fixtures.metricResponseCache(), times(2)).isCached("argus-metric");
+            verify(fixtures.metricResponseCache(), times(0)).cache(any(), anyLong());
+
+        } finally {
+            AppBootstrapLatches.release();
+        }
     }
 
     @Test
@@ -204,16 +226,19 @@ public class ArgusExtractProcessorTest {
         fixtures.appConfigMocks()
                 .runOnce();
 
-        fixtures.oneArgusToRefocusConfigurationWithDefaultValue(null)
+        fixtures.oneArgusToRefocusConfigurationWithDefaultValueAndRepeatInterval(null, 100)
                 .callRealArgusExtractProcessor()
                 .argusClientThrowsExceptionOnGetMetrics()
-                .freeze();
+                .initializeFixtures();
 
-        // init app and register executor for shutdown
-        MetricDuct app = fixtures.app();
+        // init app
+        ConfigurationUpdateManager manager = fixtures.configurationManager();
+
 
         // ACT
-        app.run();
+        manager.run();
+        fixtures.awaitUntilAllTasksHaveBeenProcessed(true);
+
 
         // ASSERT
         verify(fixtures.systemStatus(), times(1)).meter("Argus", MeterType.ExtractFailure);
@@ -223,21 +248,23 @@ public class ArgusExtractProcessorTest {
     /**
      * Executes a test that assumes a failure when a bad sample is returned from the Endpoint
      */
-    private void testWithMetricResponse(List<MetricResponse> response) throws UnauthorizedException {
+    private void testWithMetricResponse(List<MetricResponse> response) throws UnauthorizedException, InterruptedException {
         // ARRANGE
         // bootstrap
         fixtures.appConfigMocks()
                 .runOnce();
 
-        fixtures.oneArgusToRefocusConfigurationWithDefaultValue(null)
+        fixtures.oneArgusToRefocusConfigurationWithDefaultValueAndRepeatInterval(null, 100)
                 .callRealArgusExtractProcessor()
                 .argusClientReturns(response)
-                .freeze();
+                .initializeFixtures();
 
-        // init app and register executor for shutdown
-        MetricDuct app = fixtures.app();
+        // init app
+        ConfigurationUpdateManager manager = fixtures.configurationManager();
+
 
         // ACT
-        app.run();
+        manager.run();
+        fixtures.awaitUntilAllTasksHaveBeenProcessed(true);
     }
 }

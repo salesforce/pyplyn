@@ -18,7 +18,7 @@ import static java.util.Objects.nonNull;
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
  * @since 3.0
  */
-final public class CollectionUtils {
+public final class CollectionUtils {
 
     /**
      * Utilities classes should not be instantiated
@@ -72,7 +72,7 @@ final public class CollectionUtils {
      *   guarantees the return to be a {@link List} (empty if the input was null)
      */
     public static <T> List<T> immutableOrEmptyList(List<T> input) {
-        return Optional.ofNullable(input).map(Collections::unmodifiableList).orElse(Collections.emptyList());
+        return Optional.ofNullable(input).map(ArrayList::new).map(Collections::unmodifiableList).orElse(Collections.emptyList());
     }
 
     /**
@@ -80,7 +80,7 @@ final public class CollectionUtils {
      *   or returns null if input was null
      */
     public static <T> List<T> immutableListOrNull(List<T> input) {
-        return Optional.ofNullable(input).map(Collections::unmodifiableList).orElse(null);
+        return Optional.ofNullable(input).map(ArrayList::new).map(Collections::unmodifiableList).orElse(null);
     }
 
     /**
@@ -97,7 +97,7 @@ final public class CollectionUtils {
      *   guarantees the return to be a {@link Map} (empty if the input was null)
      */
     public static <K, V> Map<K, V> immutableOrEmptyMap(Map<K, V> input) {
-        return Optional.ofNullable(input).map(Collections::unmodifiableMap).orElse(Collections.emptyMap());
+        return Optional.ofNullable(input).map(HashMap::new).map(Collections::unmodifiableMap).orElse(Collections.emptyMap());
     }
 
     /**
@@ -105,7 +105,7 @@ final public class CollectionUtils {
      *   or returns null if input was null
      */
     public static <K, V> Map<K, V> immutableMapOrNull(Map<K, V> input) {
-        return Optional.ofNullable(input).map(Collections::unmodifiableMap).orElse(null);
+        return Optional.ofNullable(input).map(HashMap::new).map(Collections::unmodifiableMap).orElse(null);
     }
 
     /**
@@ -113,7 +113,7 @@ final public class CollectionUtils {
      *   guarantees the return to be a {@link SortedMap} (empty if the input was null)
      */
     public static <K, V> SortedMap<K, V> immutableSortedOrEmptyMap(SortedMap<K, V> input) {
-        return Optional.ofNullable(input).map(Collections::unmodifiableSortedMap).orElse(Collections.emptySortedMap());
+        return Optional.ofNullable(input).map(TreeMap::new).map(Collections::unmodifiableSortedMap).orElse(Collections.emptySortedMap());
     }
 
     /**
@@ -121,6 +121,22 @@ final public class CollectionUtils {
      *   or returns null if input was null
      */
     public static <K, V> SortedMap<K, V> immutableSortedMapOrNull(SortedMap<K, V> input) {
-        return Optional.ofNullable(input).map(Collections::unmodifiableSortedMap).orElse(null);
+        return Optional.ofNullable(input).map(TreeMap::new).map(Collections::unmodifiableSortedMap).orElse(null);
+    }
+
+    /**
+     * Creates an unmodifiable copy of the input list, iterated using its implementation specific order
+     *   guarantees the return to be a {@link List} (empty if the input was null)
+     */
+    public static <T> Set<T> immutableOrEmptySet(Set<T> input) {
+        return Optional.ofNullable(input).map(HashSet::new).map(Collections::unmodifiableSet).orElse(Collections.emptySet());
+    }
+
+    /**
+     * Creates an unmodifiable copy of the input list, iterated using its implementation specific order
+     *   or returns null if input was null
+     */
+    public static <T> Set<T> immutableSetOrNull(Set<T> input) {
+        return Optional.ofNullable(input).map(HashSet::new).map(Collections::unmodifiableSet).orElse(null);
     }
 }

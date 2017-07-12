@@ -43,7 +43,7 @@ import static java.util.Objects.nonNull;
  */
 public class Threshold implements Transform, Serializable {
     private static final long serialVersionUID = 1883668176362666986L;
-    private final static String MESSAGE_TEMPLATE = "%s threshold hit by %s, with value=%s %s %.2f";
+    private static final String MESSAGE_TEMPLATE = "%s threshold hit by %s, with value=%s %s %.2f";
 
 
     @JsonProperty

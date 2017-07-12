@@ -17,15 +17,13 @@ import org.mockito.MockitoAnnotations;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import java.io.FileNotFoundException;
 import java.util.Collections;
 
 import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.hamcrest.MatcherAssert.*;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import static org.testng.Assert.fail;
 
 /**
  * Test class
@@ -40,10 +38,18 @@ public class ClusterTest {
     AppConfig appConfig;
 
     @Mock
-    AppConfig.Hazelcast hazelcast;
+    AppConfig.Hazelcast hazelcastConfig;
+
+    ShutdownHook shutdownHook;
 
     @Mock
-    ShutdownHook shutdownHook;
+    private HazelcastInstance hazelcastInstance;
+
+    @Mock
+    private com.hazelcast.core.Cluster hazelcastCluster;
+
+    @Mock
+    private Member member;
 
 
     @BeforeMethod
@@ -51,8 +57,14 @@ public class ClusterTest {
         MockitoAnnotations.initMocks(this);
 
         // ARRANGE
-        doReturn(hazelcast).when(appConfig).hazelcast();
-        cluster = new Cluster(appConfig, shutdownHook);
+        shutdownHook = spy(new ShutdownHook());
+
+        doReturn(hazelcastConfig).when(appConfig).hazelcast();
+        cluster = spy(new Cluster(appConfig, shutdownHook));
+
+        doReturn(hazelcastInstance).when(cluster).initHazelcast();
+        doReturn(hazelcastCluster).when(hazelcastInstance).getCluster();
+        doReturn(Collections.singleton(member)).when(hazelcastCluster).getMembers();
     }
 
     @Test
@@ -65,83 +77,54 @@ public class ClusterTest {
     @Test
     public void testIsNotMaster() throws Exception {
         // ARRANGE
-        doReturn(true).when(hazelcast).isEnabled();
-        doReturn("config").when(hazelcast).config();
+        doReturn(true).when(hazelcastConfig).isEnabled();
+        doReturn(false).when(member).localMember();
 
-        MockedCluster cluster = new MockedCluster(appConfig, shutdownHook);
-        cluster.isMasterNode(false);
+        cluster.initialize();
 
         // ACT/ASSERT
-        assertThat("Expecting isMaster=false, when Hazelcast is running", cluster.isMaster(), equalTo(false));
+        assertThat("Expecting isEnabled=true, when Hazelcast is running", cluster.isEnabled(), equalTo(true));
+        assertThat("Expecting isMaster=false, when Hazelcast is running as slave", cluster.isMaster(), equalTo(false));
         verify(shutdownHook).registerOperation(any());
     }
 
     @Test
     public void testDistributedMap() throws Exception {
         // ACT/ASSERT
-        assertThat("Expecting null return, when Hazelcast is not running", cluster.distributedMap("map"), nullValue());
-        verify(shutdownHook, times(0)).registerOperation(any());
+        try {
+            cluster.distributedMap("map");
+            fail("Expecting this to fail");
+
+        } catch (NullPointerException e) {
+            verify(cluster, times(1)).guardAgainstInitializationFailures();
+        }
     }
 
     @Test
     public void testStartCluster() throws Exception {
         // ARRANGE
-        doReturn(true).when(hazelcast).isEnabled();
-        doReturn("config").when(hazelcast).config();
+        doReturn(true).when(hazelcastConfig).isEnabled();
 
         // ACT
-        cluster = new MockedCluster(appConfig, shutdownHook);
+        cluster.initialize();
 
         // ASSERT
-        assertThat(((MockedCluster) cluster).hazelcast, notNullValue());
+        verify(cluster).initHazelcast();
         verify(shutdownHook).registerOperation(any());
     }
-
 
     @Test
     public void testStopCluster() throws Exception {
         // ARRANGE
-        ShutdownHook shutdownHook = new ShutdownHook();
-        doReturn(true).when(hazelcast).isEnabled();
-        cluster = new MockedCluster(appConfig, shutdownHook);
+        doReturn(true).when(hazelcastConfig).isEnabled();
+        doReturn(false).when(member).localMember();
 
         // ACT
+        cluster.initialize();
         shutdownHook.shutdown();
 
         // ASSERT
-        assertThat(((MockedCluster) cluster).hazelcast, notNullValue());
-        verify(((MockedCluster) cluster).hazelcast).shutdown();
-    }
-
-
-    /**
-     * Mocked cluster class; we need to override init to avoid actually initializing the Hazelcast cluster
-     */
-    private static class MockedCluster extends Cluster {
-        private HazelcastInstance hazelcast;
-        private com.hazelcast.core.Cluster hazelCluster;
-        private Member member;
-
-        public MockedCluster(AppConfig appConfig, ShutdownHook shutdownHook) throws FileNotFoundException {
-            super(appConfig, shutdownHook);
-        }
-
-        /**
-         * NOTE: this is called from the parent constructor; be careful to avoid adding circular dependencies !
-         */
-        @Override
-        HazelcastInstance init(String configFile) throws FileNotFoundException {
-            hazelcast = mock(HazelcastInstance.class);
-            return hazelcast;
-        }
-
-        void isMasterNode(boolean masterNode) {
-            hazelCluster = mock(com.hazelcast.core.Cluster.class);
-            doReturn(hazelCluster).when(hazelcast).getCluster();
-
-            member = mock(Member.class);
-            doReturn(Collections.singleton(member)).when(hazelCluster).getMembers();
-            doReturn(masterNode).when(member).localMember();
-        }
+        verify(cluster).initHazelcast();
+        verify(hazelcastInstance).shutdown();
     }
 }

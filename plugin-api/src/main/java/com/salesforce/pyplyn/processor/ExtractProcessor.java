@@ -10,6 +10,7 @@ package com.salesforce.pyplyn.processor;
 
 import com.salesforce.pyplyn.model.Extract;
 import com.salesforce.pyplyn.model.TransformationResult;
+import io.reactivex.Flowable;
 
 import java.util.Collections;
 import java.util.List;
@@ -33,6 +34,17 @@ public interface ExtractProcessor<T extends Extract> extends Filterable<T, Extra
      */
     List<List<TransformationResult>> process(List<T> datasource);
 
+
+    /**
+     * This method leverages the {@link #process(List)} method to asynchronously)}
+     *   handle the dataset
+     *
+     * @param datasource dataset that should be processed
+     */
+    default Flowable<List<List<TransformationResult>>> processAsync(List<T> datasource) {
+        return Flowable.fromCallable(() -> process(datasource));
+    }
+
     /**
      * Default processor logic that will first filter the required data then process all valid entries
      *
@@ -45,5 +57,20 @@ public interface ExtractProcessor<T extends Extract> extends Filterable<T, Extra
         }
 
         return Collections.emptyList();
+    }
+
+    /**
+     * Default processor logic that will first filter the required data then process all valid entries
+     *   this method will handle async processing
+     *
+     * @return list of results or empty list when nothing was processed
+     */
+    default Flowable<List<List<TransformationResult>>> executeAsync(Extract... data) {
+        List<T> filtered = filter(data);
+        if (!filtered.isEmpty()) {
+            return processAsync(filtered);
+        }
+
+        return Flowable.empty();
     }
 }

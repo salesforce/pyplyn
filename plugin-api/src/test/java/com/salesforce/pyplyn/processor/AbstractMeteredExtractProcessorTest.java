@@ -15,7 +15,6 @@ import com.salesforce.pyplyn.status.SystemStatus;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -25,9 +24,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static org.hamcrest.MatcherAssert.*;
-import static org.hamcrest.Matchers.*;
-import static org.mockito.Mockito.any;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.*;
 
 /**
@@ -122,11 +120,6 @@ public class AbstractMeteredExtractProcessorTest {
         @Override
         protected String meterName() {
             return AbstractMeteredExtractProcessorImpl.class.getSimpleName();
-        }
-
-        @Override
-        protected Logger logger() {
-            return logger;
         }
 
         @Override

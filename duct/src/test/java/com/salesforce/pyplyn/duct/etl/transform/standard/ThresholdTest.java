@@ -18,7 +18,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static com.salesforce.pyplyn.duct.etl.transform.standard.Threshold.Type.LESS_THAN;
-import static org.hamcrest.MatcherAssert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
 /**

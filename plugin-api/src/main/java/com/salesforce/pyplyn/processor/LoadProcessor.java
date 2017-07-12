@@ -10,6 +10,8 @@ package com.salesforce.pyplyn.processor;
 
 import com.salesforce.pyplyn.model.Load;
 import com.salesforce.pyplyn.model.TransformationResult;
+import io.reactivex.Flowable;
+import io.reactivex.Observable;
 
 import java.util.Collections;
 import java.util.List;
@@ -35,6 +37,17 @@ public interface LoadProcessor<T extends Load> extends Filterable<T, Load> {
     List<Boolean> process(List<TransformationResult> data, List<T> destinations);
 
     /**
+     * This method leverages the {@link #process(List, List)} method to asynchronously)}
+     *   load data to the dataset
+     *
+     * @param data dataset that should be processed
+     * @param destinations where the data should be loaded to
+     */
+    default Flowable<List<Boolean>> processAsync(List<TransformationResult> data, List<T> destinations) {
+        return Flowable.fromCallable(() -> process(data, destinations));
+    }
+
+    /**
      * Default processor logic that will first filter the required data then process all valid entries
      *
      * @return list of results or empty list when nothing was processed
@@ -46,5 +59,20 @@ public interface LoadProcessor<T extends Load> extends Filterable<T, Load> {
         }
 
         return Collections.emptyList();
+    }
+
+    /**
+     * Default processor logic that will first filter the required data then process all valid entries
+     *   this method will handle async processing
+     *
+     * @return list of results or empty list when nothing was processed
+     */
+    default Flowable<List<Boolean>> executeAsync(List<TransformationResult> data, Load... destinations) {
+        List<T> filtered = filter(destinations);
+        if (!filtered.isEmpty()) {
+            return processAsync(data, filtered);
+        }
+
+        return Flowable.empty();
     }
 }
