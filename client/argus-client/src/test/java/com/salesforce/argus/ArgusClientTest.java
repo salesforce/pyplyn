@@ -26,7 +26,7 @@ import retrofit2.Response;
 import java.util.Collections;
 import java.util.List;
 
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.MatcherAssert.*;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.any;
@@ -75,7 +75,7 @@ public class ArgusClientTest {
         Response<ResponseBody> response = Response.success(mock(ResponseBody.class), headers);
 
         @SuppressWarnings("unchecked")
-        Call<ResponseBody> responseCall = (Call<ResponseBody>)mock(Call.class);
+        Call<ResponseBody> responseCall = mock(Call.class);
         doReturn(response).when(responseCall).execute();
 		doReturn(request).when(responseCall).request();
 		doReturn(responseCall).when(svc).auth(any());
@@ -95,7 +95,7 @@ public class ArgusClientTest {
 		Response<String> failedResponse = Response.error(400, fail);
 
 		@SuppressWarnings("unchecked")
-		Call<ResponseBody> responseCall = (Call<ResponseBody>)mock(Call.class);
+		Call<ResponseBody> responseCall = mock(Call.class);
 		doReturn(failedResponse).when(responseCall).execute();
 		doReturn(request).when(responseCall).request();
 		doReturn(responseCall).when(svc).auth(any());
@@ -117,7 +117,7 @@ public class ArgusClientTest {
         Response<List<MetricResponse>> response = Response.success(Collections.singletonList(expectedMetric));
 
         @SuppressWarnings("unchecked")
-        Call<List<MetricResponse>> responseCall = (Call<List<MetricResponse>>)mock(Call.class);
+        Call<List<MetricResponse>> responseCall = mock(Call.class);
         doReturn(response).when(responseCall).execute();
 		doReturn(request).when(responseCall).request();
 		doReturn(responseCall).when(svc).getMetrics(any(), any());
@@ -143,7 +143,7 @@ public class ArgusClientTest {
     	
     	// ACT
     	@SuppressWarnings("unchecked")
-		Call<AlertObject>responseCall = (Call<AlertObject>)mock(Call.class);
+		Call<AlertObject>responseCall = mock(Call.class);
     	doReturn(response).when(responseCall).execute();
 		doReturn(request).when(responseCall).request();
 		doReturn(responseCall).when(svc).createAlert(any(), any());
@@ -164,7 +164,7 @@ public class ArgusClientTest {
     	
     	// ACT
     	@SuppressWarnings("unchecked")
-		Call<AlertObject>responseCall = (Call<AlertObject>)mock(Call.class);
+		Call<AlertObject>responseCall = mock(Call.class);
     	doReturn(response).when(responseCall).execute();
 		doReturn(request).when(responseCall).request();
 		doReturn(responseCall).when(svc).updateAlert(any(), anyLong(), any());
@@ -175,22 +175,60 @@ public class ArgusClientTest {
     }
     
     @Test
-    public void loadAlertsByOwner() throws Exception {
-    	// ARRANGE
-    	String ownerName = "cceDevils";
-    	AlertObject alert = new AlertObjectBuilder().withOwnerName(ownerName).build();
-    	Response<List<AlertObject>> response = Response.success(Collections.singletonList(alert));
-    	
-    	// ACT
-    	@SuppressWarnings("unchecked")
-        Call<List<AlertObject>> responseCall = (Call<List<AlertObject>>)mock(Call.class);
+    public void loadAlert() throws Exception {
+        // ARRANGE
+        long id = LONG_ID;
+        AlertObject alertObject = new AlertObjectBuilder().withId(id).build();
+        Response<AlertObject> response = Response.success(alertObject);
+        
+        // ACT
+        @SuppressWarnings("unchecked")
+        Call<AlertObject> responseCall = mock(Call.class);
         doReturn(response).when(responseCall).execute();
+        doReturn(request).when(responseCall).request();
+        doReturn(responseCall).when(svc).getAlert(any(), anyLong());
+        
+        // ASSERT
+        AlertObject alert = argus.loadAlert(id);
+        assertThat(alert.id(), is(id)); // Findbugs: PRMC_POSSIBLY_REDUNDANT_METHOD_CALLS - IGNORE
+    }
+
+	@Test
+	public void loadAlertsByOwner() throws Exception {
+		// ARRANGE
+		String ownerName = "cceDevils";
+		AlertObject alert = new AlertObjectBuilder().withOwnerName(ownerName).build();
+		Response<List<AlertObject>> response = Response.success(Collections.singletonList(alert));
+
+		// ACT
+		@SuppressWarnings("unchecked")
+		Call<List<AlertObject>> responseCall = (Call<List<AlertObject>>)mock(Call.class);
+		doReturn(response).when(responseCall).execute();
 		doReturn(request).when(responseCall).request();
 		doReturn(responseCall).when(svc).getAlertsByOwner(any(), anyString());
+
+		// ASSERT
+		List<AlertObject> alerts = argus.loadAlertsByOwner(ownerName);
+		assertThat(alerts.get(0).ownerName(), is(ownerName));
+	}
+    
+    @Test
+    public void loadAlertMetadataByOwner() throws Exception {
+        // ARRANGE
+        String ownerName = "cceDevils";
+        AlertObject alert = new AlertObjectBuilder().withOwnerName(ownerName).build();
+        Response<List<AlertObject>> response = Response.success(Collections.singletonList(alert));
+        
+        // ACT
+        @SuppressWarnings("unchecked")
+        Call<List<AlertObject>> responseCall = mock(Call.class);
+        doReturn(response).when(responseCall).execute();
+        doReturn(request).when(responseCall).request();
+        doReturn(responseCall).when(svc).getAlertsByOwner(any(), anyString());
         
         // ASSERT
         List<AlertObject> alerts = argus.loadAlertsByOwner(ownerName);
-    	assertThat(alerts.get(0).ownerName(), is(ownerName));
+        assertThat(alerts.get(0).ownerName(), is(ownerName));
     }
     
     @Test
@@ -201,7 +239,7 @@ public class ArgusClientTest {
     	
     	// ACT
     	@SuppressWarnings("unchecked")
-		Call<Void>responseCall = (Call<Void>)mock(Call.class);
+		Call<Void>responseCall = mock(Call.class);
     	doReturn(response).when(responseCall).execute();
 		doReturn(request).when(responseCall).request();
 		doReturn(responseCall).when(svc).deleteAlert(any(), anyLong());
@@ -222,7 +260,7 @@ public class ArgusClientTest {
     	
     	// ACT
     	@SuppressWarnings("unchecked")
-		Call<List<TriggerObject>>responseCall = (Call<List<TriggerObject>>)mock(Call.class);
+		Call<List<TriggerObject>>responseCall = mock(Call.class);
     	doReturn(response).when(responseCall).execute();
 		doReturn(request).when(responseCall).request();
 		doReturn(responseCall).when(svc).getTriggersForAlert(any(), anyLong());
@@ -244,7 +282,7 @@ public class ArgusClientTest {
     	
     	// ACT
     	@SuppressWarnings("unchecked")
-		Call<List<TriggerObject>>responseCall = (Call<List<TriggerObject>>)mock(Call.class);
+		Call<List<TriggerObject>>responseCall = mock(Call.class);
     	doReturn(response).when(responseCall).execute();
 		doReturn(request).when(responseCall).request();
 		doReturn(responseCall).when(svc).createTrigger(any(), anyLong(), any());
@@ -266,7 +304,7 @@ public class ArgusClientTest {
     	
     	// ACT
     	@SuppressWarnings("unchecked")
-		Call<TriggerObject>responseCall = (Call<TriggerObject>)mock(Call.class);
+		Call<TriggerObject>responseCall = mock(Call.class);
     	doReturn(response).when(responseCall).execute();
 		doReturn(request).when(responseCall).request();
 		doReturn(responseCall).when(svc).updateTrigger(any(), anyLong(), anyLong(), any());
@@ -286,7 +324,7 @@ public class ArgusClientTest {
     	
     	// ACT
     	@SuppressWarnings("unchecked")
-		Call<Void>responseCall = (Call<Void>)mock(Call.class);
+		Call<Void>responseCall = mock(Call.class);
     	doReturn(response).when(responseCall).execute();
 		doReturn(request).when(responseCall).request();
 		doReturn(responseCall).when(svc).deleteTrigger(any(), anyLong(), anyLong());
@@ -307,7 +345,7 @@ public class ArgusClientTest {
     	
     	// ACT
     	@SuppressWarnings("unchecked")
-		Call<NotificationObject>responseCall = (Call<NotificationObject>)mock(Call.class);
+		Call<NotificationObject>responseCall = mock(Call.class);
     	doReturn(response).when(responseCall).execute();
 		doReturn(request).when(responseCall).request();
 		doReturn(responseCall).when(svc).getNotificationsForAlert(any(), anyLong());
@@ -327,7 +365,7 @@ public class ArgusClientTest {
     	
     	// ACT
     	@SuppressWarnings("unchecked")
-		Call<NotificationObject>responseCall = (Call<NotificationObject>)mock(Call.class);
+		Call<NotificationObject>responseCall = mock(Call.class);
     	doReturn(response).when(responseCall).execute();
 		doReturn(request).when(responseCall).request();
 		doReturn(responseCall).when(svc).getNotificationsForAlert(any(), anyLong());
@@ -347,7 +385,7 @@ public class ArgusClientTest {
     	
     	// ACT
     	@SuppressWarnings("unchecked")
-		Call<NotificationObject>responseCall = (Call<NotificationObject>)mock(Call.class);
+		Call<NotificationObject>responseCall = mock(Call.class);
     	doReturn(response).when(responseCall).execute();
 		doReturn(request).when(responseCall).request();
 		doReturn(responseCall).when(svc).createNotification(any(), anyLong(), any());
@@ -369,7 +407,7 @@ public class ArgusClientTest {
     	
     	// ACT
     	@SuppressWarnings("unchecked")
-		Call<NotificationObject>responseCall = (Call<NotificationObject>)mock(Call.class);
+		Call<NotificationObject>responseCall = mock(Call.class);
     	doReturn(response).when(responseCall).execute();
 		doReturn(request).when(responseCall).request();
 		doReturn(responseCall).when(svc).updateNotification(any(), anyLong(), anyLong(), any());
@@ -392,7 +430,7 @@ public class ArgusClientTest {
     	
     	// ACT
     	@SuppressWarnings("unchecked")
-		Call<NotificationObject>responseCall = (Call<NotificationObject>)mock(Call.class);
+		Call<NotificationObject>responseCall = mock(Call.class);
     	doReturn(response).when(responseCall).execute();
 		doReturn(request).when(responseCall).request();
 		doReturn(responseCall).when(svc).deleteNotification(any(), anyLong(), anyLong());
@@ -414,7 +452,7 @@ public class ArgusClientTest {
     	
     	// ACT
     	@SuppressWarnings("unchecked")
-		Call<NotificationObject>responseCall = (Call<NotificationObject>)mock(Call.class);
+		Call<NotificationObject>responseCall = mock(Call.class);
     	doReturn(response).when(responseCall).execute();
 		doReturn(request).when(responseCall).request();
 		doReturn(responseCall).when(svc).attachTriggerToNotification(any(), anyLong(), anyLong(), anyLong());
@@ -438,7 +476,7 @@ public class ArgusClientTest {
     	
     	// ACT
     	@SuppressWarnings("unchecked")
-		Call<NotificationObject>responseCall = (Call<NotificationObject>)mock(Call.class);
+		Call<NotificationObject>responseCall = mock(Call.class);
     	doReturn(response).when(responseCall).execute();
 		doReturn(request).when(responseCall).request();
 		doReturn(responseCall).when(svc).removeTriggerFromNotification(any(), anyLong(), anyLong(), anyLong());
@@ -457,7 +495,7 @@ public class ArgusClientTest {
     	
     	// ACT
     	@SuppressWarnings("unchecked")
-		Call<NotificationObject>responseCall = (Call<NotificationObject>)mock(Call.class);
+		Call<NotificationObject>responseCall = mock(Call.class);
     	doReturn(response).when(responseCall).execute();
 		doReturn(request).when(responseCall).request();
 		doReturn(responseCall).when(svc).getAllDashboards(any());
@@ -477,7 +515,7 @@ public class ArgusClientTest {
     	
     	// ACT
     	@SuppressWarnings("unchecked")
-		Call<List<DashboardObject>>responseCall = (Call<List<DashboardObject>>)mock(Call.class);
+		Call<List<DashboardObject>>responseCall = mock(Call.class);
     	doReturn(response).when(responseCall).execute();
 		doReturn(request).when(responseCall).request();
 		doReturn(responseCall).when(svc).getDashboardByName(any(), anyString(), anyString());
@@ -498,7 +536,7 @@ public class ArgusClientTest {
     	
     	// ACT
     	@SuppressWarnings("unchecked")
-		Call<DashboardObject>responseCall = (Call<DashboardObject>)mock(Call.class);
+		Call<DashboardObject>responseCall = mock(Call.class);
     	doReturn(response).when(responseCall).execute();
 		doReturn(request).when(responseCall).request();
 		doReturn(responseCall).when(svc).createDashboard(any(), any());
@@ -520,7 +558,7 @@ public class ArgusClientTest {
     	
     	// ACT
     	@SuppressWarnings("unchecked")
-		Call<DashboardObject>responseCall = (Call<DashboardObject>)mock(Call.class);
+		Call<DashboardObject>responseCall = mock(Call.class);
     	doReturn(response).when(responseCall).execute();
 		doReturn(request).when(responseCall).request();
 		doReturn(responseCall).when(svc).updateDashboard(any(), anyLong(), any());
@@ -543,7 +581,7 @@ public class ArgusClientTest {
     	
     	// ACT
     	@SuppressWarnings("unchecked")
-		Call<DashboardObject>responseCall = (Call<DashboardObject>)mock(Call.class);
+		Call<DashboardObject>responseCall = mock(Call.class);
     	doReturn(response).when(responseCall).execute();
 		doReturn(request).when(responseCall).request();
 		doReturn(responseCall).when(svc).deleteDashboard(any(), anyLong());
@@ -562,7 +600,7 @@ public class ArgusClientTest {
     	
     	// ACT
     	@SuppressWarnings("unchecked")
-		Call<DashboardObject>responseCall = (Call<DashboardObject>)mock(Call.class);
+		Call<DashboardObject>responseCall = mock(Call.class);
     	doReturn(response).when(responseCall).execute();
 		doReturn(request).when(responseCall).request();
 		doReturn(responseCall).when(svc).getDashboardById(any(), anyLong());
@@ -579,7 +617,7 @@ public class ArgusClientTest {
         Response<ResponseBody> response = Response.error(401, errorBody);
 
         @SuppressWarnings("unchecked")
-        Call<ResponseBody> responseCall = (Call<ResponseBody>)mock(Call.class);
+        Call<ResponseBody> responseCall = mock(Call.class);
         doReturn(response).when(responseCall).execute();
 		doReturn(request).when(responseCall).request();
 		doReturn(responseCall).when(svc).auth(any());
@@ -596,7 +634,7 @@ public class ArgusClientTest {
         Response<ResponseBody> response = Response.error(405, errorBody);
 
         @SuppressWarnings("unchecked")
-        Call<ResponseBody> responseCall = (Call<ResponseBody>)mock(Call.class);
+        Call<ResponseBody> responseCall = mock(Call.class);
         doReturn(response).when(responseCall).execute();
 		doReturn(request).when(responseCall).request();
 		doReturn(responseCall).when(svc).auth(any());

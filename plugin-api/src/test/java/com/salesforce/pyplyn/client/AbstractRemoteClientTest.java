@@ -66,7 +66,7 @@ public class AbstractRemoteClientTest {
 
         // prepare a call mock
         @SuppressWarnings("unchecked")
-        Call<String> call = (Call<String>) mock(Call.class);
+        Call<String> call = mock(Call.class);
         doReturn(call).when(svc).get();
         doReturn(request).when(call).request();
         this.call = call;

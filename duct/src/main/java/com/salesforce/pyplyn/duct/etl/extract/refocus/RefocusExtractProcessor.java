@@ -67,6 +67,7 @@ public class RefocusExtractProcessor extends AbstractMeteredExtractProcessor<Ref
     /**
      * Processes a list of Refocus expressions and returns their results
      */
+    @Override
     public List<List<TransformationResult>> process(List<Refocus> data) {
         return data.stream()
                 // group by Refocus endpoint
@@ -242,7 +243,7 @@ public class RefocusExtractProcessor extends AbstractMeteredExtractProcessor<Ref
 
     /**
      * Returns a previously initialized client for the specified endpoint
-     *   or initializes one and returns it
+     * or initializes one and returns it
      */
     public RefocusClient client(String endpointId) {
         return endpoints.computeIfAbsent(endpointId, key -> {
@@ -267,7 +268,7 @@ public class RefocusExtractProcessor extends AbstractMeteredExtractProcessor<Ref
 
     /**
      * @return a {@link Cache} for the corresponding {@link ArgusClient}
-     *         initializes the cache if not previously
+     * initializes the cache if not previously
      */
     public Cache<Sample> cache(RefocusClient client) {
         return Optional.ofNullable(caches.get(client)).orElseThrow(() ->

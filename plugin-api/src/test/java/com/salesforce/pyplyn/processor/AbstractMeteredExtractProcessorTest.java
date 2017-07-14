@@ -45,7 +45,7 @@ public class AbstractMeteredExtractProcessorTest {
         MockitoAnnotations.initMocks(this);
 
         // ARRANGE
-        processor = spy(new AbstractMeteredExtractProcessorImpl(this.logger));
+        processor = spy(new AbstractMeteredExtractProcessorImpl());
     }
 
     @Test
@@ -98,11 +98,6 @@ public class AbstractMeteredExtractProcessorTest {
      * Implementation class
      */
     private static class AbstractMeteredExtractProcessorImpl extends AbstractMeteredExtractProcessor<ExtractImpl> {
-        final Logger logger;
-
-        public AbstractMeteredExtractProcessorImpl(Logger logger) {
-            this.logger = logger;
-        }
 
         @Override
         public List<List<TransformationResult>> process(List<ExtractImpl> datasource) {

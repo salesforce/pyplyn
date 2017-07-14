@@ -68,11 +68,17 @@ public interface ArgusService {
 
     @GET("alerts")
     Call<List<AlertObject>> getAlertsByOwner(@Header("Cookie") String cookie, @Query("ownername") String ownername);
+    
+    @GET("alerts/meta")
+    Call<List<AlertObject>> getAlertMetadataByOwner(@Header("Cookie") String cookie, @Query("ownername") String ownername);
 
     @POST("alerts")
     @Headers("Content-Type: application/json")
     Call<AlertObject> createAlert(@Header("Cookie") String cookie, @Body AlertObject alert);
 
+    @GET("alerts/{id}")
+    Call<AlertObject> getAlert(@Header("Cookie") String cookie, @Path("id") long id);
+    
     @PUT("alerts/{id}")
     Call<AlertObject> updateAlert(@Header("Cookie") String cookie, @Path("id") long id, @Body AlertObject alert);
 

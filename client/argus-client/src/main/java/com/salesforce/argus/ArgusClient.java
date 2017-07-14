@@ -110,6 +110,13 @@ public class ArgusClient extends AbstractRemoteClient<ArgusService> {
         Preconditions.checkNotNull(alert, "Alert should not be null");
         return executeAndRetrieveBody(svc().updateAlert(cookie, alert.id(), alert), null);
     }
+    
+    /**
+     * Get an existing alert by ID.
+     */
+    public AlertObject loadAlert(long id) throws UnauthorizedException {
+        return executeAndRetrieveBody(svc().getAlert(cookie, id), null);
+    }
 
     /**
      * Get all alerts owned by the target user
@@ -122,6 +129,19 @@ public class ArgusClient extends AbstractRemoteClient<ArgusService> {
         // The Argus API does not currently respect just the ownername filter and returns all visible alerts so as
         // a workaround filter it here.
         return executeAndRetrieveBody(svc().getAlertsByOwner(cookie, ownerName), Collections.emptyList())
+                        .stream().filter(a -> ownerName.equals(a.ownerName())).collect(Collectors.toList());
+    }
+    
+    /**
+     * Load alert metadata for the specified user.
+     * <p/>
+     * WARNING: Use of this method is highly discouraged since the instances of {@link AlertObject} returned
+     * do not have their expression field populated. This method exists because it returns more quickly than
+     * {@link #loadAlertsByOwner(String)}, which should be used instead wherever possible. 
+     */
+    public List<AlertObject> loadAlertsMetadataByOwner(String ownerName) throws UnauthorizedException {
+        Preconditions.checkNotNull(ownerName, "Owner name should not be null");
+        return executeAndRetrieveBody(svc().getAlertMetadataByOwner(cookie, ownerName), Collections.emptyList())
                         .stream().filter(a -> ownerName.equals(a.ownerName())).collect(Collectors.toList());
     }
 

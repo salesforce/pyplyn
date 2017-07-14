@@ -31,7 +31,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -115,7 +115,7 @@ public class RefocusClientTest {
         Response<AuthResponse> response = Response.success(authResponse);
 
         @SuppressWarnings("unchecked")
-        Call<AuthResponse> responseCall = (Call<AuthResponse>)mock(Call.class);
+        Call<AuthResponse> responseCall = mock(Call.class);
         doReturn(response).when(responseCall).execute();
         doReturn(request).when(responseCall).request();
         doReturn(responseCall).when(svc).authenticate(any());
@@ -139,7 +139,7 @@ public class RefocusClientTest {
         Response<AuthResponse> failedResponse = Response.error(400, fail);
 
         @SuppressWarnings("unchecked")
-        Call<ResponseBody> responseCall = (Call<ResponseBody>)mock(Call.class);
+        Call<ResponseBody> responseCall = mock(Call.class);
         doReturn(failedResponse).when(responseCall).execute();
         doReturn(request).when(responseCall).request();
         doReturn(responseCall).when(svc).authenticate(any());
@@ -164,7 +164,7 @@ public class RefocusClientTest {
         Response<ResponseBody> response = Response.success(okBody);
 
         @SuppressWarnings("unchecked")
-        Call<ResponseBody> responseCall = (Call<ResponseBody>)mock(Call.class);
+        Call<ResponseBody> responseCall = mock(Call.class);
         doReturn(response).when(responseCall).execute();
         doReturn(request).when(responseCall).request();
         doReturn(responseCall).when(svc).upsertSamplesBulk(any(), any());
@@ -198,7 +198,7 @@ public class RefocusClientTest {
         Response<ResponseBody> response = Response.error(400, errorBody);
 
         @SuppressWarnings("unchecked")
-        Call<ResponseBody> responseCall = (Call<ResponseBody>)mock(Call.class);
+        Call<ResponseBody> responseCall = mock(Call.class);
         doReturn(response).when(responseCall).execute();
         doReturn(request).when(responseCall).request();
         doReturn(responseCall).when(svc).upsertSamplesBulk(any(), any());
@@ -215,7 +215,7 @@ public class RefocusClientTest {
         Response<List<Subject>> response = Response.success(responseData);
 
         @SuppressWarnings("unchecked")
-        Call<List<Subject>> responseCall = (Call<List<Subject>>)mock(Call.class);
+        Call<List<Subject>> responseCall = mock(Call.class);
         doReturn(response).when(responseCall).execute();
         doReturn(request).when(responseCall).request();
         doReturn(responseCall).when(svc).getSubjects(any(), any());
@@ -236,7 +236,7 @@ public class RefocusClientTest {
         Response<List<Subject>> response = Response.error(400, errorBody);
 
         @SuppressWarnings("unchecked")
-        Call<List<Subject>> responseCall = (Call<List<Subject>>)mock(Call.class);
+        Call<List<Subject>> responseCall = mock(Call.class);
         doReturn(response).when(responseCall).execute();
         doReturn(request).when(responseCall).request();
         doReturn(responseCall).when(svc).getSubjects(any(), any());
@@ -254,7 +254,7 @@ public class RefocusClientTest {
         Response<Sample> response = Response.success(sample);
 
         @SuppressWarnings("unchecked")
-        Call<ResponseBody> responseCall = (Call<ResponseBody>) mock(Call.class);
+        Call<ResponseBody> responseCall = mock(Call.class);
         doReturn(response).when(responseCall).execute();
         doReturn(request).when(responseCall).request();
         doReturn(responseCall).when(svc).getSample(any(), any(), anyList());
@@ -274,7 +274,7 @@ public class RefocusClientTest {
         Response<List<Sample>> response = Response.success(Collections.singletonList(sample));
 
         @SuppressWarnings("unchecked")
-        Call<ResponseBody> responseCall = (Call<ResponseBody>) mock(Call.class);
+        Call<ResponseBody> responseCall = mock(Call.class);
         doReturn(response).when(responseCall).execute();
         doReturn(request).when(responseCall).request();
         doReturn(responseCall).when(svc).getSample(any(), anyString());
@@ -295,7 +295,7 @@ public class RefocusClientTest {
         Response<List<Sample>> response = Response.success(Collections.singletonList(sample));
 
         @SuppressWarnings("unchecked")
-        Call<List<Sample>> responseCall = (Call<List<Sample>>)mock(Call.class);
+        Call<List<Sample>> responseCall = mock(Call.class);
         doReturn(response).when(responseCall).execute();
         doReturn(request).when(responseCall).request();
         doReturn(responseCall).when(svc).upsertSamplesBulk(any(), any());
@@ -313,7 +313,7 @@ public class RefocusClientTest {
         Response<Sample> response = Response.success(sample);
 
         @SuppressWarnings("unchecked")
-        Call<Sample> responseCall = (Call<Sample>)mock(Call.class);
+        Call<Sample> responseCall = mock(Call.class);
         doReturn(response).when(responseCall).execute();
         doReturn(request).when(responseCall).request();
         doReturn(responseCall).when(svc).deleteSample(any(), anyString());
@@ -331,7 +331,7 @@ public class RefocusClientTest {
         Response<List<Subject>> response = Response.success(Collections.singletonList(subject));
 
         @SuppressWarnings("unchecked")
-        Call<List<Subject>> responseCall = (Call<List<Subject>>)mock(Call.class);
+        Call<List<Subject>> responseCall = mock(Call.class);
         doReturn(response).when(responseCall).execute();
         doReturn(request).when(responseCall).request();
         doReturn(responseCall).when(svc).getSubjects(any(), any());
@@ -354,7 +354,7 @@ public class RefocusClientTest {
         Response<Subject> response = Response.success(subject);
 
         @SuppressWarnings("unchecked")
-        Call<Subject> responseCall = (Call<Subject>)mock(Call.class);
+        Call<Subject> responseCall = mock(Call.class);
         doReturn(response).when(responseCall).execute();
         doReturn(request).when(responseCall).request();
         doReturn(responseCall).when(svc).getSubject(any(), anyString(), anyList());
@@ -374,7 +374,7 @@ public class RefocusClientTest {
         Response<Subject> response = Response.success(subject);
 
         @SuppressWarnings("unchecked")
-        Call<Subject> responseCall = (Call<Subject>)mock(Call.class);
+        Call<Subject> responseCall = mock(Call.class);
         doReturn(response).when(responseCall).execute();
         doReturn(request).when(responseCall).request();
         doReturn(responseCall).when(svc).getSubjectHierarchy(any(), anyString(), anyString());
@@ -395,7 +395,7 @@ public class RefocusClientTest {
         Response<Subject> response = Response.error(400, errorBody);
 
         @SuppressWarnings("unchecked")
-        Call<Subject> responseCall = (Call<Subject>)mock(Call.class);
+        Call<Subject> responseCall = mock(Call.class);
         doReturn(response).when(responseCall).execute();
         doReturn(request).when(responseCall).request();
         doReturn(responseCall).when(svc).getSubject(any(), anyString(), anyList());
@@ -414,7 +414,7 @@ public class RefocusClientTest {
         Response<Subject> response = Response.success(subject);
 
         @SuppressWarnings("unchecked")
-        Call<Subject> responseCall = (Call<Subject>)mock(Call.class);
+        Call<Subject> responseCall = mock(Call.class);
         doReturn(response).when(responseCall).execute();
         doReturn(request).when(responseCall).request();
         doReturn(responseCall).when(svc).postSubject(any(), any());
@@ -434,7 +434,7 @@ public class RefocusClientTest {
         Response<Subject> response = Response.error(400, errorBody);
 
         @SuppressWarnings("unchecked")
-        Call<Subject> responseCall = (Call<Subject>)mock(Call.class);
+        Call<Subject> responseCall = mock(Call.class);
         doReturn(response).when(responseCall).execute();
         doReturn(request).when(responseCall).request();
         doReturn(responseCall).when(svc).postSubject(any(), any());
@@ -459,7 +459,7 @@ public class RefocusClientTest {
         Response<Subject> response = Response.success(subject);
 
         @SuppressWarnings("unchecked")
-        Call<Subject> responseCall = (Call<Subject>)mock(Call.class);
+        Call<Subject> responseCall = mock(Call.class);
         doReturn(response).when(responseCall).execute();
         doReturn(request).when(responseCall).request();
         doReturn(responseCall).when(svc).patchSubject(any(), anyString(), any());
@@ -480,7 +480,7 @@ public class RefocusClientTest {
         Response<Subject> response = Response.error(400, errorBody);
 
         @SuppressWarnings("unchecked")
-        Call<Subject> responseCall = (Call<Subject>)mock(Call.class);
+        Call<Subject> responseCall = mock(Call.class);
         doReturn(response).when(responseCall).execute();
         doReturn(request).when(responseCall).request();
         doReturn(responseCall).when(svc).patchSubject(any(), any(), any());
@@ -506,7 +506,7 @@ public class RefocusClientTest {
     	
     	// ACT
     	@SuppressWarnings("unchecked")
-		Call<Aspect>responseCall = (Call<Aspect>)mock(Call.class);
+		Call<Aspect>responseCall = mock(Call.class);
     	doReturn(response).when(responseCall).execute();
         doReturn(request).when(responseCall).request();
         doReturn(responseCall).when(svc).getAspects(any(), any());
@@ -525,7 +525,7 @@ public class RefocusClientTest {
     	
     	// ACT
     	@SuppressWarnings("unchecked")
-		Call<Aspect>responseCall = (Call<Aspect>)mock(Call.class);
+		Call<Aspect>responseCall = mock(Call.class);
     	doReturn(response).when(responseCall).execute();
         doReturn(request).when(responseCall).request();
         doReturn(responseCall).when(svc).getAspect(any(), anyString(), anyList());
@@ -544,7 +544,7 @@ public class RefocusClientTest {
     	
     	// ACT
     	@SuppressWarnings("unchecked")
-		Call<Aspect>responseCall = (Call<Aspect>)mock(Call.class);
+		Call<Aspect>responseCall = mock(Call.class);
     	doReturn(response).when(responseCall).execute();
         doReturn(request).when(responseCall).request();
         doReturn(responseCall).when(svc).postAspect(any(), any());
@@ -562,7 +562,7 @@ public class RefocusClientTest {
     	
     	// ACT
     	@SuppressWarnings("unchecked")
-		Call<Aspect>responseCall = (Call<Aspect>)mock(Call.class);
+		Call<Aspect>responseCall = mock(Call.class);
     	doReturn(response).when(responseCall).execute();
         doReturn(request).when(responseCall).request();
         doReturn(responseCall).when(svc).patchAspect(any(), anyString(), any());
