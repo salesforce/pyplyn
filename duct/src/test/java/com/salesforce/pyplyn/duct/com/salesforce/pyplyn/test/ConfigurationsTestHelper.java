@@ -9,12 +9,21 @@
 package com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test;
 
 import com.salesforce.pyplyn.configuration.Configuration;
-import com.salesforce.pyplyn.duct.etl.extract.argus.Argus;
-import com.salesforce.pyplyn.duct.etl.extract.refocus.Refocus;
+import com.salesforce.pyplyn.configuration.ImmutableConfiguration;
+import com.salesforce.pyplyn.duct.etl.extract.argus.ImmutableArgus;
+import com.salesforce.pyplyn.duct.etl.extract.refocus.ImmutableRefocus;
 import com.salesforce.pyplyn.duct.etl.transform.standard.*;
 import com.salesforce.pyplyn.model.Extract;
 import com.salesforce.pyplyn.model.Load;
+import com.salesforce.pyplyn.model.ThresholdType;
 import com.salesforce.pyplyn.model.Transform;
+
+import java.util.List;
+
+import static com.salesforce.pyplyn.model.ThresholdType.GREATER_THAN;
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 
 /**
  * Test helper that creates a full {@link com.salesforce.pyplyn.configuration.Configuration} object
@@ -40,30 +49,30 @@ public class ConfigurationsTestHelper {
                                                           String argusExpression, String argusName,
                                                           String refocusSubject, String refocusAspect,
                                                           long repeatIntervalMillis, boolean disabled) {
-        Extract[] extracts = new Extract[]{
-                new Argus(argusEndpoint, argusExpression, argusName, 1, 2d),
-                new Refocus(refocusEndpoint, refocusSubject, null, refocusAspect, 1, 2d)
-        };
+        List<Extract> extracts = asList(
+                ImmutableArgus.of(argusEndpoint, argusExpression, argusName, 1, 2d),
+                ImmutableRefocus.of(refocusEndpoint, refocusSubject, null, refocusAspect, 1, 2d)
+        );
 
-        Transform[] transform = createThresholdTransforms("metric");
+        List<Transform> transform = createThresholdTransforms("metric");
 
-        Load[] load = new Load[]{
-                new com.salesforce.pyplyn.duct.etl.load.refocus.Refocus(refocusEndpoint, refocusSubject, refocusAspect,
-                        "defaultMessageCode", "defaultMessageBody", null)
-        };
+        List<Load> load = singletonList(
+                com.salesforce.pyplyn.duct.etl.load.refocus.ImmutableRefocus.of(refocusEndpoint, refocusSubject, refocusAspect,
+                        "defaultMessageCode", "defaultMessageBody", emptyList())
+        );
 
-        return new Configuration(repeatIntervalMillis, extracts, transform, load, disabled);
+        return ImmutableConfiguration.of(repeatIntervalMillis, extracts, transform, load, disabled);
     }
 
     /**
      * Creates an array of {@link Transform}'s, based on {@link Threshold}
      */
-    public static Transform[] createThresholdTransforms(String metricName) {
-        LastDatapoint lastDatapoint = new LastDatapoint();
-        SaveMetricMetadata saveMetricMetadata = new SaveMetricMetadata();
-        Threshold threshold = new Threshold(metricName, 1000d, 100d, 10d, Threshold.Type.GREATER_THAN);
-        InfoStatus infoStatus = new InfoStatus();
-        HighestValue highestValue = new HighestValue(HighestValue.Display.ORIGINAL_VALUE, HighestValue.Display.ORIGINAL_TIMESTAMP);
-        return new Transform[]{lastDatapoint, saveMetricMetadata, threshold, infoStatus, highestValue};
+    public static List<Transform> createThresholdTransforms(String metricName) {
+        LastDatapoint lastDatapoint = ImmutableLastDatapoint.builder().build();
+        SaveMetricMetadata saveMetricMetadata = ImmutableSaveMetricMetadata.builder().build();
+        Threshold threshold = ImmutableThreshold.of(metricName, 1000d, 100d, 10d, GREATER_THAN);
+        InfoStatus infoStatus = ImmutableInfoStatus.builder().build();
+        HighestValue highestValue = ImmutableHighestValue.of(HighestValue.Display.ORIGINAL_VALUE, HighestValue.Display.ORIGINAL_TIMESTAMP);
+        return asList(lastDatapoint, saveMetricMetadata, threshold, infoStatus, highestValue);
     }
 }

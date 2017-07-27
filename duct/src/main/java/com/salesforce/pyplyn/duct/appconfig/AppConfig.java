@@ -8,13 +8,16 @@
 
 package com.salesforce.pyplyn.duct.appconfig;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.util.Map;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.salesforce.pyplyn.annotations.PyplynImmutableStyle;
+import org.immutables.value.Value;
 
-import java.util.Collections;
-import java.util.Map;
-import java.util.Optional;
+import javax.annotation.Nullable;
 
 
 /**
@@ -30,101 +33,87 @@ import java.util.Optional;
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
  * @since 3.0
  */
+@Value.Immutable
+@Value.Enclosing
+@PyplynImmutableStyle
+@JsonDeserialize(as = ImmutableAppConfig.class)
+@JsonSerialize(as = ImmutableAppConfig.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class AppConfig {
-    @JsonProperty(required = true)
-    private Global global;
+public abstract class AppConfig {
+    public abstract Global global();
 
-    @JsonProperty
-    private Hazelcast hazelcast;
+    @Nullable
+    public abstract Hazelcast hazelcast();
 
-    @JsonProperty
-    private Alert alert;
-
-    public Global global() {
-        return global;
-    }
-
-    public Hazelcast hazelcast() {
-        return hazelcast;
-    }
-
-    public Alert alert() {
-        return alert;
-    }
+    @Nullable
+    public abstract Alert alert();
 
 
-    public static class Global {
-        @JsonProperty(required = true)
-        private String configurationsPath;
+    @Value.Immutable
+    @PyplynImmutableStyle
+    @JsonDeserialize(as = ImmutableAppConfig.Global.class)
+    @JsonSerialize(as = ImmutableAppConfig.Global.class)
+    public static abstract class Global {
+        public abstract String configurationsPath();
 
-        @JsonProperty(required = true)
-        private String connectorsPath;
+        public abstract String connectorsPath();
 
-        @JsonProperty(required = true)
-        private Long minRepeatIntervalMillis;
-
-        @JsonProperty(required = true)
-        private Long updateConfigurationIntervalMillis;
-
-        public String configurationsPath() {
-            return configurationsPath;
-        }
-
-        public String connectorsPath() {
-            return connectorsPath;
-        }
-
+        /**
+         * This parameter will be removed in future versions
+         *
+         * @see {@link Global#runOnce}
+         * @deprecated
+         */
+        @Deprecated
+        @Value.Default
         public long minRepeatIntervalMillis() {
-            return minRepeatIntervalMillis;
+            return 60_000L;
         }
 
-        @JsonIgnore
-        public final boolean runOnce() {
+        @Value.Default
+        public boolean runOnce() {
             return minRepeatIntervalMillis() <= 0;
         }
 
-        public long updateConfigurationIntervalMillis() {
-            return updateConfigurationIntervalMillis;
+        public abstract Long updateConfigurationIntervalMillis();
+
+        @Value.Default
+        public int ioPoolsThreadSize() {
+            return 200;
         }
     }
 
-    public static class Hazelcast {
-        @JsonProperty(defaultValue = "false")
-        private Boolean enabled;
-
-        @JsonProperty(required = true)
-        private String config;
-
+    @Value.Immutable
+    @PyplynImmutableStyle
+    @JsonDeserialize(as = ImmutableAppConfig.Hazelcast.class)
+    @JsonSerialize(as = ImmutableAppConfig.Hazelcast.class)
+    public static abstract class Hazelcast {
+        @Value.Default
+        @JsonProperty("enabled")
         public boolean isEnabled() {
-            return Optional.ofNullable(enabled).orElse(Boolean.FALSE);
+            return false;
         }
 
-        public String config() {
-            return config;
-        }
+        public abstract String config();
     }
 
-    public static class Alert {
-        @JsonProperty(defaultValue = "false")
-        private boolean enabled;
+    @Value.Immutable
+    @PyplynImmutableStyle
+    @JsonDeserialize(as = ImmutableAppConfig.Alert.class)
+    @JsonSerialize(as = ImmutableAppConfig.Alert.class)
+    public static abstract class Alert {
+        @Value.Default
+        @JsonProperty("enabled")
+        public boolean isEnabled() {
+            return false;
+        }
 
         @JsonProperty(defaultValue = "300000")
-        private Long checkIntervalMillis;
-
-        @JsonProperty(required = true)
-        private Map<String, Double> thresholds;
-
-        public boolean isEnabled() {
-            return Optional.ofNullable(enabled).orElse(Boolean.FALSE);
-        }
-
+        @Value.Default
         public long checkIntervalMillis() {
-            return Optional.ofNullable(checkIntervalMillis).orElse(300000L);
+            return 300_000L;
         }
 
-        public Map<String, Double> thresholds() {
-            return Collections.unmodifiableMap(thresholds);
-        }
+        public abstract Map<String, Double> thresholds();
     }
 }

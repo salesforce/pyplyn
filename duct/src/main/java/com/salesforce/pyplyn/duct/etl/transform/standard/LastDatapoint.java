@@ -8,11 +8,14 @@
 
 package com.salesforce.pyplyn.duct.etl.transform.standard;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.collect.Iterables;
+import com.salesforce.pyplyn.annotations.PyplynImmutableStyle;
 import com.salesforce.pyplyn.model.Transform;
-import com.salesforce.pyplyn.model.TransformationResult;
+import com.salesforce.pyplyn.model.Transmutation;
+import org.immutables.value.Value;
 
-import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -30,19 +33,22 @@ import static java.util.Objects.nonNull;
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
  * @since 3.0
  */
-public class LastDatapoint implements Transform, Serializable {
+@Value.Immutable
+@PyplynImmutableStyle
+@JsonDeserialize(as = ImmutableLastDatapoint.class)
+@JsonSerialize(as = ImmutableLastDatapoint.class)
+public abstract class LastDatapoint implements Transform {
     private static final long serialVersionUID = -2187464148729449576L;
 
-
     /**
-     * Applies this transformation and returns a new {@link TransformationResult} matrix
+     * Applies this transformation and returns a new {@link Transmutation} matrix
      */
     @Override
-    public List<List<TransformationResult>> apply(List<List<TransformationResult>> input) {
+    public List<List<Transmutation>> apply(List<List<Transmutation>> input) {
         return input.stream()
                 .map(points -> {
                     // load last result point and return a list containing a single element
-                    TransformationResult result = Iterables.getLast(points, null);
+                    Transmutation result = Iterables.getLast(points, null);
                     if (nonNull(result)) {
                         return Collections.singletonList(result);
                     }
@@ -52,16 +58,5 @@ public class LastDatapoint implements Transform, Serializable {
                 })
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
-    }
-
-
-    @Override
-    public boolean equals(Object o) {
-        return !(o == null || getClass() != o.getClass());
-    }
-
-    @Override
-    public int hashCode() {
-        return LastDatapoint.class.hashCode();
     }
 }

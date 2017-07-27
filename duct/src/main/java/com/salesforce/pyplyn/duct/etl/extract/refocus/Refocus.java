@@ -8,12 +8,13 @@
 
 package com.salesforce.pyplyn.duct.etl.extract.refocus;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.salesforce.pyplyn.annotations.PyplynImmutableStyle;
 import com.salesforce.pyplyn.model.Extract;
+import org.immutables.value.Value;
 
-import java.io.Serializable;
-import java.util.Optional;
+import javax.annotation.Nullable;
 
 /**
  * Refocus datasource model
@@ -21,59 +22,22 @@ import java.util.Optional;
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
  * @since 3.0
  */
-public class Refocus implements Extract, Serializable {
+@Value.Immutable
+@PyplynImmutableStyle
+@JsonDeserialize(as = ImmutableRefocus.class)
+@JsonSerialize(as = ImmutableRefocus.class)
+public abstract class Refocus implements Extract {
     private static final long serialVersionUID = -2303603367792896790L;
-
-    @JsonProperty(required = true)
-    private String endpoint;
-
-    @JsonProperty(required = true)
-    private String subject;
-
-    @JsonProperty
-    private String actualSubject;
-
-    @JsonProperty(required = true)
-    private String aspect;
-
-    @JsonProperty(defaultValue = "0")
-    private Integer cacheMillis;
-
-    @JsonProperty
-    private Double defaultValue;
-
-
-    /**
-     * Default constructor
-     */
-    @JsonCreator
-    public Refocus(@JsonProperty("endpoint") String endpoint,
-                   @JsonProperty("subject") String subject,
-                   @JsonProperty("actualSubject") String actualSubject,
-                   @JsonProperty("aspect") String aspect,
-                   @JsonProperty("cacheMillis") Integer cacheMillis,
-                   @JsonProperty("defaultValue") Double defaultValue) {
-        this.endpoint = endpoint;
-        this.subject = subject;
-        this.actualSubject = actualSubject;
-        this.aspect = aspect;
-        this.cacheMillis = cacheMillis;
-        this.defaultValue = defaultValue;
-    }
 
     /**
      * Endpoint where the expression should be executed on
      */
-    public String endpoint() {
-        return endpoint;
-    }
+    public abstract String endpoint();
 
     /**
      * Subject to load data for; can include wildcards
      */
-    public String subject() {
-        return subject;
-    }
+    public abstract String subject();
 
     /**
      * Used to filter samples returned from the Refocus endpoint by the name specified in this field;
@@ -84,22 +48,24 @@ public class Refocus implements Extract, Serializable {
      *
      * @return {@link Refocus#actualSubject} if specified, or otherwise {@link Refocus#subject}, since in that case they are the same
      */
+    @Nullable
+    @Value.Default
     public String actualSubject() {
-        return Optional.ofNullable(actualSubject).orElse(subject);
+        return subject();
     }
 
     /**
      * Aspect to load
      */
-    public String aspect() {
-        return aspect;
-    }
+    public abstract String aspect();
 
     /**
      * How long to cache this expression's results
      */
+    @Value.Default
+    @Value.Auxiliary
     public int cacheMillis() {
-        return Optional.ofNullable(cacheMillis).orElse(0);
+        return 0;
     }
 
     /**
@@ -107,14 +73,14 @@ public class Refocus implements Extract, Serializable {
      *   having this parameter specified causes the processor to generate one datapoint
      *   with this value and the current time (at the time of execution)
      */
-    public Double defaultValue() {
-        return defaultValue;
-    }
-
+    @Nullable
+    @Value.Auxiliary
+    public abstract Double defaultValue();
 
     /**
      * @return the Refocus standardized sample name (i.e.: SUBJECT.PATH|ASPECT)
      */
+    @Value.Auxiliary
     public final String name() {
         return String.format("%s|%s", subject(), aspect());
     }
@@ -122,6 +88,7 @@ public class Refocus implements Extract, Serializable {
     /**
      * @return the Refocus filtered sample name (i.e.: SUBJECT.PATH.*|ASPECT)
      */
+    @Value.Auxiliary
     public final String filteredName() {
         return String.format("%s|%s", actualSubject(), aspect());
     }
@@ -129,44 +96,8 @@ public class Refocus implements Extract, Serializable {
     /**
      * @return the cache key for this object
      */
+    @Value.Auxiliary
     public final String cacheKey() {
         return filteredName();
-    }
-
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        Refocus refocus = (Refocus) o;
-
-        if (!endpoint.equals(refocus.endpoint)) {
-            return false;
-        }
-
-        if (!subject.equals(refocus.subject)) {
-            return false;
-        }
-
-        if (actualSubject != null ? !actualSubject.equals(refocus.actualSubject) : refocus.actualSubject != null) {
-            return false;
-        }
-
-        return aspect.equals(refocus.aspect);
-    }
-
-    @Override
-    public int hashCode() {
-        int result = endpoint.hashCode();
-        result = 31 * result + subject.hashCode();
-        result = 31 * result + (actualSubject != null ? actualSubject.hashCode() : 0);
-        result = 31 * result + aspect.hashCode();
-        return result;
     }
 }

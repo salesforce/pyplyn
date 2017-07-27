@@ -11,17 +11,13 @@ package com.salesforce.refocus;
 import com.google.common.base.Preconditions;
 import com.salesforce.pyplyn.client.AbstractRemoteClient;
 import com.salesforce.pyplyn.client.UnauthorizedException;
-import com.salesforce.pyplyn.configuration.AbstractConnector;
+import com.salesforce.pyplyn.configuration.ConnectorInterface;
 import com.salesforce.refocus.model.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.nio.charset.Charset;
-import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 import static com.salesforce.pyplyn.util.CollectionUtils.nullOutByteArray;
+import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
@@ -32,11 +28,8 @@ import static java.util.Objects.nonNull;
  * @since 1.0
  */
 public class RefocusClient extends AbstractRemoteClient<RefocusService> {
-    private static final Logger logger = LoggerFactory.getLogger(RefocusClient.class);
-
-    // authorization header used for all calls
-    private static final String HEADER_PREFIX = "";
-    private String authorizationHeader;
+    // authentication token
+    private byte[] accessToken;
 
 
     /**
@@ -44,7 +37,7 @@ public class RefocusClient extends AbstractRemoteClient<RefocusService> {
      *
      * @param connector The Refocus API endpoint to use in calls
      */
-    public RefocusClient(AbstractConnector connector) {
+    public RefocusClient(ConnectorInterface connector) {
         super(connector, RefocusService.class);
     }
 
@@ -53,47 +46,46 @@ public class RefocusClient extends AbstractRemoteClient<RefocusService> {
      */
     @Override
     public boolean isAuthenticated() {
-        return nonNull(authorizationHeader);
-    }
-
-    /**
-     * @return the current class' {@link Logger} object, required by its supertype
-     */
-    @Override
-    protected Logger logger() {
-        return logger;
+        return nonNull(accessToken);
     }
 
     /**
      * Authenticates to a Refocus endpoint, using either a user and password or a token
      * <p/>
      * <p/>To specify a token, pass <b>username</b> as null and the token in the <b>password</b> field,
-     *   base64 encoding its string value, in the corresponding {@link AbstractConnector} implementation.
+     *   base64 encoding its string value, in the corresponding {@link ConnectorInterface} implementation.
      *
      * @throws UnauthorizedException if the passed credentials are invalid
      */
     @Override
-    public boolean auth() throws UnauthorizedException {
-        // if a token is specified (null user, password specified as byte[])
+    protected boolean auth() throws UnauthorizedException {
+        // if we know the token already, we can consider the state as authenticated
+        if (nonNull(accessToken)) {
+            return true;
+        }
+
+        // if an username is not specified, we consider the password to be the accessToken
+        String username = connector().username();
+        if (isNull(username)) {
+            this.accessToken = connector().password();
+            return true;
+        }
+
+        // retrieve password
         byte[] password = connector().password();
         try {
-            if (isNull(connector().username()) && nonNull(password)) {
-                // store it so we can authenticate all calls with it
-                this.authorizationHeader = generateAuthorizationHeader(new String(password, Charset.defaultCharset()));
-                return true;
+            AuthResponse response = executeNoRetry(svc().authenticate(ImmutableAuthRequest.of(connector().username(), password)), null);
+
+            // failed to retrieve a token, stop here
+            if (isNull(response)) {
+                return false;
             }
 
-            // otherwise attempt to auth user/pass
-            AuthResponse authResponse =
-                    executeAndRetrieveBody(svc().authenticate(new AuthRequest(connector().username(), password)), null);
+            // memoize the token
+            this.accessToken = response.token();
 
-            // if successful, generate and store the auth header
-            if (nonNull(authResponse)) {
-                this.authorizationHeader = generateAuthorizationHeader(authResponse.token());
-                return true;
-            }
-
-            return false;
+            // mark success
+            return true;
 
         // null out password bytes, once used
         } finally {
@@ -102,13 +94,20 @@ public class RefocusClient extends AbstractRemoteClient<RefocusService> {
     }
 
     /**
-     * Generates the Authorization header
-     *
-     * @return empty string, if a null token was passed
+     * Clears the authentication tokens
      */
-    String generateAuthorizationHeader(String token) {
-        return Optional.ofNullable(token).map(t -> HEADER_PREFIX + t).orElse("");
+    @Override
+    protected void resetAuth() {
+        this.accessToken = null;
     }
+
+    /**
+     * Construct an authorization header
+     */
+    String authorizationHeader() {
+        return prefixTokenHeader(accessToken, "");
+    }
+
 
     /**
      * Retrieves a sample from the remote endpoint
@@ -119,7 +118,7 @@ public class RefocusClient extends AbstractRemoteClient<RefocusService> {
      */
     public Sample getSample(String key, List<String> fields) throws UnauthorizedException {
         Preconditions.checkNotNull(key, "Key should not be null");
-        return executeAndRetrieveBody(svc().getSample(authorizationHeader, key, fields), null);
+        return executeAndRetrieveBody(svc().getSample(authorizationHeader(), key, fields), null);
     }
 
     /**
@@ -131,7 +130,7 @@ public class RefocusClient extends AbstractRemoteClient<RefocusService> {
      */
     public List<Sample> getSamples(String name) throws UnauthorizedException {
         Preconditions.checkNotNull(name, "Name should not be null");
-        return executeAndRetrieveBody(svc().getSample(authorizationHeader, name), Collections.emptyList());
+        return executeAndRetrieveBody(svc().getSample(authorizationHeader(), name), emptyList());
     }
 
 
@@ -143,7 +142,7 @@ public class RefocusClient extends AbstractRemoteClient<RefocusService> {
      */
     public boolean upsertSamplesBulk(List<Sample> samples) throws UnauthorizedException {
         Preconditions.checkNotNull(samples, "Samples should not be null");
-        return nonNull(executeAndRetrieveBody(svc().upsertSamplesBulk(authorizationHeader, samples), null));
+        return nonNull(executeAndRetrieveBody(svc().upsertSamplesBulk(authorizationHeader(), samples), null));
     }
 
 
@@ -155,7 +154,7 @@ public class RefocusClient extends AbstractRemoteClient<RefocusService> {
      */
     public Sample deleteSample(String key) throws UnauthorizedException {
         Preconditions.checkNotNull(key, "Key should not be null");
-        return executeAndRetrieveBody(svc().deleteSample(authorizationHeader, key), null);
+        return executeAndRetrieveBody(svc().deleteSample(authorizationHeader(), key), null);
     }
 
 
@@ -166,7 +165,7 @@ public class RefocusClient extends AbstractRemoteClient<RefocusService> {
      * @return empty collection if any errors encountered
      */
     public List<Subject> getSubjects(List<String> fields) throws UnauthorizedException {
-        return executeAndRetrieveBody(svc().getSubjects(authorizationHeader, fields), Collections.emptyList());
+        return executeAndRetrieveBody(svc().getSubjects(authorizationHeader(), fields), emptyList());
     }
 
     /**
@@ -178,7 +177,7 @@ public class RefocusClient extends AbstractRemoteClient<RefocusService> {
      */
     public Subject getSubject(String key, List<String> fields) throws UnauthorizedException {
         Preconditions.checkNotNull(key, "Key should not be null");
-        return executeAndRetrieveBody(svc().getSubject(authorizationHeader, key, fields), null);
+        return executeAndRetrieveBody(svc().getSubject(authorizationHeader(), key, fields), null);
     }
 
     /**
@@ -191,7 +190,7 @@ public class RefocusClient extends AbstractRemoteClient<RefocusService> {
      */
     public Subject getSubjectHierarchy(String key, String status) throws UnauthorizedException {
         Preconditions.checkNotNull(key, "Key should not be null");
-        return executeAndRetrieveBody(svc().getSubjectHierarchy(authorizationHeader, key, status), null);
+        return executeAndRetrieveBody(svc().getSubjectHierarchy(authorizationHeader(), key, status), null);
     }
 
     /**
@@ -202,7 +201,7 @@ public class RefocusClient extends AbstractRemoteClient<RefocusService> {
      */
     public Subject postSubject(Subject subject) throws UnauthorizedException {
         Preconditions.checkNotNull(subject, "Subject should not be null");
-        return executeAndRetrieveBody(svc().postSubject(authorizationHeader, subject), null);
+        return executeAndRetrieveBody(svc().postSubject(authorizationHeader(), subject), null);
     }
 
     /**
@@ -213,7 +212,7 @@ public class RefocusClient extends AbstractRemoteClient<RefocusService> {
      */
     public Subject patchSubject(Subject subject) throws UnauthorizedException {
         Preconditions.checkNotNull(subject, "Subject should not be null");
-        return executeAndRetrieveBody(svc().patchSubject(authorizationHeader, subject.id(), subject), null);
+        return executeAndRetrieveBody(svc().patchSubject(authorizationHeader(), subject.id(), subject), null);
     }
 
     /**
@@ -223,7 +222,7 @@ public class RefocusClient extends AbstractRemoteClient<RefocusService> {
      * @return empty collection if any errors encountered
      */
     public List<Aspect> getAspects(List<String> fields) throws UnauthorizedException {
-        return executeAndRetrieveBody(svc().getAspects(authorizationHeader, fields), null);
+        return executeAndRetrieveBody(svc().getAspects(authorizationHeader(), fields), null);
     }
 
     /**
@@ -235,7 +234,7 @@ public class RefocusClient extends AbstractRemoteClient<RefocusService> {
      */
     public Aspect getAspect(String key, List<String> fields) throws UnauthorizedException {
         Preconditions.checkNotNull(key, "Key should not be null");
-        return executeAndRetrieveBody(svc().getAspect(authorizationHeader, key, fields), null);
+        return executeAndRetrieveBody(svc().getAspect(authorizationHeader(), key, fields), null);
     }
 
     /**
@@ -246,7 +245,7 @@ public class RefocusClient extends AbstractRemoteClient<RefocusService> {
      */
     public Aspect postAspect(Aspect aspect) throws UnauthorizedException {
         Preconditions.checkNotNull(aspect, "Aspect should not be null");
-        return executeAndRetrieveBody(svc().postAspect(authorizationHeader, aspect), null);
+        return executeAndRetrieveBody(svc().postAspect(authorizationHeader(), aspect), null);
     }
 
     /**
@@ -257,6 +256,6 @@ public class RefocusClient extends AbstractRemoteClient<RefocusService> {
      */
     public Aspect patchAspect(Aspect aspect) throws UnauthorizedException {
         Preconditions.checkNotNull(aspect, "Aspect should not be null");
-        return executeAndRetrieveBody(svc().patchAspect(authorizationHeader, aspect.name(), aspect), null);
+        return executeAndRetrieveBody(svc().patchAspect(authorizationHeader(), aspect.name(), aspect), null);
     }
 }

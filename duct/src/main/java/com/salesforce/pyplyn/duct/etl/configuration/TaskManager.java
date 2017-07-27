@@ -20,13 +20,11 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.salesforce.pyplyn.util.CollectionUtils.immutableOrEmptySet;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -52,13 +50,11 @@ public class TaskManager<T extends Configuration> {
     private final ConcurrentHashMap<T, Disposable> ACTIVE_PUBLISHERS = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<T, Instant> LAST_EXECUTED = new ConcurrentHashMap<>();
 
-
     private final CountDownLatch HAS_STARTED_PROCESSING = new CountDownLatch(1);
     private final CountDownLatch HAS_COMPLETED_PROCESSING = new CountDownLatch(1);
 
     private final AtomicInteger CURRENTLY_PROCESSING_COUNTER = new AtomicInteger(0);
     private AtomicInteger TASK_COUNTER = new AtomicInteger(0);
-
 
     private final boolean runOnce;
 
@@ -77,19 +73,21 @@ public class TaskManager<T extends Configuration> {
         this.shutdownHook = shutdownHook;
 
         // prioritize tasks based on their place in the pipeline
-        extractScheduler = initExtractScheduler();
-        transformScheduler = initTransformScheduler();
-        loadScheduler = initLoadScheduler();
+        Integer ioPoolSize = config.global().ioPoolsThreadSize();
+        extractScheduler = initExtractScheduler(ioPoolSize);
+        transformScheduler = initTransformScheduler(ioPoolSize);
+        loadScheduler = initLoadScheduler(ioPoolSize);
     }
 
     /**
      * Initializes a scheduler that will be used for offloading IO work performed by {@link Extract}s
      * <p/>
      * <p/> Threads executed on this scheduler have {@link Thread#NORM_PRIORITY}
+     * @param ioPoolSize Size of thread pool for this scheduler
      */
-    private Scheduler initExtractScheduler() {
+    private Scheduler initExtractScheduler(Integer ioPoolSize) {
         ThreadFactory factory = newThreadFactory("TaskManager-Extract-%s", Thread.NORM_PRIORITY);
-        ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), factory);
+        ExecutorService executor = Executors.newFixedThreadPool(ioPoolSize, factory);
         shutdownHook.registerExecutor(executor);
         return Schedulers.from(executor);
     }
@@ -98,10 +96,11 @@ public class TaskManager<T extends Configuration> {
      * Initializes a scheduler that will be used for offloading IO work performed by {@link PollingTransform}s
      * <p/>
      * <p/> Threads executed on this scheduler have {@link Thread#NORM_PRIORITY+1}
+     * @param ioPoolSize Size of thread pool for this scheduler
      */
-    private Scheduler initTransformScheduler() {
+    private Scheduler initTransformScheduler(Integer ioPoolSize) {
         ThreadFactory factory = newThreadFactory("TaskManager-Transform-%s", Thread.NORM_PRIORITY + 1);
-        ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), factory);
+        ExecutorService executor = Executors.newFixedThreadPool(ioPoolSize, factory);
         shutdownHook.registerExecutor(executor);
         return Schedulers.from(executor);
     }
@@ -110,10 +109,11 @@ public class TaskManager<T extends Configuration> {
      * Initializes a scheduler that will be used for offloading IO work performed by {@link Load}s
      * <p/>
      * <p/> Threads executed on this scheduler have {@link Thread#NORM_PRIORITY}+2
+     * @param ioPoolSize Size of thread pool for this scheduler
      */
-    private Scheduler initLoadScheduler() {
+    private Scheduler initLoadScheduler(Integer ioPoolSize) {
         ThreadFactory factory = newThreadFactory("TaskManager-Load-%s", Thread.NORM_PRIORITY + 2);
-        ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), factory);
+        ExecutorService executor = Executors.newFixedThreadPool(ioPoolSize, factory);
         shutdownHook.registerExecutor(executor);
         return Schedulers.from(executor);
     }
@@ -141,9 +141,86 @@ public class TaskManager<T extends Configuration> {
      * <p/> - and to remove the task once it's been disposed
      */
     public void upsert(T task) {
-        Disposable disposable = createObservable(task)
-                // do not emit any items until subscribed
-                .publish().autoConnect()
+        Disposable disposable = createTask(task)
+
+                // ETL cycle
+                .flatMap((T configuration) -> {
+                    // EXTRACT
+
+                    // merge all Extract results
+                    Flowable<List<List<Transmutation>>> transformed =
+                            Flowable.merge(
+                                    Flowable.fromIterable(extractProcessors).observeOn(extractScheduler)
+
+                                            // filter out types (Extract[]) that cannot be processed and return an Async result
+                                            .map(processor -> processor.executeAsync(configuration.extract()))
+                            );
+
+                    // combine all Extract results into a single List<List<Transmutation>>
+                    final List<List<Transmutation>> extractsCollector = new ArrayList<>();
+                    Single<List<List<Transmutation>>> mergedResultLists = transformed.reduce(extractsCollector, (list, items) -> {
+                        list.addAll(items);
+                        return list;
+                    });
+                    transformed = mergedResultLists.toFlowable();
+
+
+                    // TRANSFORM
+                    for (Transform transform : configuration.transform()) {
+                        // PollingTransforms are executed on a dedicated scheduler
+                        if (transform instanceof PollingTransform) {
+                            transformed = transformed.flatMap(tr -> transform.applyAsync(tr, transformScheduler));
+
+                        // standard transforms are observed on the computation scheduler
+                        } else {
+                            transformed = transformed.flatMap(tr -> transform.applyAsync(tr, Schedulers.computation()));
+                        }
+                    }
+
+
+                    // LOAD
+                    return transformed
+                            // process each row individually
+                            .flatMap(Flowable::fromIterable)
+
+                            // for each row an loadProcessor combination, apply
+                            .flatMap(resultRow -> Flowable.fromIterable(loadProcessors).observeOn(loadScheduler)
+                                    .map(loadProcessor -> loadProcessor.executeAsync(resultRow, configuration.load()))
+                            )
+
+                            // reduce all results into a List<Boolean>
+                            .flatMap(s -> s)
+                            .reduce((booleans, booleans2) -> {
+                                booleans.addAll(booleans2);
+                                return booleans;
+                            }).toFlowable();
+                })
+
+                // lifecycle management
+                .doFinally(this::hookAfterTaskProcessed)
+                .doFinally(CURRENTLY_PROCESSING_COUNTER::decrementAndGet)
+                .doOnSubscribe(subscription -> CURRENTLY_PROCESSING_COUNTER.incrementAndGet())
+
+                // handle results and errors
+                .doOnNext(results -> logger.info("Got results {} (counter={})", results, TASK_COUNTER.incrementAndGet()))
+                .doOnError(this::onError)
+
+                // Process tasks
+                .subscribeOn(Schedulers.computation())
+                .subscribe();
+
+        // register publisher and dispose previous one (if exists)
+        Optional.ofNullable(ACTIVE_PUBLISHERS.put(task, disposable)).ifPresent(Disposable::dispose);
+    }
+
+    public Flowable<T> createTask(T task) {
+        return Flowable.interval(0, task.repeatIntervalMillis(), MILLISECONDS)
+                .map(i -> task)
+                // stop if shutting down
+                .takeWhile(t -> !shutdownHook.isShutdown())
+
+                // stop after the first task if only running once
+                .takeUntil(ignored -> runOnce)
 
                 // remove subscriptions that are disposed or completed
                 .doFinally(() -> ACTIVE_SUBSCRIPTIONS.remove(task))
@@ -174,80 +251,8 @@ public class TaskManager<T extends Configuration> {
                 })
 
                 // mark the time at which we ran last
-                .doOnNext(results -> LAST_EXECUTED.put(task, Instant.now()))
-
-                // ETL cycle
-                .flatMap(configuration -> {
-                    // EXTRACT
-
-                    // merge all Extract results
-                    Flowable<List<List<TransformationResult>>> transformed =
-                            Flowable.merge(
-                                    Flowable.fromIterable(extractProcessors).observeOn(extractScheduler)
-
-                                            // filter out types (Extract[]) that cannot be processed and return an Async result
-                                            .map(processor -> processor.executeAsync(configuration.extract()))
-                            );
-
-                    // combine all Extract results into a single List<List<TransformationResult>>
-                    final List<List<TransformationResult>> extractsCollector = new ArrayList<>();
-                    Single<List<List<TransformationResult>>> mergedResultLists = transformed.reduce(extractsCollector, (list, items) -> {
-                        list.addAll(items);
-                        return list;
-                    });
-                    transformed = mergedResultLists.toFlowable();
-
-
-                    // TRANSFORM
-                    for (Transform transform : configuration.transform()) {
-                        // PollingTransforms are executed on a dedicated scheduler
-                        if (transform instanceof PollingTransform) {
-                            transformed = transformed.flatMap(tr -> transform.applyAsync(tr, transformScheduler));
-
-                            // standard transforms are observed on the computation scheduler
-                        } else {
-                            transformed = transformed.flatMap(tr -> transform.applyAsync(tr, Schedulers.computation()));
-                        }
-                    }
-
-
-                    // LOAD
-                    final List<Boolean> loadCollector = new ArrayList<>();
-                    Flowable<List<Boolean>> loadStage = transformed
-
-                            // process each row individually
-                            .flatMap(Flowable::fromIterable)
-
-                            // for each row an loadProcessor combination, apply
-                            .flatMap(resultRow -> Flowable.fromIterable(loadProcessors).observeOn(loadScheduler)
-                                    .map(loadProcessor -> loadProcessor.executeAsync(resultRow, configuration.load()))
-                            )
-
-                            // reduce all results into a List<Boolean>
-                            .flatMap(s -> s)
-                            .reduce(loadCollector, (list, items) -> {
-                                list.addAll(items);
-                                return list;
-                            }).toFlowable();
-
-                    return loadStage;
-                })
-
-                // lifecycle management
-                .doFinally(this::hookAfterTaskProcessed)
-                .doFinally(CURRENTLY_PROCESSING_COUNTER::decrementAndGet)
-                .doOnSubscribe(subscription -> CURRENTLY_PROCESSING_COUNTER.incrementAndGet())
-
-                // handle results and errors
-                .doOnNext(results -> logger.info("Got results for {}: {}", results, TASK_COUNTER.incrementAndGet()))
-                .doOnError(this::onError)
-
-                // Process tasks
-                .subscribeOn(Schedulers.computation())
-                .subscribe();
-
-        // register publisher and dispose previous one (if exists)
-        Optional.ofNullable(ACTIVE_PUBLISHERS.put(task, disposable)).ifPresent(Disposable::dispose);
+                .doOnNext(results -> LAST_EXECUTED.put(task, Instant.now()));
+//                .onErrorResumeNext(defer(() -> createTask(task)));
     }
 
 
@@ -272,30 +277,24 @@ public class TaskManager<T extends Configuration> {
     }
 
     /**
-     * @return either an observable stream for the specified task at each interval or a single one (runOnce mode)
+     * @return all known tasks
      */
-    private Flowable<T> createObservable(T task) {
-        if (!runOnce) {
-            // issue tasks indefinitely
-            return Flowable.interval(0, task.repeatIntervalMillis(), MILLISECONDS)
-                    .map(i -> task)
-                    .takeWhile(t -> !shutdownHook.isShutdown());
-
-        } else {
-            // issue task only once
-            return Flowable.just(task);
-        }
+    public Set<T> allTasks() {
+        ArrayList<T> taskList = Collections.list(ACTIVE_PUBLISHERS.keys());
+        return immutableOrEmptySet(new HashSet<>(taskList));
     }
-
-    public void onError(Throwable e) {
-        logger.warn("Unexpected exception", e);
-    }
-
 
 
     //
     // LIFECYCLE MANAGEMENT
     //
+
+    /**
+     * Log errors
+     */
+    public void onError(Throwable e) {
+        logger.warn("Unexpected exception", e);
+    }
 
     /**
      * This method enables {@link ConfigurationUpdateManager} to signal that there is no work to begin with,
@@ -304,6 +303,12 @@ public class TaskManager<T extends Configuration> {
     protected void notifyCompleted() {
         HAS_STARTED_PROCESSING.countDown();
         HAS_COMPLETED_PROCESSING.countDown();
+    }
+
+    public void completeIfRunningOnceWithoutAnyTasks() {
+        if (runOnce) {
+            notifyCompleted();
+        }
     }
 
     /**

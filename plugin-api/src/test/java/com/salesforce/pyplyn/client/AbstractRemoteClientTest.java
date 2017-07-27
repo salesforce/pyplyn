@@ -8,14 +8,14 @@
 
 package com.salesforce.pyplyn.client;
 
-import com.salesforce.pyplyn.configuration.AbstractConnectorImpl;
+import com.salesforce.pyplyn.configuration.Connector;
+import com.salesforce.pyplyn.configuration.ImmutableConnector;
 import okhttp3.Headers;
 import okhttp3.Request;
 import okhttp3.ResponseBody;
 import okio.BufferedSource;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.slf4j.Logger;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import retrofit2.Call;
@@ -37,12 +37,9 @@ import static org.testng.Assert.fail;
  * @since 3.0
  */
 public class AbstractRemoteClientTest {
-    AbstractConnectorImpl connector;
+    Connector connector;
     AbstractRemoteClientImpl client;
     Call<String> call;
-
-    @Mock
-    Logger logger;
 
     @Mock
     AbstractRemoteClientImpl.RetroService svc;
@@ -52,9 +49,12 @@ public class AbstractRemoteClientTest {
         MockitoAnnotations.initMocks(this);
 
         // ARRANGE
-        connector = spy(new AbstractConnectorImpl("connector"));
-        doReturn("http://localhost:8080/").when(connector).endpoint();
-        client = spy(new AbstractRemoteClientImpl(connector, AbstractRemoteClientImpl.RetroService.class, logger));
+        connector = ImmutableConnector.builder()
+            .id("connector")
+            .endpoint("http://localhost:8080/")
+            .password("".getBytes())
+            .build();
+        client = spy(new AbstractRemoteClientImpl(this.connector, AbstractRemoteClientImpl.RetroService.class));
 
         doReturn(svc).when(client).svc();
 
@@ -92,6 +92,7 @@ public class AbstractRemoteClientTest {
         // ARRANGE
         Response<String> failure = createFailedResponse(401);
         doReturn(failure).when(call).execute();
+        doReturn(call).when(call).clone();
 
         // ACT
         client.executeAndRetrieveBody(call, "failed");
@@ -133,6 +134,7 @@ public class AbstractRemoteClientTest {
         // ARRANGE
         Response<String> failure = createFailedUnreadableResponse(401);
         doReturn(failure).when(call).execute();
+        doReturn(call).when(call).clone();
 
         // ACT
         try {
@@ -163,14 +165,13 @@ public class AbstractRemoteClientTest {
     @Test
     public void testClientWithProxy() throws Exception {
         // ARRANGE
-        doReturn("127.0.0.1").when(connector).proxyHost();
-        doReturn(8901).when(connector).proxyPort();
-        doReturn(10L).when(connector).connectTimeout();
-        doReturn(10L).when(connector).readTimeout();
-        doReturn(10L).when(connector).writeTimeout();
+        connector = ImmutableConnector.builder().from(connector)
+            .proxyHost("127.0.0.1")
+            .proxyPort(8901)
+            .build();
 
         // ACT
-        client = new AbstractRemoteClientImpl(connector, AbstractRemoteClientImpl.RetroService.class, logger);
+        client = new AbstractRemoteClientImpl(connector, AbstractRemoteClientImpl.RetroService.class);
         Call<String> remoteCall = client.svc().get();
 
         try {
@@ -187,7 +188,7 @@ public class AbstractRemoteClientTest {
     @Test
     public void testCacheKey() throws Exception {
         // ACT
-        String cacheKey = client.cacheKey();
+        String cacheKey = client.endpoint();
 
         // ASSERT
         assertThat("Cache key should be the connector id", cacheKey, equalTo("connector"));

@@ -8,7 +8,8 @@
 
 package com.salesforce.pyplyn.duct.etl.transform.standard;
 
-import com.salesforce.pyplyn.model.TransformationResult;
+import com.salesforce.pyplyn.model.ImmutableTransmutation;
+import com.salesforce.pyplyn.model.Transmutation;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -28,13 +29,14 @@ import static org.hamcrest.Matchers.*;
  */
 public class HighestValueTest {
     private final ZonedDateTime NOW = ZonedDateTime.now(ZoneOffset.UTC);
-    private List<List<TransformationResult>> transformationResults;
+    private List<List<Transmutation>> transformationResults;
 
     @BeforeMethod
     public void setUp() throws Exception {
         // ARRANGE
-        List<TransformationResult> series = Collections.singletonList(
-                new TransformationResult(NOW, "metric", 10d, 10d)
+        Transmutation.Metadata metadata = ImmutableTransmutation.Metadata.builder().build();
+        List<Transmutation> series = Collections.singletonList(
+                ImmutableTransmutation.of(NOW, "metric", 10d, 10d, metadata)
         );
 
         transformationResults = Collections.singletonList(series);
@@ -45,16 +47,16 @@ public class HighestValueTest {
     @Test
     public void testOriginalDateIsAddedToMessageBody() throws Exception {
         // ARRANGE
-        HighestValue transform = new HighestValue(null, HighestValue.Display.ORIGINAL_TIMESTAMP);
+        HighestValue transform = ImmutableHighestValue.of(null, HighestValue.Display.ORIGINAL_TIMESTAMP);
 
         // ACT
-        List<List<TransformationResult>> results = transform.apply(transformationResults);
+        List<List<Transmutation>> results = transform.apply(transformationResults);
 
         // ASSERT
         assertThat(results, not(empty()));
         assertThat(results.get(0), not(empty()));
 
-        TransformationResult result = results.get(0).get(0);
+        Transmutation result = results.get(0).get(0);
         assertThat("The result should contain the original time",
                 result.metadata().messages(), hasItem(containsString(NOW.toString())));
     }

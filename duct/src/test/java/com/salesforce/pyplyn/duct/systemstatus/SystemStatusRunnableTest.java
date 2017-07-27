@@ -11,12 +11,11 @@ package com.salesforce.pyplyn.duct.systemstatus;
 import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapFixtures;
 import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapLatches;
 import com.salesforce.pyplyn.duct.etl.configuration.ConfigurationUpdateManager;
-import com.salesforce.pyplyn.status.AlertLevel;
+import com.salesforce.pyplyn.model.StatusCode;
 import com.salesforce.pyplyn.status.MeterType;
 import com.salesforce.pyplyn.status.StatusMessage;
 import com.salesforce.pyplyn.status.SystemStatusConsumer;
 import org.mockito.ArgumentCaptor;
-import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -99,7 +98,7 @@ public class SystemStatusRunnableTest {
 
             // check expected output
             assertThat("Expecting one message, status=OK", messages, hasSize(1));
-            assertThat("The status should be OK", messages.get(0).level(), is(AlertLevel.OK));
+            assertThat("The status should be OK", messages.get(0).level(), is(StatusCode.OK));
 
             // check that timer messages are being logged
             ArgumentCaptor<StatusMessage> timerMessageCaptor = ArgumentCaptor.forClass(StatusMessage.class);

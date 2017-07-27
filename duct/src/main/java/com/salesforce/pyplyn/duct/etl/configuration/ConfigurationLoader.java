@@ -12,6 +12,8 @@ import com.google.inject.Inject;
 import com.salesforce.pyplyn.configuration.Configuration;
 import com.salesforce.pyplyn.duct.app.BootstrapException;
 import com.salesforce.pyplyn.duct.appconfig.AppConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Set;
@@ -23,6 +25,7 @@ import java.util.Set;
  * @since 3.0
  */
 public class ConfigurationLoader {
+    protected static final Logger logger = LoggerFactory.getLogger(ConfigurationLoader.class);
     private final AppConfig appConfig;
     private final ConfigurationIntake intake;
 
@@ -45,16 +48,9 @@ public class ConfigurationLoader {
     public Set<Configuration> load() {
         // read all configurations
         try {
-            try {
-                // read all files from config path
-                return intake.parseAll(intake.getAllConfigurationsFromDisk(appConfig.global().configurationsPath()));
-
-            } catch (IOException e) {
-                // being unable to read the configuration files is an unrecoverable exception
-                //   we will rethrow this as a BootstrapException, since the process
-                //   would be unable to load any configurations to process
-                throw new BootstrapException("Could not read configuration", e);
-            }
+            // read all files from config path
+            logger.info("Reading configurations from {}", appConfig.global().configurationsPath());
+            return intake.parseAll(appConfig.global().configurationsPath());
 
         } finally {
             // throw an exception if any of the configuration files could not be read successfully

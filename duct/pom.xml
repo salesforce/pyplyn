@@ -16,7 +16,6 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>duct</artifactId>
-    <version>10.0.0-SNAPSHOT</version>
 
     <properties>
         <main.class>com.salesforce.pyplyn.duct.app.DuctMain</main.class>
@@ -146,6 +145,10 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.module</groupId>
+            <artifactId>jackson-module-guice</artifactId>
+        </dependency>
 
         <!-- CLI arg parsing -->
         <dependency>
@@ -173,8 +176,6 @@
         <dependency>
             <groupId>io.reactivex.rxjava2</groupId>
             <artifactId>rxjava</artifactId>
-            <version>2.1.0</version>
-            <scope>compile</scope>
         </dependency>
 
         <!-- Hazelcast -->

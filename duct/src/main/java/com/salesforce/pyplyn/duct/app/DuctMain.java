@@ -49,7 +49,7 @@ public final class DuctMain {
      *
      * @param args CLI args
      */
-    public static void main(String[] args) {
+    public static void main(String... args) {
         execute(AppBootstrap.class, args);
     }
 

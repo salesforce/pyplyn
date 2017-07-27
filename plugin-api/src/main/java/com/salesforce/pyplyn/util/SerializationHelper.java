@@ -8,9 +8,10 @@
 
 package com.salesforce.pyplyn.util;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-
-import java.io.*;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 
 import static java.util.Objects.nonNull;
 
@@ -21,26 +22,6 @@ import static java.util.Objects.nonNull;
  * @since 3.0
  */
 public interface SerializationHelper {
-    /**
-     * Should serialize the passed <b>object</b> to a String
-     */
-    String serializeJson(Object object) throws JsonProcessingException;
-
-    /**
-     * Should deserialize a JSON from a {@link File} as an object of the specified class type
-     */
-    <T> T deserializeJsonFile(String filename, Class<T> cls) throws IOException;
-
-    /**
-     * Should deserialize a JSON from a {@link String} as an object of the specified class type
-     */
-    <T> T deserializeJsonString(String jsonData, Class<T> cls) throws IOException;
-
-    /**
-     * Should deserialize a JSON from an {@link InputStream} as an object of the specified class type
-     */
-    <T> T deserializeJsonStream(InputStream is, Class<T> cls) throws IOException;
-
     /**
      * Loads packaged resources or files from disk
      * <p/>

@@ -11,10 +11,17 @@ package com.salesforce.argus.model;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.salesforce.pyplyn.annotations.PyplynImmutableStyle;
+import org.immutables.value.Value;
 
-import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
+import javax.annotation.Nullable;
+import java.util.List;
+
+import static com.fasterxml.jackson.annotation.JsonInclude.Include.ALWAYS;
+import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY;
 import static com.fasterxml.jackson.annotation.JsonProperty.Access.WRITE_ONLY;
-import static com.salesforce.pyplyn.util.CollectionUtils.nullableArrayCopy;
 
 /**
  * Argus notification object representation.
@@ -23,158 +30,65 @@ import static com.salesforce.pyplyn.util.CollectionUtils.nullableArrayCopy;
  *   when a trigger condition is met. A notification can be tied to multiple triggers.
  *
  * @author thomas.harris
- * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
+ * @author Mihai Bojin &lt();mbojin@salesforce.com&gt();
  */
+@Value.Immutable
+@PyplynImmutableStyle
+@JsonDeserialize(as = ImmutableNotificationObject.class)
+@JsonSerialize(as = ImmutableNotificationObject.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@JsonInclude(NON_NULL)
-public class NotificationObject {
+@JsonInclude(NON_EMPTY)
+public abstract class NotificationObject {
+    @Nullable
     @JsonProperty(access = WRITE_ONLY)
-    private final Long id;
+    public abstract Long id();
 
+    @Nullable
     @JsonProperty(access = WRITE_ONLY)
-    private final Long createdById;
+    public abstract Long createdById();
 
+    @Nullable
     @JsonProperty(access = WRITE_ONLY)
-    private final Long createdDate;
+    public abstract Long createdDate();
 
+    @Nullable
     @JsonProperty(access = WRITE_ONLY)
-    private final Long modifiedById;
+    public abstract Long modifiedById();
 
+    @Nullable
     @JsonProperty(access = WRITE_ONLY)
-    private final Long modifiedDate;
+    public abstract Long modifiedDate();
 
-    @JsonProperty
-    private final String name;
+    @Nullable
+    public abstract String name();
 
-    @JsonProperty
-    private final String notifierName;
+    @Nullable
+    public abstract String notifierName();
 
-    @JsonProperty
-    private final String[] subscriptions;
+    public abstract List<String> subscriptions();
 
-    @JsonProperty
-    private final String[] metricsToAnnotate;
+    @JsonInclude(ALWAYS)
+    public abstract List<String> metricsToAnnotate();
 
-    @JsonProperty
-    private final Long cooldownPeriod;
+    @Nullable
+    public abstract Long cooldownPeriod();
 
-    @JsonProperty
-    private final Long cooldownExpiration;
+    @Nullable
+    public abstract Long cooldownExpiration();
 
     @JsonProperty("triggersIds")
-    private final Long[] triggerIds;
+    public abstract List<Long> triggerIds();
 
-    @JsonProperty
-    private final Long alertId;
+    @Nullable
+    public abstract Long alertId();
 
-    @JsonProperty
-    private final String customText;
+    @Nullable
+    public abstract String customText();
 
-    @JsonProperty
-    private final Integer severityLevel;
+    @Nullable
+    public abstract Integer severityLevel();
 
+    @Nullable
     @JsonProperty("sractionable")
-    private final Boolean SRactionable;
-
-    public NotificationObject(@JsonProperty("id") Long id,
-                              @JsonProperty("createdById") Long createdById,
-                              @JsonProperty("createdDate") Long createdDate,
-                              @JsonProperty("modifiedById") Long modifiedById,
-                              @JsonProperty("modifiedDate") Long modifiedDate,
-                              @JsonProperty("name") String name,
-                              @JsonProperty("notifierName") String notifierName,
-                              @JsonProperty("subscriptions") String[] subscriptions,
-                              @JsonProperty("metricsToAnnotate") String[] metricsToAnnotate,
-                              @JsonProperty("cooldownPeriod") Long cooldownPeriod,
-                              @JsonProperty("cooldownExpiration") Long cooldownExpiration,
-                              @JsonProperty("triggersIds") Long[] triggerIds,
-                              @JsonProperty("alertId") Long alertId,
-                              @JsonProperty("customText") String customText,
-                              @JsonProperty("severityLevel") Integer severityLevel,
-                              @JsonProperty("sractionable") Boolean SRactionable) {
-        this.id = id;
-        this.createdById = createdById;
-        this.createdDate = createdDate;
-        this.modifiedById = modifiedById;
-        this.modifiedDate = modifiedDate;
-        this.name = name;
-        this.notifierName = notifierName;
-        this.subscriptions = nullableArrayCopy(subscriptions);
-        this.metricsToAnnotate = nullableArrayCopy(metricsToAnnotate);
-        this.cooldownPeriod = cooldownPeriod;
-        this.cooldownExpiration = cooldownExpiration;
-        this.triggerIds = nullableArrayCopy(triggerIds);
-        this.alertId = alertId;
-        this.customText = customText;
-        this.severityLevel = severityLevel;
-        this.SRactionable = SRactionable;
-    }
-
-    /* Getters */
-
-    public Long id() {
-        return id;
-    }
-
-    public Long createdById() {
-        return createdById;
-    }
-
-    public Long createdDate() {
-        return createdDate;
-    }
-
-    public Long modifiedById() {
-        return modifiedById;
-    }
-
-    public Long modifiedDate() {
-        return modifiedDate;
-    }
-
-    public String name() {
-        return name;
-    }
-
-    public String notifierName() {
-        return notifierName;
-    }
-
-
-    public String[] subscriptions() {
-        return nullableArrayCopy(subscriptions);
-    }
-
-    public String[] metricsToAnnotate() {
-        return nullableArrayCopy(metricsToAnnotate);
-    }
-
-    public Long cooldownPeriod() {
-        return cooldownPeriod;
-    }
-
-    public Long cooldownExpiration() {
-        return cooldownExpiration;
-    }
-
-    public Long[] triggerIds() {
-        return nullableArrayCopy(triggerIds);
-    }
-
-
-    public Long alertId() {
-        return alertId;
-    }
-
-    public String customText() {
-        return customText;
-    }
-
-    public Integer severityLevel() {
-        return severityLevel;
-    }
-
-    public Boolean isSRactionable() {
-        return SRactionable;
-    }
+    public abstract Boolean isSRactionable();
 }

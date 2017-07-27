@@ -8,12 +8,17 @@
 
 package com.salesforce.argus.model;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.salesforce.pyplyn.annotations.PyplynImmutableStyle;
+import org.immutables.value.Value;
 
-import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
+import javax.annotation.Nullable;
+
+import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY;
 import static com.fasterxml.jackson.annotation.JsonProperty.Access.WRITE_ONLY;
 
 /**
@@ -22,101 +27,45 @@ import static com.fasterxml.jackson.annotation.JsonProperty.Access.WRITE_ONLY;
  * @author thomas.harris
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
  */
+@Value.Immutable
+@PyplynImmutableStyle
+@JsonDeserialize(as = ImmutableDashboardObject.class)
+@JsonSerialize(as = ImmutableDashboardObject.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@JsonInclude(NON_NULL)
-public class DashboardObject {
+@JsonInclude(NON_EMPTY)
+public abstract class DashboardObject {
+    @Nullable
     @JsonProperty(access = WRITE_ONLY)
-    private final Long id;
+    public abstract Long id();
 
+    @Nullable
     @JsonProperty(access = WRITE_ONLY)
-    private final Long createdById;
+    public abstract Long createdById();
 
+    @Nullable
     @JsonProperty(access = WRITE_ONLY)
-    private final Long createdDate;
+    public abstract Long createdDate();
 
+    @Nullable
     @JsonProperty(access = WRITE_ONLY)
-    private final Long modifiedById;
+    public abstract Long modifiedById();
 
+    @Nullable
     @JsonProperty(access = WRITE_ONLY)
-    private final Long modifiedDate;
+    public abstract Long modifiedDate();
 
-    @JsonProperty
-    private final String name;
+    @Nullable
+    public abstract String name();
 
-    @JsonProperty
-    private final String content;
+    @Nullable
+    public abstract String content();
 
-    @JsonProperty
-    private final String ownerName;
+    @Nullable
+    public abstract String ownerName();
 
-    @JsonProperty
-    private final Boolean shared;
+    @Nullable
+    public abstract Boolean shared();
 
-    @JsonProperty
-    private final String description;
-
-    @JsonCreator
-    public DashboardObject(@JsonProperty("id") Long id,
-                           @JsonProperty("createdById") Long createdById,
-                           @JsonProperty("createdDate") Long createdDate,
-                           @JsonProperty("modifiedById") Long modifiedById,
-                           @JsonProperty("modifiedDate") Long modifiedDate,
-                           @JsonProperty("name") String name,
-                           @JsonProperty("content") String content,
-                           @JsonProperty("ownerName") String ownerName,
-                           @JsonProperty("shared") Boolean shared,
-                           @JsonProperty("description") String description) {
-        this.id = id;
-        this.createdById = createdById;
-        this.createdDate = createdDate;
-        this.modifiedById = modifiedById;
-        this.modifiedDate = modifiedDate;
-        this.name = name;
-        this.content = content;
-        this.ownerName = ownerName;
-        this.shared = shared;
-        this.description = description;
-    }
-
-    /* Getters */
-
-    public Long id() {
-        return id;
-    }
-
-    public Long createdById() {
-        return createdById;
-    }
-
-    public Long createdDate() {
-        return createdDate;
-    }
-
-    public Long modifiedById() {
-        return modifiedById;
-    }
-
-    public Long modifiedDate() {
-        return modifiedDate;
-    }
-
-    public String name() {
-        return name;
-    }
-
-    public String content() {
-        return content;
-    }
-
-    public String ownerName() {
-        return ownerName;
-    }
-
-    public Boolean isShared() {
-        return shared;
-    }
-
-    public String description() {
-        return description;
-    }
+    @Nullable
+    public abstract String description();
 }

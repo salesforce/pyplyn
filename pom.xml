@@ -78,6 +78,10 @@
                 <configuration>
                     <source>${jdk.version}</source>
                     <target>${jdk.version}</target>
+                    <useIncrementalCompilation>false</useIncrementalCompilation>
+                    <compilerArgs>
+                        <arg>-Xlint:all,-options,-path</arg>
+                    </compilerArgs>
                 </configuration>
             </plugin>
 
@@ -140,11 +144,24 @@
                 </configuration>
             </plugin>
 
+            <!-- Configure test runtime -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <properties>
+                        <property>
+                            <name>surefire.testng.verbose</name>
+                            <value>3</value>
+                        </property>
+                    </properties>
+                </configuration>
+            </plugin>
+
             <!-- Code coverage -->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.7.9</version>
                 <executions>
                     <execution>
                         <goals>
@@ -159,6 +176,13 @@
                         </goals>
                     </execution>
                 </executions>
+                <!-- Excludes generated classes -->
+                <configuration>
+                    <excludes>
+                        <exclude>**/Immutable**</exclude>
+                        <exclude>**/generated-sources**</exclude>
+                    </excludes>
+                </configuration>
             </plugin>
         </plugins>
 
@@ -246,6 +270,11 @@
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>2.19.1</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-report-plugin</artifactId>
                     <version>2.19.1</version>
                 </plugin>
@@ -258,6 +287,11 @@
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>build-helper-maven-plugin</artifactId>
                     <version>1.12</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.jacoco</groupId>
+                    <artifactId>jacoco-maven-plugin</artifactId>
+                    <version>0.7.9</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -346,6 +380,11 @@
                 <artifactId>jackson-databind</artifactId>
                 <version>2.7.2</version>
             </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.module</groupId>
+                <artifactId>jackson-module-guice</artifactId>
+                <version>2.7.2</version>
+            </dependency>
 
             <!-- GUICE -->
             <dependency>
@@ -364,6 +403,20 @@
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
                 <version>20.0</version>
+            </dependency>
+
+            <!-- Findbugs/jsr305 -->
+            <dependency>
+                <groupId>com.google.code.findbugs</groupId>
+                <artifactId>jsr305</artifactId>
+                <version>3.0.2</version>
+            </dependency>
+
+            <!-- Immutables -->
+            <dependency>
+                <groupId>org.immutables</groupId>
+                <artifactId>value</artifactId>
+                <version>2.5.3</version>
             </dependency>
 
             <!-- Retrofit -->

@@ -17,24 +17,28 @@ import com.salesforce.argus.model.MetricResponse;
 import com.salesforce.pyplyn.cache.CacheFactory;
 import com.salesforce.pyplyn.cache.ConcurrentCacheMap;
 import com.salesforce.pyplyn.client.UnauthorizedException;
-import com.salesforce.pyplyn.configuration.AbstractConnector;
+import com.salesforce.pyplyn.configuration.Connector;
 import com.salesforce.pyplyn.configuration.Configuration;
+import com.salesforce.pyplyn.configuration.ConnectorInterface;
+import com.salesforce.pyplyn.configuration.ImmutableConfiguration;
 import com.salesforce.pyplyn.duct.app.AppBootstrap;
 import com.salesforce.pyplyn.duct.app.BootstrapException;
 import com.salesforce.pyplyn.duct.app.DuctMain;
 import com.salesforce.pyplyn.duct.app.ShutdownHook;
 import com.salesforce.pyplyn.duct.appconfig.AppConfig;
 import com.salesforce.pyplyn.duct.cluster.Cluster;
-import com.salesforce.pyplyn.duct.connector.AppConnector;
+import com.salesforce.pyplyn.duct.connector.AppConnectors;
 import com.salesforce.pyplyn.duct.etl.configuration.ConfigurationLoader;
 import com.salesforce.pyplyn.duct.etl.configuration.ConfigurationUpdateManager;
 import com.salesforce.pyplyn.duct.etl.configuration.TaskManager;
 import com.salesforce.pyplyn.duct.etl.extract.argus.Argus;
 import com.salesforce.pyplyn.duct.etl.extract.argus.ArgusExtractProcessor;
+import com.salesforce.pyplyn.duct.etl.extract.argus.ImmutableArgus;
+import com.salesforce.pyplyn.duct.etl.extract.refocus.ImmutableRefocus;
 import com.salesforce.pyplyn.duct.etl.extract.refocus.Refocus;
 import com.salesforce.pyplyn.duct.etl.extract.refocus.RefocusExtractProcessor;
 import com.salesforce.pyplyn.duct.etl.load.refocus.RefocusLoadProcessor;
-import com.salesforce.pyplyn.duct.etl.transform.standard.LastDatapoint;
+import com.salesforce.pyplyn.duct.etl.transform.standard.ImmutableLastDatapoint;
 import com.salesforce.pyplyn.duct.systemstatus.ConsoleOutputConsumer;
 import com.salesforce.pyplyn.duct.systemstatus.SystemStatusRunnable;
 import com.salesforce.pyplyn.model.*;
@@ -48,12 +52,15 @@ import com.salesforce.refocus.model.Sample;
 import io.reactivex.Flowable;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-
+import java.nio.charset.Charset;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.util.Collections.emptyList;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -68,10 +75,10 @@ public class AppBootstrapFixtures {
     public static final String MOCK_CONNECTOR_NAME = "mock-connector";
 
     @Mock
-    private AbstractConnector connector;
+    private Connector connector;
 
     @Mock
-    private AppConnector appConnector;
+    private AppConnectors appConnectors;
 
     @Mock
     private SystemStatusRunnable systemStatus;
@@ -107,12 +114,6 @@ public class AppBootstrapFixtures {
     private ConcurrentCacheMap<Sample> sampleCache;
 
     @Mock
-    private TransformationResult transformationResult;
-
-    @Mock
-    private ETLMetadata transformationResultMetadata;
-
-    @Mock
     private RefocusLoadProcessor refocusLoadProcessor;
 
     @Mock
@@ -131,9 +132,11 @@ public class AppBootstrapFixtures {
     private IMap<Configuration, Configuration> hazelcastConfigurationMap;
 
     private AppConfigMocks appConfigMocks;
-    private List<AbstractConnector> connectors = new ArrayList<>();
+    private List<ConnectorInterface> connectors = new ArrayList<>();
     private Set<ExtractProcessor<? extends Extract>> extractProcessors = new HashSet<>();
     private Set<LoadProcessor<? extends Load>> loadProcessors = new HashSet<>();
+    private Transmutation transmutation;
+    private Transmutation.Metadata transmutationMetadata;
     private ShutdownHook shutdownHook;
 
     private Injector injector;
@@ -158,8 +161,9 @@ public class AppBootstrapFixtures {
 
         // App connector
         connectors.add(connector);
-        doReturn(connector).when(appConnector).get(MOCK_CONNECTOR_NAME);
+        doReturn(connector).when(appConnectors).findConnector(MOCK_CONNECTOR_NAME);
         doReturn("http://localhost/").when(connector).endpoint();
+        doReturn("password".getBytes(Charset.defaultCharset())).when(connector).password();
         doReturn(30000L).when(connector).connectTimeout();
         doReturn(30000L).when(connector).readTimeout();
         doReturn(30000L).when(connector).writeTimeout();
@@ -169,8 +173,12 @@ public class AppBootstrapFixtures {
         doReturn(systemStatusTimer).when(systemStatus).timer(any(), any());
 
         // Transformation results
-        doReturn(transformationResultMetadata).when(transformationResult).metadata();
-        doReturn(1L).when(transformationResult).value();
+        transmutationMetadata = ImmutableTransmutation.Metadata.builder().build();
+        transmutation = ImmutableTransmutation.of(ZonedDateTime.now(ZoneOffset.UTC),
+                "result",
+                1L,
+                1L,
+                transmutationMetadata);
 
         // Cache
         doReturn(metricResponseCache).when(cacheFactory).newCache();
@@ -182,13 +190,25 @@ public class AppBootstrapFixtures {
         // Extract Processors
         doReturn(Flowable.empty()).when(argusExtractProcessor).processAsync(any());
         doReturn(Flowable.empty()).when(argusExtractProcessor).executeAsync(any());
+        doCallRealMethod().when(argusExtractProcessor).filter(any());
+        doReturn(Argus.class).when(argusExtractProcessor).filteredType();
 
         doReturn(Flowable.empty()).when(refocusExtractProcessor).processAsync(any());
         doReturn(Flowable.empty()).when(refocusExtractProcessor).executeAsync(any());
+        doCallRealMethod().when(refocusExtractProcessor).filter(any());
+        doReturn(Refocus.class).when(refocusExtractProcessor).filteredType();
 
         // Load Processors
         doReturn(Flowable.just(Collections.singletonList(true))).when(refocusLoadProcessor).processAsync(any(), any());
         doReturn(Flowable.just(Collections.singletonList(true))).when(refocusLoadProcessor).executeAsync(any(), any());
+        doCallRealMethod().when(refocusLoadProcessor).filter(any());
+        doReturn(com.salesforce.pyplyn.duct.etl.load.refocus.Refocus.class).when(refocusLoadProcessor).filteredType();
+
+        // Clients and caches
+        doReturn(new AppConnectors.ClientAndCache<>(argusClient, metricResponseCache)).when(appConnectors)
+                .retrieveOrBuildClient(MOCK_CONNECTOR_NAME, ArgusClient.class, MetricResponse.class);
+        doReturn(new AppConnectors.ClientAndCache<>(refocusClient, sampleCache)).when(appConnectors)
+                .retrieveOrBuildClient(MOCK_CONNECTOR_NAME, RefocusClient.class, Sample.class);
     }
 
 
@@ -221,9 +241,7 @@ public class AppBootstrapFixtures {
             applyExtractAndLoadProcessorLatches();
         }
 
-        /**
-         * Add all processors to previously defined task observer
-         */
+        // Add all processors to previously defined task observer
         extractProcessors.addAll(injector.getInstance(new Key<Set<ExtractProcessor<? extends Extract>>>(){}));
         loadProcessors.addAll(injector.getInstance(new Key<Set<LoadProcessor<? extends Load>>>(){}));
     }
@@ -240,7 +258,7 @@ public class AppBootstrapFixtures {
             AppBootstrapLatches.beforeExtractProcessorStarts().countDown();
             AppBootstrapLatches.holdOffBeforeExtractProcessorStarts().await();
 
-            return filter(invocation.getArguments(), Argus.class);
+            return invocation.callRealMethod();
         }).when(argusExtractProcessor).filter(any());
 
         // note when extract processing has completed
@@ -261,7 +279,7 @@ public class AppBootstrapFixtures {
             AppBootstrapLatches.beforeExtractProcessorStarts().countDown();
             AppBootstrapLatches.holdOffBeforeExtractProcessorStarts().await();
 
-            return filter(invocation.getArguments(), Refocus.class);
+            return invocation.callRealMethod();
         }).when(refocusExtractProcessor).filter(any());
 
         // note when extract processing has completed
@@ -282,7 +300,7 @@ public class AppBootstrapFixtures {
             AppBootstrapLatches.beforeLoadProcessorStarts().countDown();
             AppBootstrapLatches.holdOffBeforeLoadProcessorStarts().await();
 
-            return filter(invocation.getArguments(), com.salesforce.pyplyn.duct.etl.load.refocus.Refocus.class);
+            return invocation.callRealMethod();
         }).when(refocusLoadProcessor).filter(any());
 
         // note when load has completed
@@ -317,10 +335,6 @@ public class AppBootstrapFixtures {
 
     private void initTaskManager() {
         taskManager = spy(new TaskManagerWithLatches<>(appConfigMocks().appConfig, extractProcessors, loadProcessors, shutdownHook)).initLatches();
-    }
-
-    public void stopTaskManager() {
-        ((TaskManagerWithLatches)taskManager()).notifyCompleted();
     }
 
     public AppBootstrapFixtures initConfigurationManager() {
@@ -388,7 +402,7 @@ public class AppBootstrapFixtures {
         return this;
     }
 
-    public AppBootstrapFixtures argusToRefocusConfigurationWithTransformsAndRepeatInterval(Transform[] transforms, long millis) {
+    public AppBootstrapFixtures argusToRefocusConfigurationWithTransformsAndRepeatInterval(List<Transform> transforms, long millis) {
         doReturn(new HashSet<>(Collections.singleton(new ConfigurationMocks().argusExtract(null).withTransforms(transforms).repeatIntervalMillis(millis).build())))
                 .when(configurationLoader)
                 .load();
@@ -424,58 +438,47 @@ public class AppBootstrapFixtures {
     }
 
     public AppBootstrapFixtures returnMockedTransformationResultFromAllExtractProcessors() {
-        doReturn(Collections.singletonList(Collections.singletonList(transformationResult))).when(argusExtractProcessor).process(any());
-        doAnswer(invocation -> filter(invocation.getArguments(), Argus.class)).when(argusExtractProcessor).filter(any());
+        doReturn(Collections.singletonList(Collections.singletonList(transmutation))).when(argusExtractProcessor).process(any());
+        doCallRealMethod().when(argusExtractProcessor).filter(any());
         doCallRealMethod().when(argusExtractProcessor).execute(any());
         doCallRealMethod().when(argusExtractProcessor).processAsync(any());
         doCallRealMethod().when(argusExtractProcessor).executeAsync(any());
-        doReturn(argusClient).when(argusExtractProcessor).client(any());
-        doReturn(metricResponseCache).when(argusExtractProcessor).cache(any());
 
-
-        doReturn(Collections.singletonList(Collections.singletonList(transformationResult))).when(refocusExtractProcessor).process(any());
-        doAnswer(invocation -> filter(invocation.getArguments(), Refocus.class)).when(refocusExtractProcessor).filter(any());
+        doReturn(Collections.singletonList(Collections.singletonList(transmutation))).when(refocusExtractProcessor).process(any());
+        doCallRealMethod().when(refocusExtractProcessor).filter(any());
         doCallRealMethod().when(refocusExtractProcessor).execute(any());
         doCallRealMethod().when(refocusExtractProcessor).processAsync(any());
         doCallRealMethod().when(refocusExtractProcessor).executeAsync(any());
-        doReturn(refocusClient).when(refocusExtractProcessor).client(any());
-        doReturn(sampleCache).when(refocusExtractProcessor).cache(any());
 
         return this;
     }
 
-    public AppBootstrapFixtures returnTransformationResultFromAllExtractProcessors(List<List<TransformationResult>> results) {
+    public AppBootstrapFixtures returnTransformationResultFromAllExtractProcessors(List<List<Transmutation>> results) {
         doReturn(results).when(argusExtractProcessor).process(any());
-        doAnswer(invocation -> filter(invocation.getArguments(), Argus.class)).when(argusExtractProcessor).filter(any());
+        doCallRealMethod().when(argusExtractProcessor).filter(any());
         doCallRealMethod().when(argusExtractProcessor).execute(any());
         doCallRealMethod().when(argusExtractProcessor).processAsync(any());
         doCallRealMethod().when(argusExtractProcessor).executeAsync(any());
-        doReturn(argusClient).when(argusExtractProcessor).client(any());
-        doReturn(metricResponseCache).when(argusExtractProcessor).cache(any());
 
         doReturn(results).when(refocusExtractProcessor).process(any());
-        doAnswer(invocation -> filter(invocation.getArguments(), Refocus.class)).when(refocusExtractProcessor).filter(any());
+        doCallRealMethod().when(refocusExtractProcessor).filter(any());
         doCallRealMethod().when(refocusExtractProcessor).execute(any());
         doCallRealMethod().when(refocusExtractProcessor).processAsync(any());
         doCallRealMethod().when(refocusExtractProcessor).executeAsync(any());
-        doReturn(refocusClient).when(refocusExtractProcessor).client(any());
-        doReturn(sampleCache).when(refocusExtractProcessor).cache(any());
 
         return this;
     }
 
     public AppBootstrapFixtures callRealArgusExtractProcessor() {
         // we need to reinitialize the object to provide access to the real failed/succeeded (protected) methods
-        argusExtractProcessor = spy(new ArgusExtractProcessor(appConnector, cacheFactory, shutdownHook));
-        doReturn(argusClient).when(argusExtractProcessor).client(any());
-        doReturn(metricResponseCache).when(argusExtractProcessor).cache(any());
+        argusExtractProcessor = spy(new ArgusExtractProcessor(appConnectors, shutdownHook));
+        doCallRealMethod().when(argusExtractProcessor).filter(any());
         return this;
     }
 
     public AppBootstrapFixtures argusClientCanNotAuth() throws UnauthorizedException {
         doReturn(false).when(argusClient).isAuthenticated();
-        doThrow(UnauthorizedException.class).when(argusClient).auth();
-        doCallRealMethod().when(argusExtractProcessor).client(any());
+        doThrow(UnauthorizedException.class).when(argusClient).authenticate();
         return this;
     }
 
@@ -491,16 +494,14 @@ public class AppBootstrapFixtures {
 
     public AppBootstrapFixtures callRealRefocusExtractProcessor() {
         // we need to reinitialize the object to provide access to the real failed/succeeded (protected) methods
-        refocusExtractProcessor = spy(new RefocusExtractProcessor(appConnector, cacheFactory, shutdownHook));
-        doReturn(refocusClient).when(refocusExtractProcessor).client(any());
-        doReturn(sampleCache).when(refocusExtractProcessor).cache(any());
+        refocusExtractProcessor = spy(new RefocusExtractProcessor(appConnectors, shutdownHook));
+        doCallRealMethod().when(refocusExtractProcessor).filter(any());
         return this;
     }
 
     public AppBootstrapFixtures refocusClientCanNotAuth() throws UnauthorizedException {
         doReturn(false).when(refocusClient).isAuthenticated();
-        doThrow(UnauthorizedException.class).when(refocusClient).auth();
-        doCallRealMethod().when(refocusExtractProcessor).client(any());
+        doThrow(UnauthorizedException.class).when(refocusClient).authenticate();
         return this;
     }
 
@@ -516,20 +517,26 @@ public class AppBootstrapFixtures {
 
     public AppBootstrapFixtures callRealRefocusLoadProcessor() {
         // we need to reinitialize the object to provide access to the real failed/succeeded (protected) methods
-        refocusLoadProcessor = spy(new RefocusLoadProcessor(appConnector, shutdownHook));
-        doReturn(refocusClient).when(refocusLoadProcessor).client(any());
+        refocusLoadProcessor = spy(new RefocusLoadProcessor(appConnectors, shutdownHook));
+        doCallRealMethod().when(refocusLoadProcessor).filter(any());
         return this;
     }
 
+    // TODO: should always use real caches
     public AppBootstrapFixtures realSampleCache() {
         sampleCache = spy(new CacheFactory().newCache());
         doReturn(sampleCache).when(cacheFactory).newCache();
+        doReturn(new AppConnectors.ClientAndCache<>(refocusClient, sampleCache)).when(appConnectors)
+                .retrieveOrBuildClient(MOCK_CONNECTOR_NAME, RefocusClient.class, Sample.class);
         return this;
     }
 
+    // TODO: should always use real caches
     public AppBootstrapFixtures realMetricResponseCache() {
         metricResponseCache = spy(new CacheFactory().newCache());
         doReturn(metricResponseCache).when(cacheFactory).newCache();
+        doReturn(new AppConnectors.ClientAndCache<>(argusClient, metricResponseCache)).when(appConnectors)
+                .retrieveOrBuildClient(MOCK_CONNECTOR_NAME, ArgusClient.class, MetricResponse.class);
         return this;
     }
 
@@ -602,8 +609,8 @@ public class AppBootstrapFixtures {
         return refocusLoadProcessor;
     }
 
-    public AppConnector appConnector() {
-        return appConnector;
+    public AppConnectors appConnectors() {
+        return appConnectors;
     }
 
     public CacheFactory cacheFactory() {
@@ -625,38 +632,6 @@ public class AppBootstrapFixtures {
     //
 
     /**
-     * Sleeps for the specified duration and ignores any interrupts, guaranteeing the specified time has passed
-     * <p/> Do not call this method with large duration values, as it will affect your tests' executions
-     *
-     * @param duration how many milliseconds the thread will sleep for
-     */
-    public static void sleepForMs(long duration) {
-        long time0 = System.currentTimeMillis();
-        do {
-            try {
-                Thread.sleep(System.currentTimeMillis()-time0);
-
-            } catch (InterruptedException e) {
-                // ignoring any interrupts, this is test code and
-                //   it's the developer's responsibility to not call this method with huge values
-                //   and cause the test to not be able to be gracefully interrupted
-            }
-        } while (System.currentTimeMillis() - time0 < duration);
-    }
-
-    /**
-     * Used to replace the default filtering in Extract and Load processors
-     *   since we are mocking the models, which then will then in turn not match the "obj instanceof ModelClass" test
-     */
-    private <T, S> List<T> filter(S[] objects, final Class<T> cls) throws InterruptedException {
-        return Arrays.stream(objects)
-                .filter(cls::isInstance)
-                .map(cls::cast)
-                .collect(Collectors.toList());
-    }
-
-
-    /**
      * Initializes all default components with mocks
      */
     private class MockedDependenciesModule extends AbstractModule {
@@ -666,7 +641,7 @@ public class AppBootstrapFixtures {
             bind(AppConfig.class).toInstance(appConfigMocks.get());
 
             // app connectors
-            bind(AppConnector.class).toInstance(appConnector);
+            bind(AppConnectors.class).toInstance(appConnectors);
             MultibinderFactory.appConnectors(binder()).addBinding().toInstance(connectors);
 
             // System Status
@@ -725,8 +700,9 @@ public class AppBootstrapFixtures {
             doReturn(hazelcast).when(appConfig).hazelcast();
 
             // set defaults
-            doReturn(100L).when(global).minRepeatIntervalMillis(); // run flow every 100ms
+            doReturn(false).when(global).runOnce(); // run as a service by default
             doReturn(60000L).when(global).updateConfigurationIntervalMillis(); // update configurations every minute (avoid updating configs in most tests)
+            doReturn(200).when(global).ioPoolsThreadSize();
 
             doReturn(Boolean.FALSE).when(hazelcast).isEnabled();
 
@@ -742,7 +718,7 @@ public class AppBootstrapFixtures {
 
         public AppConfigMocks runOnce() {
             // only run app once
-            doReturn(-1L).when(global).minRepeatIntervalMillis();
+            doReturn(true).when(global).runOnce();
             return this;
         }
 
@@ -773,11 +749,10 @@ public class AppBootstrapFixtures {
     public static class ConfigurationMocks {
         Boolean isEnabled = false;
         Long repeatIntervalMillis = 10000L;
-        List<Extract> extracts = new ArrayList<>();
+        List<Extract> extract = new ArrayList<>();
         List<Transform> transform = new ArrayList<>();
         List<Load> load = new ArrayList<>();
-
-        Integer cacheMillis = null;
+        int cacheMillis = 0;
 
         public ConfigurationMocks() {
             MockitoAnnotations.initMocks(this);
@@ -804,27 +779,27 @@ public class AppBootstrapFixtures {
         }
 
         public ConfigurationMocks argusExtract(Double defaultValue) {
-            extracts.add(new Argus(MOCK_CONNECTOR_NAME, "expression", "argus-metric", cacheMillis, defaultValue));
+            extract.add(ImmutableArgus.of(MOCK_CONNECTOR_NAME, "expression", "argus-metric", cacheMillis, defaultValue));
             return this;
         }
 
         public ConfigurationMocks refocusExtract(Double defaultValue) {
-            extracts.add(new Refocus(MOCK_CONNECTOR_NAME, "subject", "subject", "aspect", cacheMillis, defaultValue));
+            extract.add(ImmutableRefocus.of(MOCK_CONNECTOR_NAME, "subject", "subject", "aspect", cacheMillis, defaultValue));
             return this;
         }
 
         public ConfigurationMocks refocusLoad() {
-            load.add(new com.salesforce.pyplyn.duct.etl.load.refocus.Refocus(MOCK_CONNECTOR_NAME, "subject", "aspect", null, null, null));
+            load.add(com.salesforce.pyplyn.duct.etl.load.refocus.ImmutableRefocus.of(MOCK_CONNECTOR_NAME, "subject", "aspect", null, null, emptyList()));
             return this;
         }
 
         public ConfigurationMocks lastDatapoint() {
-            transform.add(new LastDatapoint());
+            transform.add(ImmutableLastDatapoint.builder().build());
             return this;
         }
 
-        public ConfigurationMocks withTransforms(Transform[] transforms) {
-            transform.addAll(Arrays.asList(transforms));
+        public ConfigurationMocks withTransforms(List<Transform> transforms) {
+            transform.addAll(transforms);
             return this;
         }
 
@@ -832,9 +807,7 @@ public class AppBootstrapFixtures {
          * Builds a {@link Configuration} based on the configuration fixture defined with this class' methods
          */
         public Configuration build() {
-            return new Configuration(repeatIntervalMillis, extracts.toArray(new Extract[0]),
-                    transform.toArray(new Transform[0]),
-                    load.toArray(new Load[0]), !isEnabled);
+            return ImmutableConfiguration.of(repeatIntervalMillis, extract, transform, load, !isEnabled);
         }
     }
 

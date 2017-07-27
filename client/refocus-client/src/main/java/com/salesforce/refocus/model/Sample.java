@@ -8,18 +8,20 @@
 
 package com.salesforce.refocus.model;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.salesforce.pyplyn.annotations.PyplynImmutableStyle;
 import com.salesforce.pyplyn.cache.Cacheable;
+import org.immutables.value.Value;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
-import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
+import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY;
 import static com.fasterxml.jackson.annotation.JsonProperty.Access.WRITE_ONLY;
-import static com.salesforce.pyplyn.util.CollectionUtils.immutableListOrNull;
-import static com.salesforce.pyplyn.util.CollectionUtils.immutableOrEmptyList;
 import static java.util.Objects.nonNull;
 
 /**
@@ -28,84 +30,41 @@ import static java.util.Objects.nonNull;
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
  * @since 1.0
  */
+@Value.Immutable
+@PyplynImmutableStyle
+@JsonDeserialize(as = ImmutableSample.class)
+@JsonSerialize(as = ImmutableSample.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@JsonInclude(NON_NULL)
-public class Sample implements Cacheable {
+@JsonInclude(NON_EMPTY)
+public abstract class Sample implements Cacheable {
+    @Nullable
     @JsonProperty(access = WRITE_ONLY)
-    private String id;
+    public abstract String id();
 
-    @JsonProperty
-    private String name;
+    public abstract String name();
 
-    @JsonProperty
-    private String value;
+    @Nullable
+    public abstract String value();
 
+    @Nullable
     @JsonProperty(access = WRITE_ONLY)
-    private String updatedAt;
+    public abstract String updatedAt();
 
-    @JsonProperty
-    private final List<String> tags;
+    public abstract List<String> tags();
 
-    @JsonProperty
-    private List<Link> relatedLinks;
+    public abstract List<Link> relatedLinks();
 
-    @JsonProperty
-    private String messageCode;
+    @Nullable
+    public abstract String messageCode();
 
-    @JsonProperty
-    private String messageBody;
+    @Nullable
+    public abstract String messageBody();
 
-    @JsonCreator
-    public Sample(@JsonProperty("id") String id,
-                  @JsonProperty("name") String name,
-                  @JsonProperty("value") String value,
-                  @JsonProperty("updatedAt") String updatedAt,
-                  @JsonProperty("tags") List<String> tags,
-                  @JsonProperty("relatedLinks") List<Link> relatedLinks,
-                  @JsonProperty("messageCode") String messageCode,
-                  @JsonProperty("messageBody") String messageBody) {
-        this.id = id;
-        this.name = name;
-        this.value = value;
-        this.updatedAt = updatedAt;
-        this.tags = immutableListOrNull(tags);
-        this.relatedLinks = immutableListOrNull(relatedLinks);
-        this.messageCode = messageCode;
-        this.messageBody = messageBody;
-    }
-
-    /* Getters */
-
-    public String id() {
-        return id;
-    }
-
-    public String name() {
-        return name;
-    }
-
-    public String value() {
-        return value;
-    }
-
-    public String updatedAt() {
-        return updatedAt;
-    }
-
-    public List<String> tags() {
-        return immutableOrEmptyList(tags);
-    }
-
-    public List<Link> relatedLinks() {
-        return immutableOrEmptyList(relatedLinks);
-    }
-
-    public String messageCode() {
-        return messageCode;
-    }
-
-    public String messageBody() {
-        return messageBody;
+    @Override
+    @Value.Derived
+    @Value.Auxiliary
+    public String cacheKey() {
+        return name();
     }
 
     /**
@@ -114,17 +73,12 @@ public class Sample implements Cacheable {
      */
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder().append('"').append(name).append('"');
+        StringBuilder sb = new StringBuilder().append('"').append(name()).append('"');
 
-        if (nonNull(value)) {
-            sb.append('=').append(value);
+        if (nonNull(value())) {
+            sb.append('=').append(value());
         }
 
         return sb.toString();
-    }
-
-    @Override
-    public String cacheKey() {
-        return name;
     }
 }

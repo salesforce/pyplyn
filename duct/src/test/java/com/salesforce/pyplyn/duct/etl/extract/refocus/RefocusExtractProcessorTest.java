@@ -11,10 +11,10 @@ package com.salesforce.pyplyn.duct.etl.extract.refocus;
 import com.salesforce.pyplyn.client.UnauthorizedException;
 import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapFixtures;
 import com.salesforce.pyplyn.duct.etl.configuration.ConfigurationUpdateManager;
-import com.salesforce.pyplyn.model.TransformationResult;
+import com.salesforce.pyplyn.model.Transmutation;
 import com.salesforce.pyplyn.status.MeterType;
+import com.salesforce.refocus.model.ImmutableSample;
 import com.salesforce.refocus.model.Sample;
-import com.salesforce.refocus.model.builder.SampleBuilder;
 import org.mockito.ArgumentCaptor;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -75,10 +75,10 @@ public class RefocusExtractProcessorTest {
     @Test
     public void testDefaultValueProvidedOnTimeout() throws Exception {
         // ARRANGE
-        Sample timedOutValue = new SampleBuilder()
-                .withName("subject|aspect")
-                .withUpdatedAt(ZonedDateTime.now(ZoneOffset.UTC).toString())
-                .withValue(RefocusExtractProcessor.RESPONSE_TIMEOUT)
+        Sample timedOutValue = ImmutableSample.builder()
+                .name("subject|aspect")
+                .updatedAt(ZonedDateTime.now(ZoneOffset.UTC).toString())
+                .value(RefocusExtractProcessor.RESPONSE_TIMEOUT)
                 .build();
 
         // bootstrap
@@ -105,13 +105,13 @@ public class RefocusExtractProcessorTest {
         verify(fixtures.systemStatus(), times(0)).meter("Refocus", MeterType.ExtractNoDataReturned);
 
         @SuppressWarnings("unchecked")
-        ArgumentCaptor<List<TransformationResult>> dataCaptor = ArgumentCaptor.forClass(List.class);
+        ArgumentCaptor<List<Transmutation>> dataCaptor = ArgumentCaptor.forClass(List.class);
         verify(fixtures.refocusLoadProcessor()).executeAsync(dataCaptor.capture(), any());
 
-        List<TransformationResult> data = dataCaptor.getValue();
+        List<Transmutation> data = dataCaptor.getValue();
         assertThat(data, hasSize(1));
 
-        TransformationResult result = data.get(0);
+        Transmutation result = data.get(0);
         assertThat(result.name(), equalTo("subject|aspect"));
         assertThat(result.value(), equalTo(1.2d));
         assertThat(result.originalValue(), equalTo(1.2d));
@@ -122,10 +122,10 @@ public class RefocusExtractProcessorTest {
     public void testSamplesAreCached() throws Exception {
         // ARRANGE
         // create a sample
-        Sample sample = new SampleBuilder()
-                .withName("subject|aspect")
-                .withUpdatedAt(ZonedDateTime.now(ZoneOffset.UTC).toString())
-                .withValue("1.2")
+        Sample sample = ImmutableSample.builder()
+                .name("subject|aspect")
+                .updatedAt(ZonedDateTime.now(ZoneOffset.UTC).toString())
+                .value("1.2")
                 .build();
 
         // bootstrap
@@ -159,10 +159,10 @@ public class RefocusExtractProcessorTest {
     public void testTimedOutSamplesAreNotCached() throws Exception {
         // ARRANGE
         // create a sample
-        Sample sample = new SampleBuilder()
-                .withName("subject|aspect")
-                .withUpdatedAt(ZonedDateTime.now(ZoneOffset.UTC).toString())
-                .withValue(RefocusExtractProcessor.RESPONSE_TIMEOUT)
+        Sample sample = ImmutableSample.builder()
+                .name("subject|aspect")
+                .updatedAt(ZonedDateTime.now(ZoneOffset.UTC).toString())
+                .value(RefocusExtractProcessor.RESPONSE_TIMEOUT)
                 .build();
 
         // bootstrap
@@ -193,9 +193,9 @@ public class RefocusExtractProcessorTest {
     @Test
     public void testProcessShouldFailWhenDataInvalid() throws Exception {
         // create a sample
-        Sample badSample = new SampleBuilder()
-                .withName("subject|aspect")
-                .withUpdatedAt("INVALID_DATE")
+        Sample badSample = ImmutableSample.builder()
+                .name("subject|aspect")
+                .updatedAt("INVALID_DATE")
                 .build();
 
         assertFailureWithSample(badSample);
@@ -205,10 +205,10 @@ public class RefocusExtractProcessorTest {
     @Test
     public void testProcessShouldFailWithTimedOutSample() throws Exception {
         // create a sample
-        Sample badSample = new SampleBuilder()
-                .withName("subject|aspect")
-                .withUpdatedAt(ZonedDateTime.now(ZoneOffset.UTC).toString())
-                .withValue(RefocusExtractProcessor.RESPONSE_TIMEOUT)
+        Sample badSample = ImmutableSample.builder()
+                .name("subject|aspect")
+                .updatedAt(ZonedDateTime.now(ZoneOffset.UTC).toString())
+                .value(RefocusExtractProcessor.RESPONSE_TIMEOUT)
                 .build();
 
         assertFailureWithSample(badSample);
@@ -217,10 +217,10 @@ public class RefocusExtractProcessorTest {
     @Test
     public void testProcessShouldFailWithInvalidSampleValue() throws Exception {
         // create a sample
-        Sample badSample = new SampleBuilder()
-                .withName("subject|aspect")
-                .withUpdatedAt(ZonedDateTime.now(ZoneOffset.UTC).toString())
-                .withValue("INVALID")
+        Sample badSample = ImmutableSample.builder()
+                .name("subject|aspect")
+                .updatedAt(ZonedDateTime.now(ZoneOffset.UTC).toString())
+                .value("INVALID")
                 .build();
 
         assertFailureWithSample(badSample);

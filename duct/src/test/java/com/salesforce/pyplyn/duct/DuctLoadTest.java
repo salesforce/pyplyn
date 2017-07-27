@@ -10,9 +10,11 @@ package com.salesforce.pyplyn.duct;
 
 import com.salesforce.pyplyn.duct.app.ShutdownHook;
 import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapFixtures;
+import com.salesforce.pyplyn.duct.etl.load.refocus.ImmutableRefocus;
 import com.salesforce.pyplyn.duct.etl.load.refocus.Refocus;
 import com.salesforce.pyplyn.duct.etl.load.refocus.RefocusLoadProcessor;
-import com.salesforce.pyplyn.model.TransformationResult;
+import com.salesforce.pyplyn.model.ImmutableTransmutation;
+import com.salesforce.pyplyn.model.Transmutation;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.testng.annotations.BeforeMethod;
@@ -36,14 +38,16 @@ public class DuctLoadTest {
     private ShutdownHook shutdownHook;
 
     private AppBootstrapFixtures fixtures;
-    private TransformationResult result;
+    private Transmutation result;
 
     @BeforeMethod
     public void setUp() throws Exception {
         //ARRANGE
         MockitoAnnotations.initMocks(this);
         Number num = 1;
-        result = new TransformationResult(ZonedDateTime.now(), ACTUAL_NAME, num, num);
+
+        Transmutation.Metadata metadata = ImmutableTransmutation.Metadata.builder().build();
+        result = ImmutableTransmutation.of(ZonedDateTime.now(),  ACTUAL_NAME, num, num, metadata);
 
         fixtures = new AppBootstrapFixtures().initializeFixtures();
     }
@@ -52,9 +56,9 @@ public class DuctLoadTest {
     public void processRefocus() throws Exception {
         //ARRANGE
         @SuppressWarnings("unchecked")
-        RefocusLoadProcessor refocusLoadProcessor = spy(new RefocusLoadProcessor(fixtures.appConnector(), shutdownHook));
-        Refocus refocus = new Refocus("endpoint", "subject", "aspect",
-                "defaultMessageCode", "defaultMessageBody", null);
+        RefocusLoadProcessor refocusLoadProcessor = spy(new RefocusLoadProcessor(fixtures.appConnectors(), shutdownHook));
+        Refocus refocus = ImmutableRefocus.of("endpoint", "subject", "aspect",
+                "defaultMessageCode", "defaultMessageBody", Collections.emptyList());
         Boolean boolVal = Boolean.TRUE;
 
         //ACT

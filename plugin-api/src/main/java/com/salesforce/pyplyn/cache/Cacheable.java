@@ -9,7 +9,7 @@
 package com.salesforce.pyplyn.cache;
 
 /**
- * Classes whose instances can be cached should implement this interface and provide a cacheKey() implementation
+ * Classes whose instances can be cached should implement this interface and provide a endpoint() implementation
  *
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
  * @since 3.0

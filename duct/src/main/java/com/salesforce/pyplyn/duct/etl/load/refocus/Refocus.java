@@ -8,18 +8,17 @@
 
 package com.salesforce.pyplyn.duct.etl.load.refocus;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.salesforce.pyplyn.annotations.PyplynImmutableStyle;
 import com.salesforce.pyplyn.model.Load;
-import com.salesforce.pyplyn.model.TransformationResult;
-import com.salesforce.pyplyn.util.CollectionUtils;
+import com.salesforce.pyplyn.model.Transmutation;
 import com.salesforce.refocus.model.Link;
 import com.salesforce.refocus.model.Sample;
+import org.immutables.value.Value;
 
-import java.io.Serializable;
+import javax.annotation.Nullable;
 import java.util.List;
-
-import static com.salesforce.pyplyn.util.CollectionUtils.immutableOrEmptyList;
 
 /**
  * Refocus load destination model
@@ -27,105 +26,50 @@ import static com.salesforce.pyplyn.util.CollectionUtils.immutableOrEmptyList;
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
  * @since 3.0
  */
-public class Refocus implements Load, Serializable {
+@Value.Immutable
+@PyplynImmutableStyle
+@JsonDeserialize(as = ImmutableRefocus.class)
+@JsonSerialize(as = ImmutableRefocus.class)
+public abstract class Refocus implements Load {
     private static final long serialVersionUID = 7327981995594592996L;
-
-    @JsonProperty(required = true)
-    private String endpoint;
-
-    @JsonProperty(required = true)
-    private String subject;
-
-    @JsonProperty(required = true)
-    private String aspect;
-
-    @JsonProperty
-    private String defaultMessageCode;
-
-    @JsonProperty
-    private String defaultMessageBody;
-
-    @JsonProperty
-    private List<Link> relatedLinks;
-
-
-    /**
-     * Default constructor
-     */
-    @JsonCreator
-    public Refocus(@JsonProperty("endpoint") String endpoint,
-                   @JsonProperty("subject") String subject,
-                   @JsonProperty("aspect") String aspect,
-                   @JsonProperty("defaultMessageCode") String defaultMessageCode,
-                   @JsonProperty("defaultMessageBody") String defaultMessageBody,
-                   @JsonProperty("relatedLinks") List<Link> relatedLinks) {
-        this.endpoint = endpoint;
-        this.subject = subject;
-        this.aspect = aspect;
-        this.defaultMessageCode = defaultMessageCode;
-        this.defaultMessageBody = defaultMessageBody;
-        this.relatedLinks = CollectionUtils.immutableListOrNull(relatedLinks);
-    }
 
     /**
      * Endpoint where the results should be published
      */
-    public String endpoint() {
-        return endpoint;
-    }
+    public abstract String endpoint();
+
+    /**
+     * Subject to use for the sample
+     */
+    public abstract String subject();
+
+    /**
+     * Aspect to use for the sample
+     */
+    public abstract String aspect();
+
+    /**
+     * Message code to publish by default, if {@link Transmutation#metadata()} does not contain one
+     */
+    @Nullable
+    public abstract String defaultMessageCode();
+
+    /**
+     * Message body to publish by default, if {@link Transmutation#metadata()} does not contain any messages
+     */
+    @Nullable
+    public abstract String defaultMessageBody();
 
     /**
      * List of related links to associate to the published {@link Sample}
      */
-    public List<Link> relatedLinks() {
-        return immutableOrEmptyList(relatedLinks);
-    }
-
-    /**
-     * Message code to publish by default, if {@link TransformationResult#metadata()} does not contain one
-     */
-    public String defaultMessageCode() {
-        return defaultMessageCode;
-    }
-
-    /**
-     * Message body to publish by default, if {@link TransformationResult#metadata()} does not contain any messages
-     */
-    public String defaultMessageBody() {
-        return defaultMessageBody;
-    }
+    public abstract List<Link> relatedLinks();
 
     /**
      * @return the Refocus standardized sample name (i.e.: SUBJECT.PATH|ASPECT)
      */
+    @Value.Auxiliary
     public final String name() {
-        return String.format("%s|%s", subject, aspect);
-    }
-
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        Refocus refocus = (Refocus) o;
-
-        if (!endpoint.equals(refocus.endpoint)) {
-            return false;
-        }
-        if (!subject.equals(refocus.subject)) {
-            return false;
-        }
-
-        return aspect.equals(refocus.aspect);
-    }
-
-    @Override
-    public int hashCode() {
-        return 31 * (31 * endpoint.hashCode() + subject.hashCode()) + aspect.hashCode();
+        return String.format("%s|%s", subject(), aspect());
     }
 }

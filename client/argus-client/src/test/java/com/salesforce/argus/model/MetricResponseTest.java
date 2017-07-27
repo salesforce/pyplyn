@@ -8,11 +8,16 @@
 
 package com.salesforce.argus.model;
 
-import com.salesforce.argus.model.builder.MetricResponseBuilderTest;
 import org.testng.annotations.Test;
 
+import java.time.Instant;
+import java.util.Collections;
+import java.util.TreeMap;
+
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.not;
 
 /**
  * Test class
@@ -24,9 +29,36 @@ public class MetricResponseTest {
     @Test
     public void testCacheKeyIsMetricName() throws Exception {
         // ARRANGE
-        MetricResponse response = MetricResponseBuilderTest.defaultMetricResponseBuilder().build();
+        MetricResponse response = ImmutableMetricResponse.builder().metric("metric").build();
+
 
         // ACT/ASSERT
         assertThat(response.cacheKey(), equalTo(response.metric()));
+    }
+
+    @Test
+    public void testToStringContainsLastDatapoint() throws Exception {
+        // ARRANGE
+        String now = Long.valueOf(Instant.now().toEpochMilli()).toString();
+        TreeMap<String, String> map = new TreeMap<>();
+        map.put(now, "1.0");
+        map.put(now+1, "2.0");
+        map.put(now+2, "3.0");
+
+        MetricResponse response = ImmutableMetricResponse.builder()
+                .metric("metric")
+                .datapoints(map)
+                .build();
+
+
+        // ACT
+        String stringResponse = response.toString();
+
+
+        // ASSERT
+        assertThat(stringResponse, containsString("metric"));
+        assertThat(stringResponse, containsString("3.0"));
+        assertThat(stringResponse, not(containsString("2.0")));
+        assertThat(stringResponse, not(containsString("1.0")));
     }
 }

@@ -8,28 +8,28 @@
 
 package com.salesforce.pyplyn.duct.etl.transform.standard;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.salesforce.pyplyn.model.Transform;
-import com.salesforce.pyplyn.model.TransformationResult;
-import com.salesforce.pyplyn.model.builder.TransformationResultBuilder;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.salesforce.pyplyn.annotations.PyplynImmutableStyle;
+import com.salesforce.pyplyn.model.*;
+import org.immutables.value.Value;
 
-import java.io.Serializable;
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.salesforce.pyplyn.duct.etl.transform.standard.Threshold.Value.*;
+import static com.salesforce.pyplyn.model.StatusCode.*;
 import static com.salesforce.pyplyn.util.FormatUtils.formatNumber;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 /**
- * Applies the specified thresholds on the {@link TransformationResult}'s value, and returns
- *   a new result with the value between the [0-3] interval:
+ * Applies the specified thresholds on the {@link Transmutation}'s value, and returns
+ *   a new result with the value corresponding to the ones defined in {@link StatusCode}:
  * <p/>- 0=OK
  * <p/>- 1=INFO
  * <p/>- 2=WARN
- * <p/>- 3=CRIT
+ * <p/>- 3=ERR (critical)
  * <p/>
  * <p/>Note: values are evaluated from most to least critical and the first match will be returned
  *   (in other words, the comparisons are always evaluated with "greater or lower than or equal to")
@@ -41,54 +41,49 @@ import static java.util.Objects.nonNull;
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
  * @since 3.0
  */
-public class Threshold implements Transform, Serializable {
+@Value.Immutable
+@PyplynImmutableStyle
+@JsonDeserialize(as = ImmutableThreshold.class)
+@JsonSerialize(as = ImmutableThreshold.class)
+public abstract class Threshold implements Transform {
     private static final long serialVersionUID = 1883668176362666986L;
     private static final String MESSAGE_TEMPLATE = "%s threshold hit by %s, with value=%s %s %.2f";
 
-
-    @JsonProperty
-    String applyToMetricName;
-
-    @JsonProperty
-    Double criticalThreshold;
-
-    @JsonProperty
-    Double warningThreshold;
-
-    @JsonProperty
-    Double infoThreshold;
-
-    @JsonProperty
-    Type type;
-
-
     /**
-     * Default constructor
-     *
-     * @param applyToMetricName Leave null/unspecified to apply to all results
-     * @param criticalThreshold Critical threshold
-     * @param warningThreshold Warning threshold
-     * @param infoThreshold Info threshold
-     * @param type Decides if the values matched against the specified thresholds, should be greater or lower
+     * Leave null/unspecified to apply to all results
      */
-    @JsonCreator
-    public Threshold(@JsonProperty("applyToMetricName") String applyToMetricName,
-                     @JsonProperty("criticalThreshold") Double criticalThreshold,
-                     @JsonProperty("warningThreshold") Double warningThreshold,
-                     @JsonProperty("infoThreshold") Double infoThreshold,
-                     @JsonProperty("type") Type type) {
-        this.applyToMetricName = applyToMetricName;
-        this.criticalThreshold = criticalThreshold;
-        this.warningThreshold = warningThreshold;
-        this.infoThreshold = infoThreshold;
-        this.type = type;
-    }
+    @Nullable
+    public abstract String applyToMetricName();
 
     /**
-     * Applies this transformation and returns a new {@link TransformationResult} matrix
+     * Critical threshold
+     */
+    @Nullable
+    public abstract Double criticalThreshold();
+
+    /**
+     * Warning threshold
+     */
+    @Nullable
+    public abstract Double warningThreshold();
+
+    /**
+     * Info threshold
+     */
+    @Nullable
+    public abstract Double infoThreshold();
+
+    /**
+     * Decides if the values matched against the specified thresholds, should be greater or lower
+     */
+    @Nullable
+    public abstract ThresholdType type();
+
+    /**
+     * Applies this transformation and returns a new {@link Transmutation} matrix
      */
     @Override
-    public List<List<TransformationResult>> apply(List<List<TransformationResult>> input) {
+    public List<List<Transmutation>> apply(List<List<Transmutation>> input) {
         return input.stream()
                 .map(metrics -> metrics.stream()
 
@@ -106,15 +101,15 @@ public class Threshold implements Transform, Serializable {
      * @param result the result object to analyze
      * @return
      */
-    TransformationResult applyThreshold(TransformationResult result) {
+    Transmutation applyThreshold(Transmutation result) {
         // if this transform should apply only to a specific id,
         //   check against passed transform result and return unchanged if it doesn't matches
-        if (nonNull(applyToMetricName) && !applyToMetricName.equals(result.name())) {
+        if (nonNull(applyToMetricName()) && !applyToMetricName().equals(result.name())) {
             return result;
         }
 
         // if type is not specified, transform to OK
-        if (isNull(type)) {
+        if (isNull(type())) {
             return changeValue(result, OK.value());
         }
 
@@ -122,14 +117,14 @@ public class Threshold implements Transform, Serializable {
         //   if any threshold is not specified (null), it will be ignored
         //   if all thresholds are not specified, the result will be transformed to OK
         Number value = result.value();
-        if (type.matches(value, criticalThreshold)) {
-            return appendMessage(changeValue(result, CRIT.value()), CRIT.code(), criticalThreshold);
+        if (type().matches(value, criticalThreshold())) {
+            return appendMessage(changeValue(result, ERR.value()), ERR.code(), criticalThreshold());
 
-        } else if (type.matches(value, warningThreshold)) {
-            return appendMessage(changeValue(result, WARN.value()), WARN.code(), warningThreshold);
+        } else if (type().matches(value, warningThreshold())) {
+            return appendMessage(changeValue(result, WARN.value()), WARN.code(), warningThreshold());
 
-        } else if (type.matches(value, infoThreshold)) {
-            return appendMessage(changeValue(result, INFO.value()), INFO.code(), infoThreshold);
+        } else if (type().matches(value, infoThreshold())) {
+            return appendMessage(changeValue(result, INFO.value()), INFO.code(), infoThreshold());
 
         } else {
             return changeValue(result, OK.value());
@@ -140,107 +135,26 @@ public class Threshold implements Transform, Serializable {
     /**
      * Changes the result's value
      */
-    public static TransformationResult changeValue(TransformationResult result, Double value) {
-        return new TransformationResultBuilder(result)
-                .withValue(value)
-                .build();
+    public static Transmutation changeValue(Transmutation result, Double value) {
+        return ImmutableTransmutation.builder().from(result).value(value).build();
     }
 
     /**
      * Appends a message with the explanation of what threshold was hit
      */
-    TransformationResult appendMessage(TransformationResult result, String code, Double threshold) {
+    Transmutation appendMessage(Transmutation result, String code, Double threshold) {
         String thresholdHitAlert = String.format(MESSAGE_TEMPLATE,
                 code,
                 result.name(),
                 formatNumber(result.originalValue()),
-                type.name(),
+                type().name(),
                 threshold);
 
-        return new TransformationResultBuilder(result)
-                .metadata((metadata) -> metadata.addMessage(thresholdHitAlert))
+        return ImmutableTransmutation.builder().from(result)
+                .metadata(ImmutableTransmutation.Metadata.builder()
+                        .from(result.metadata())
+                        .addMessages(thresholdHitAlert)
+                        .build())
                 .build();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        Threshold threshold = (Threshold) o;
-
-        if (applyToMetricName != null ? !applyToMetricName.equals(threshold.applyToMetricName) : threshold.applyToMetricName != null)
-            return false;
-        if (criticalThreshold != null ? !criticalThreshold.equals(threshold.criticalThreshold) : threshold.criticalThreshold != null)
-            return false;
-        if (warningThreshold != null ? !warningThreshold.equals(threshold.warningThreshold) : threshold.warningThreshold != null)
-            return false;
-        if (infoThreshold != null ? !infoThreshold.equals(threshold.infoThreshold) : threshold.infoThreshold != null)
-            return false;
-        return type == threshold.type;
-    }
-
-    @Override
-    public int hashCode() {
-        int result = applyToMetricName != null ? applyToMetricName.hashCode() : 0;
-        result = 31 * result + (criticalThreshold != null ? criticalThreshold.hashCode() : 0);
-        result = 31 * result + (warningThreshold != null ? warningThreshold.hashCode() : 0);
-        result = 31 * result + (infoThreshold != null ? infoThreshold.hashCode() : 0);
-        result = 31 * result + (type != null ? type.hashCode() : 0);
-        return result;
-    }
-
-
-    /**
-     * Possible trigger types
-     */
-    public enum Type {
-        GREATER_THAN, LESS_THAN;
-
-        /**
-         * Determines if a compared value is higher/lower than a specified threshold
-         *
-         * @return true if the comparison succeeds, or false if the passed threshold is null
-         */
-        public boolean matches(Number compared, Double threshold) {
-            if (nonNull(threshold) && this == GREATER_THAN) {
-                return compared.doubleValue() >= threshold;
-            } else if (nonNull(threshold) && this == LESS_THAN) {
-                return compared.doubleValue() <= threshold;
-            }
-
-            return false;
-        }
-    }
-
-    /**
-     * Predefined values for OK/INFO/WARN/ERR
-     */
-    public enum Value {
-        OK(0d, "OK"),
-        INFO(1d, "INFO"),
-        WARN(2d, "WARN"),
-        CRIT(3d, "CRIT");
-
-        private final Double value;
-        private final String code;
-
-        Value(double val, String code) {
-            this.value = val;
-            this.code = code;
-        }
-
-        public Double value() {
-            return value;
-        }
-
-        public String code() {
-            return code;
-        }
     }
 }

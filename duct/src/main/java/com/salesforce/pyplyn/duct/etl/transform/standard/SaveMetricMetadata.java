@@ -8,12 +8,15 @@
 
 package com.salesforce.pyplyn.duct.etl.transform.standard;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.collect.Iterables;
+import com.salesforce.pyplyn.annotations.PyplynImmutableStyle;
+import com.salesforce.pyplyn.model.ImmutableTransmutation;
 import com.salesforce.pyplyn.model.Transform;
-import com.salesforce.pyplyn.model.TransformationResult;
-import com.salesforce.pyplyn.model.builder.TransformationResultBuilder;
+import com.salesforce.pyplyn.model.Transmutation;
+import org.immutables.value.Value;
 
-import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -28,17 +31,20 @@ import static com.salesforce.pyplyn.util.FormatUtils.formatNumber;
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
  * @since 3.0
  */
-public class SaveMetricMetadata implements Transform, Serializable {
+@Value.Immutable
+@PyplynImmutableStyle
+@JsonDeserialize(as = ImmutableSaveMetricMetadata.class)
+@JsonSerialize(as = ImmutableSaveMetricMetadata.class)
+public abstract class SaveMetricMetadata implements Transform {
     private static final long serialVersionUID = 2589981196065459798L;
-
 
     /**
      * This method assumes only one value per source {@link com.salesforce.pyplyn.model.Extract} exists and
-     *   it will throw an {@link IllegalArgumentException} if more than one {@link TransformationResult}s per row
+     *   it will throw an {@link IllegalArgumentException} if more than one {@link Transmutation}s per row
      *   is passed
      */
     @Override
-    public List<List<TransformationResult>> apply(List<List<TransformationResult>> input) {
+    public List<List<Transmutation>> apply(List<List<Transmutation>> input) {
         // store all name, value pairs in a map
         final List<String> nameValuePairMessages = input.stream()
                 .map((iterable) -> Iterables.getOnlyElement(iterable, null))
@@ -51,23 +57,14 @@ public class SaveMetricMetadata implements Transform, Serializable {
         return input.stream()
                 .map(metrics -> metrics.stream()
                         // tags all ExtractResult objects, as we have no guarantee which will be selected at the end
-                        .map(stage -> new TransformationResultBuilder(stage)
-                                .metadata((metadata) -> metadata
-                                        .addMessages(nameValuePairMessages))
+                        .map(stage -> ImmutableTransmutation.builder().from(stage)
+                                .metadata(ImmutableTransmutation.Metadata.builder()
+                                        .from(stage.metadata())
+                                        .addAllMessages(nameValuePairMessages)
+                                        .build())
                                 .build())
 
                         .collect(Collectors.toList())
                 ).collect(Collectors.toList());
-    }
-
-
-    @Override
-    public boolean equals(Object o) {
-        return !(o == null || getClass() != o.getClass());
-    }
-
-    @Override
-    public int hashCode() {
-        return SaveMetricMetadata.class.hashCode();
     }
 }

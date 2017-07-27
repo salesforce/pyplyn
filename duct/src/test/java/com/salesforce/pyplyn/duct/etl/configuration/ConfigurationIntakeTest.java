@@ -8,6 +8,7 @@
 
 package com.salesforce.pyplyn.duct.etl.configuration;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.salesforce.pyplyn.configuration.Configuration;
 import com.salesforce.pyplyn.duct.app.BootstrapException;
 import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapFixtures;
@@ -22,6 +23,8 @@ import java.util.Set;
 import static com.salesforce.pyplyn.duct.appconfig.AppConfigProviderTest.fixSerializationHelper;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 import static org.testng.Assert.fail;
 
 /**
@@ -45,16 +48,17 @@ public class ConfigurationIntakeTest {
     public void testInvalidConfigurations() throws Exception {
         // ARRANGE
         String invalidConfigurationsDir = this.getClass().getResource(INVALID_CONFIGURATIONS).getFile();
-        SerializationHelper serializationHelper = fixSerializationHelper(fixtures);
-        ConfigurationIntake configurationIntake = new ConfigurationIntake(serializationHelper);
+        ObjectMapper mapper = fixSerializationHelper(fixtures);
+        ConfigurationIntake configurationIntake = spy(new ConfigurationIntake(mapper));
+
 
         // ACT
-        List<String> configurations = configurationIntake.getAllConfigurationsFromDisk(invalidConfigurationsDir);
-        Set<Configuration> parsedConfigurations = configurationIntake.parseAll(configurations);
+        Set<Configuration> parsedConfigurations = configurationIntake.parseAll(invalidConfigurationsDir);
+
 
         // ASSERT
         try {
-            assertThat(configurations, hasSize(1));
+            verify(configurationIntake).getAllConfigurationsFromDisk(invalidConfigurationsDir);
             assertThat(parsedConfigurations, empty());
 
             configurationIntake.throwRuntimeExceptionOnErrors();
@@ -69,8 +73,8 @@ public class ConfigurationIntakeTest {
     @Test
     public void testNullConfigurationsDir() throws Exception {
         // ARRANGE
-        SerializationHelper serializationHelper = fixSerializationHelper(fixtures);
-        ConfigurationIntake configurationIntake = new ConfigurationIntake(serializationHelper);
+        ObjectMapper mapper = fixSerializationHelper(fixtures);
+        ConfigurationIntake configurationIntake = new ConfigurationIntake(mapper);
 
         // ACT
         List<String> configurations = configurationIntake.getAllConfigurationsFromDisk(null);
@@ -82,8 +86,8 @@ public class ConfigurationIntakeTest {
     @Test(expectedExceptions = IOException.class)
     public void testNonExistentConfigurationsDir() throws Exception {
         // ARRANGE
-        SerializationHelper serializationHelper = fixSerializationHelper(fixtures);
-        ConfigurationIntake configurationIntake = new ConfigurationIntake(serializationHelper);
+        ObjectMapper mapper = fixSerializationHelper(fixtures);
+        ConfigurationIntake configurationIntake = new ConfigurationIntake(mapper);
 
         // ACT/ASSERT
         configurationIntake.getAllConfigurationsFromDisk("/invalid/dir/should/throw/IOException");
@@ -95,8 +99,8 @@ public class ConfigurationIntakeTest {
         String invalidConfigurationsDir = this.getClass().getResource(INVALID_CONFIGURATIONS).getFile();
         fixtures.appConfigMocks().configurationsPath(invalidConfigurationsDir);
 
-        SerializationHelper serializationHelper = fixSerializationHelper(fixtures);
-        ConfigurationIntake configurationIntake = new ConfigurationIntake(serializationHelper);
+        ObjectMapper mapper = fixSerializationHelper(fixtures);
+        ConfigurationIntake configurationIntake = new ConfigurationIntake(mapper);
 
         // ACT
         ConfigurationLoader configurationLoader = new ConfigurationLoader(fixtures.appConfigMocks().get(), configurationIntake);

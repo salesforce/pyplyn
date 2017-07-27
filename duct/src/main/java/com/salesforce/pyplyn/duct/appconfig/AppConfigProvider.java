@@ -8,6 +8,7 @@
 
 package com.salesforce.pyplyn.duct.appconfig;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.name.Named;
@@ -27,8 +28,9 @@ public class AppConfigProvider implements Provider<AppConfig> {
     private final AppConfig appConfig;
 
     @Inject
-    public AppConfigProvider(@Named("config") String configFile, SerializationHelper serializer) throws IOException {
-        appConfig = serializer.deserializeJsonFile(configFile, AppConfig.class);
+    public AppConfigProvider(@Named("config") String configFile, ObjectMapper mapper) throws IOException {
+        // TODO: simplify this / move to module
+        appConfig = mapper.readValue(SerializationHelper.loadResourceInsecure(configFile), AppConfig.class);
     }
 
     @Override

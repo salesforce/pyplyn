@@ -26,6 +26,8 @@ import java.util.List;
  * @since 1.0
  */
 public interface RefocusService {
+    /* Authorization header */
+    String AUTHORIZATION = "Authorization";
 
     /* Authentication */
 
@@ -37,59 +39,59 @@ public interface RefocusService {
 
     @GET("samples/{key}")
     @Headers("Content-Type: application/json")
-    Call<Sample> getSample(@Header("Authorization") String authorization, @Path("key") String key, @Query("fields") List<String> fields);
+    Call<Sample> getSample(@Header(AUTHORIZATION) String authorization, @Path("key") String key, @Query("fields") List<String> fields);
 
     @GET("samples")
     @Headers("Content-Type: application/json")
-    Call<List<Sample>> getSample(@Header("Authorization") String authorization, @Query("name") String name);
+    Call<List<Sample>> getSample(@Header(AUTHORIZATION) String authorization, @Query("name") String name);
 
     @POST("samples/upsert/bulk")
     @Headers("Content-Type: application/json")
-    Call<ResponseBody> upsertSamplesBulk(@Header("Authorization") String authorization, @Body List<Sample> samples);
+    Call<ResponseBody> upsertSamplesBulk(@Header(AUTHORIZATION) String authorization, @Body List<Sample> samples);
 
     @DELETE("samples/{key}")
     @Headers("Content-Type: application/json")
-    Call<Sample> deleteSample(@Header("Authorization") String authorization, @Path("key") String key);
+    Call<Sample> deleteSample(@Header(AUTHORIZATION) String authorization, @Path("key") String key);
 
 
     /* Subjects operations */
 
     @GET("subjects")
     @Headers("Content-Type: application/json")
-    Call<List<Subject>> getSubjects(@Header("Authorization") String authorization, @Query("fields") List<String> fields);
+    Call<List<Subject>> getSubjects(@Header(AUTHORIZATION) String authorization, @Query("fields") List<String> fields);
 
     @GET("subjects/{key}")
     @Headers("Content-Type: application/json")
-    Call<Subject> getSubject(@Header("Authorization") String authorization, @Path("key") String key, @Query("fields") List<String> fields);
+    Call<Subject> getSubject(@Header(AUTHORIZATION) String authorization, @Path("key") String key, @Query("fields") List<String> fields);
 
     @GET("subjects/{key}/hierarchy")
     @Headers("Content-Type: application/json")
-    Call<Subject> getSubjectHierarchy(@Header("Authorization") String authorization, @Path("key") String key, @Query("status") String status);
+    Call<Subject> getSubjectHierarchy(@Header(AUTHORIZATION) String authorization, @Path("key") String key, @Query("status") String status);
 
     @POST("subjects")
     @Headers("Content-Type: application/json")
-    Call<Subject> postSubject(@Header("Authorization") String authorization, @Body Subject subject);
+    Call<Subject> postSubject(@Header(AUTHORIZATION) String authorization, @Body Subject subject);
 
     @PATCH("subjects/{key}")
     @Headers("Content-Type: application/json")
-    Call<Subject> patchSubject(@Header("Authorization") String authorization, @Path("key") String key, @Body Subject subject);
+    Call<Subject> patchSubject(@Header(AUTHORIZATION) String authorization, @Path("key") String key, @Body Subject subject);
 
 
     /* Aspect operations */
 
     @GET("aspects")
     @Headers("Content-Type: application/json")
-    Call<List<Aspect>> getAspects(@Header("Authorization") String authorization, @Query("fields") List<String> fields);
+    Call<List<Aspect>> getAspects(@Header(AUTHORIZATION) String authorization, @Query("fields") List<String> fields);
 
     @GET("aspects/{key}")
     @Headers("Content-Type: application/json")
-    Call<Aspect> getAspect(@Header("Authorization") String authorization, @Path("key") String key, @Query("fields") List<String> fields);
+    Call<Aspect> getAspect(@Header(AUTHORIZATION) String authorization, @Path("key") String key, @Query("fields") List<String> fields);
 
     @POST("aspects")
     @Headers("Content-Type: application/json")
-    Call<Aspect> postAspect(@Header("Authorization") String authorization, @Body Aspect subject);
+    Call<Aspect> postAspect(@Header(AUTHORIZATION) String authorization, @Body Aspect subject);
 
     @PATCH("aspects/{key}")
     @Headers("Content-Type: application/json")
-    Call<Aspect> patchAspect(@Header("Authorization") String authorization, @Path("key") String key, @Body Aspect subject);
+    Call<Aspect> patchAspect(@Header(AUTHORIZATION) String authorization, @Path("key") String key, @Body Aspect subject);
 }

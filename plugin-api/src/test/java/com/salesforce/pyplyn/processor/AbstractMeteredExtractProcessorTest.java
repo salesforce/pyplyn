@@ -10,7 +10,7 @@ package com.salesforce.pyplyn.processor;
 
 import com.codahale.metrics.Meter;
 import com.salesforce.pyplyn.model.ExtractImpl;
-import com.salesforce.pyplyn.model.TransformationResult;
+import com.salesforce.pyplyn.model.Transmutation;
 import com.salesforce.pyplyn.status.SystemStatus;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -19,11 +19,12 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.*;
@@ -54,8 +55,8 @@ public class AbstractMeteredExtractProcessorTest {
         ExtractImpl oneElementToProcess = new ExtractImpl("id");
 
         // ACT
-        List<List<TransformationResult>> processed = processor.execute(oneElementToProcess);
-        Optional<TransformationResult> result = processed.stream().flatMap(Collection::stream).findAny();
+        List<List<Transmutation>> processed = processor.execute(singletonList(oneElementToProcess));
+        Optional<Transmutation> result = processed.stream().flatMap(Collection::stream).findAny();
 
         // ASSERT
         assertThat("We should have one result", result.isPresent(), is(true));
@@ -65,8 +66,8 @@ public class AbstractMeteredExtractProcessorTest {
     @Test
     public void testProcessNoElementsShouldReturnEmptyList() throws Exception {
         // ACT
-        List<List<TransformationResult>> processed = processor.execute();
-        Optional<TransformationResult> result = processed.stream().flatMap(Collection::stream).findAny();
+        List<List<Transmutation>> processed = processor.execute(emptyList());
+        Optional<Transmutation> result = processed.stream().flatMap(Collection::stream).findAny();
 
         // ASSERT
         assertThat("Expecting no results", result.isPresent(), is(false));
@@ -100,11 +101,11 @@ public class AbstractMeteredExtractProcessorTest {
     private static class AbstractMeteredExtractProcessorImpl extends AbstractMeteredExtractProcessor<ExtractImpl> {
 
         @Override
-        public List<List<TransformationResult>> process(List<ExtractImpl> datasource) {
-            return Collections.singletonList(
+        public List<List<Transmutation>> process(List<ExtractImpl> datasource) {
+            return singletonList(
                     datasource.stream()
                             .map((src) -> {
-                                TransformationResult result = mock(TransformationResult.class);
+                                Transmutation result = mock(Transmutation.class);
                                 doReturn(src.id()).when(result).name();
                                 return result;
                             })

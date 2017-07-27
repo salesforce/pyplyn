@@ -9,11 +9,8 @@
 package com.salesforce.refocus;
 
 import com.salesforce.pyplyn.client.UnauthorizedException;
-import com.salesforce.pyplyn.configuration.AbstractConnector;
+import com.salesforce.pyplyn.configuration.Connector;
 import com.salesforce.refocus.model.*;
-import com.salesforce.refocus.model.builder.AspectBuilder;
-import com.salesforce.refocus.model.builder.SampleBuilder;
-import com.salesforce.refocus.model.builder.SubjectBuilder;
 import okhttp3.MediaType;
 import okhttp3.Request;
 import okhttp3.ResponseBody;
@@ -26,7 +23,6 @@ import retrofit2.Response;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -45,8 +41,10 @@ import static org.mockito.Mockito.*;
  * @since 1.0
  */
 public class RefocusClientTest {
-    private final List<String> fields = Arrays.asList("id", "name", "isPublished");
-    private List<Sample> samples;
+    private static final String AUTHORIZATION_HEADER = "Authorization: fake";
+    private static final Link LINK = ImmutableLink.of("name", "url");
+    private static final List<String> fields = Arrays.asList("id", "name", "isPublished");
+
     private Sample sample;
     private Request request;
     private Subject subject;
@@ -55,9 +53,10 @@ public class RefocusClientTest {
     private RefocusService svc;
 
     @Mock
-    private AbstractConnector connector;
+    private Connector connector;
 
     private RefocusClient refocus;
+    private AuthRequest authRequest;
 
     @BeforeMethod
     public void setUp() throws Exception {
@@ -65,26 +64,23 @@ public class RefocusClientTest {
 
         // ARRANGE
         doReturn("http://localhost/").when(connector).endpoint();
+        doReturn("password".getBytes(Charset.defaultCharset())).when(connector).password();
 
         refocus = spy(new RefocusClient(connector));
         doReturn(svc).when(refocus).svc();
 
         // init a subject
-        subject = new SubjectBuilder()
-                .withId("id")
-                .withParentId("parentId")
-                .withName("name")
-                .withDescription("description")
-                .withPublished(Boolean.TRUE)
-                .withSamples(samples)
-                .withRelatedLinks(Collections.singletonList(new Link("name", "url")))
+        subject = ImmutableSubject.builder()
+                .id("id")
+                .parentId("parentId")
+                .name("name")
+                .description("description")
+                .isPublished(Boolean.TRUE)
+                .relatedLinks(Collections.singletonList(LINK))
                 .build();
 
-        // init the samples list
-        samples = new ArrayList<>();
-
         // init a sample
-        sample = new SampleBuilder().withId("id").withName("name").withValue("value").build();
+        sample = ImmutableSample.builder().id("id").name("name").value("value").build();
 
         // build a dummy request object
         Request.Builder builder = new Request.Builder();
@@ -92,6 +88,9 @@ public class RefocusClientTest {
         builder.method("MOCK", null);
         request = builder.build();
 
+        // mock auth
+        doReturn(AUTHORIZATION_HEADER).when(refocus).authorizationHeader();
+        authRequest = ImmutableAuthRequest.of("username", "password".getBytes());
     }
 
     @Test
@@ -100,18 +99,18 @@ public class RefocusClientTest {
         doReturn("password".getBytes()).when(connector).password();
 
         // ACT
-        refocus.auth();
+        refocus.authenticate();
 
         // ASSERT
         assertThat(refocus.isAuthenticated(), equalTo(true));
-        verify(refocus).generateAuthorizationHeader(new String("password".getBytes(), Charset.defaultCharset()));
+        verify(refocus).auth();
     }
 
     @Test
     public void authWithCredentials() throws Exception {
         // ARRANGE
         AuthResponse authResponse = mock(AuthResponse.class);
-        doReturn("token").when(authResponse).token();
+        doReturn("token".getBytes(Charset.defaultCharset())).when(authResponse).token();
         Response<AuthResponse> response = Response.success(authResponse);
 
         @SuppressWarnings("unchecked")
@@ -128,15 +127,15 @@ public class RefocusClientTest {
 
         // ASSERT
         assertThat(refocus.isAuthenticated(), equalTo(true));
-        verify(svc).authenticate(new AuthRequest("username", "password".getBytes()));
-        verify(refocus).generateAuthorizationHeader(new String("token".getBytes(), Charset.defaultCharset()));
+        verify(svc).authenticate(authRequest);
+        verify(refocus).auth();
     }
 
-    @Test
-    public void failedAuth() throws Exception {
+    @Test(expectedExceptions = UnauthorizedException.class)
+    public void failedAuthWithTokenThrowsException() throws Exception {
         // ARRANGE
         ResponseBody fail = ResponseBody.create(MediaType.parse(""), "FAIL");
-        Response<AuthResponse> failedResponse = Response.error(400, fail);
+        Response<AuthResponse> failedResponse = Response.error(401, fail);
 
         @SuppressWarnings("unchecked")
         Call<ResponseBody> responseCall = mock(Call.class);
@@ -148,14 +147,69 @@ public class RefocusClientTest {
         doReturn("password".getBytes()).when(connector).password();
 
         // ACT
-        boolean authenticationResult = refocus.auth();
+        try {
+            refocus.authenticate();
 
         // ASSERT
-        assertThat(authenticationResult, equalTo(false));
-        assertThat(refocus.isAuthenticated(), equalTo(false));
-        verify(svc, times(1)).authenticate(any());
-        verify(refocus, times(0)).generateAuthorizationHeader(any());
+        } finally {
+            assertThat(refocus.isAuthenticated(), equalTo(false));
+            verify(svc, times(1)).authenticate(any());
+            verify(refocus, times(1)).auth();
+        }
     }
+
+    @Test
+    public void reauthenticateIfAnOperationFailsWithAuthException() throws Exception {
+        // ARRANGE
+        // credentials
+        doReturn("username").when(connector).username();
+        doReturn("password".getBytes()).when(connector).password();
+
+        // token response
+        AuthResponse authResponse = mock(AuthResponse.class);
+        doReturn("token".getBytes(Charset.defaultCharset())).when(authResponse).token();
+        Response<AuthResponse> responseAuth = Response.success(authResponse);
+
+        // auth response
+        @SuppressWarnings("unchecked")
+        Call<AuthResponse> authResponseCall = mock(Call.class);
+        doReturn(responseAuth).when(authResponseCall).execute();
+        doReturn(request).when(authResponseCall).request();
+        doReturn(authResponseCall).when(svc).authenticate(any());
+
+        // subject
+        List<Subject> responseData = Collections.singletonList(subject);
+        Response<List<Subject>> response = Response.success(responseData);
+
+        // authentication failure
+        ResponseBody errorBody = ResponseBody.create(MediaType.parse(""), "error");
+        Response<List<Subject>> authFailedResponse = Response.error(401, errorBody);
+
+        // subjects response
+        @SuppressWarnings("unchecked")
+        Call<List<Subject>> responseCall = mock(Call.class);
+        doReturn(responseCall).when(responseCall).clone();
+        doReturn(authFailedResponse, response).when(responseCall).execute();
+        doReturn(request).when(responseCall).request();
+        doReturn(responseCall).when(svc).getSubjects(any(), any());
+
+
+        // ACT
+        List<Subject> subjects = refocus.getSubjects(fields);
+
+
+        // ASSERT
+        verify(svc).authenticate(authRequest);
+        verify(refocus).resetAuth();
+        verify(refocus).auth();
+        assertThat(refocus.isAuthenticated(), equalTo(true));
+
+        assertThat(subjects.size(), equalTo(1));
+        assertThat(subjects.get(0).name(), equalTo("name"));
+        assertThat(subjects.get(0).isPublished(), equalTo(true));
+    }
+
+
 
     @Test
     public void upsertSamples() throws Exception {
@@ -322,7 +376,7 @@ public class RefocusClientTest {
         refocus.deleteSample("id");
         
         // ASSERT
-        verify(svc).deleteSample(null, "id");
+        verify(svc).deleteSample(AUTHORIZATION_HEADER, "id");
     }
     
     @Test
@@ -349,7 +403,10 @@ public class RefocusClientTest {
     @Test
     public void getSubject() throws Exception {
         // ARRANGE
-        Subject subject = new SubjectBuilder(this.subject).withPublished(Boolean.FALSE).build();
+        Subject subject = ImmutableSubject.builder()
+                .from(this.subject)
+                .isPublished(Boolean.FALSE)
+                .build();
 
         Response<Subject> response = Response.success(subject);
 
@@ -501,7 +558,7 @@ public class RefocusClientTest {
     @Test
     public void getAspects() throws Exception {
     	// ARRANGE
-    	Aspect aspect = new AspectBuilder().withName("name").build();
+    	Aspect aspect = ImmutableAspect.builder().name("name").build();
     	Response<List<Aspect>>response = Response.success(Collections.singletonList(aspect));
     	
     	// ACT
@@ -520,7 +577,7 @@ public class RefocusClientTest {
     @Test
     public void getAspect() throws Exception {
     	// ARRANGE
-    	Aspect aspect = new AspectBuilder().withName("name").build();
+    	Aspect aspect = ImmutableAspect.builder().name("name").build();
     	Response<Aspect>response = Response.success(aspect);
     	
     	// ACT
@@ -539,7 +596,7 @@ public class RefocusClientTest {
     @Test
     public void postAspect() throws Exception {
     	// ARRANGE
-    	Aspect aspect = new AspectBuilder().withName("name").build();
+    	Aspect aspect = ImmutableAspect.builder().name("name").build();
     	Response<Aspect>response = Response.success(aspect);
     	
     	// ACT
@@ -557,7 +614,7 @@ public class RefocusClientTest {
     
     @Test
     public void patchAspect() throws Exception {
-    	Aspect aspect = new AspectBuilder().withName("name").build();
+    	Aspect aspect = ImmutableAspect.builder().name("name").build();
     	Response<Aspect>response = Response.success(aspect);
     	
     	// ACT

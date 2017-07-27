@@ -9,9 +9,8 @@
 package com.salesforce.pyplyn.processor;
 
 import com.salesforce.pyplyn.model.Load;
-import com.salesforce.pyplyn.model.TransformationResult;
+import com.salesforce.pyplyn.model.Transmutation;
 import io.reactivex.Flowable;
-import io.reactivex.Observable;
 
 import java.util.Collections;
 import java.util.List;
@@ -34,7 +33,7 @@ public interface LoadProcessor<T extends Load> extends Filterable<T, Load> {
      * @param data dataset that should be processed
      * @param destinations where the data should be loaded to
      */
-    List<Boolean> process(List<TransformationResult> data, List<T> destinations);
+    List<Boolean> process(List<Transmutation> data, List<T> destinations);
 
     /**
      * This method leverages the {@link #process(List, List)} method to asynchronously)}
@@ -43,7 +42,7 @@ public interface LoadProcessor<T extends Load> extends Filterable<T, Load> {
      * @param data dataset that should be processed
      * @param destinations where the data should be loaded to
      */
-    default Flowable<List<Boolean>> processAsync(List<TransformationResult> data, List<T> destinations) {
+    default Flowable<List<Boolean>> processAsync(List<Transmutation> data, List<T> destinations) {
         return Flowable.fromCallable(() -> process(data, destinations));
     }
 
@@ -52,7 +51,7 @@ public interface LoadProcessor<T extends Load> extends Filterable<T, Load> {
      *
      * @return list of results or empty list when nothing was processed
      */
-    default List<Boolean> execute(List<TransformationResult> data, Load... destinations) {
+    default List<Boolean> execute(List<Transmutation> data, List<Load> destinations) {
         List<T> filtered = filter(destinations);
         if (!filtered.isEmpty()) {
             return process(data, filtered);
@@ -67,7 +66,7 @@ public interface LoadProcessor<T extends Load> extends Filterable<T, Load> {
      *
      * @return list of results or empty list when nothing was processed
      */
-    default Flowable<List<Boolean>> executeAsync(List<TransformationResult> data, Load... destinations) {
+    default Flowable<List<Boolean>> executeAsync(List<Transmutation> data, List<Load> destinations) {
         List<T> filtered = filter(destinations);
         if (!filtered.isEmpty()) {
             return processAsync(data, filtered);

@@ -34,14 +34,14 @@ public interface Transform extends Serializable {
     /**
      * This method should implement the desired transformation and return the processed results
      */
-    List<List<TransformationResult>> apply(List<List<TransformationResult>> input);
+    List<List<Transmutation>> apply(List<List<Transmutation>> input);
 
     /**
      * Async transformation
      * <p/>
      * <p/> {@link Transform}s are observed on the specified {@link Scheduler}
      */
-    default Flowable<List<List<TransformationResult>>> applyAsync(List<List<TransformationResult>> input, Scheduler scheduler) {
+    default Flowable<List<List<Transmutation>>> applyAsync(List<List<Transmutation>> input, Scheduler scheduler) {
         return Flowable.just(input)
                 .observeOn(scheduler)
                 .map(this::apply);

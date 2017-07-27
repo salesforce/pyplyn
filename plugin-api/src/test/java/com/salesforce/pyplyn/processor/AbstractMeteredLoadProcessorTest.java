@@ -9,15 +9,17 @@
 package com.salesforce.pyplyn.processor;
 
 import com.codahale.metrics.Meter;
+import com.salesforce.pyplyn.model.Load;
 import com.salesforce.pyplyn.model.LoadImpl;
-import com.salesforce.pyplyn.model.TransformationResult;
+import com.salesforce.pyplyn.model.Transmutation;
 import com.salesforce.pyplyn.status.SystemStatus;
 import org.testng.annotations.Test;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
@@ -35,14 +37,14 @@ public class AbstractMeteredLoadProcessorTest {
         // ARRANGE
         AbstractMeteredLoadProcessorImpl processor = new AbstractMeteredLoadProcessorImpl(1, "result", 1, "destination");
 
-        TransformationResult result = mock(TransformationResult.class);
+        Transmutation result = mock(Transmutation.class);
         doReturn("result").when(result).name(); // FindBugs: RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT - IGNORE
-        List<TransformationResult> transformationResults = Collections.singletonList(result);
+        List<Transmutation> transmutations = singletonList(result);
 
-        LoadImpl[] destinations = {new LoadImpl("destination")};
+        List<Load> destinations = singletonList(new LoadImpl("destination"));
 
         // ACT
-        List<Boolean> processResult = processor.execute(transformationResults, destinations);
+        List<Boolean> processResult = processor.execute(transmutations, destinations);
 
         // ASSERT
         assertThat(processResult, hasSize(1));
@@ -54,12 +56,12 @@ public class AbstractMeteredLoadProcessorTest {
         // ARRANGE
         AbstractMeteredLoadProcessorImpl processor = new AbstractMeteredLoadProcessorImpl(1, "result", 0, null);
 
-        TransformationResult result = mock(TransformationResult.class);
+        Transmutation result = mock(Transmutation.class);
         doReturn("result").when(result).name(); // FindBugs: RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT - IGNORE
-        List<TransformationResult> transformationResults = Collections.singletonList(result);
+        List<Transmutation> transmutations = singletonList(result);
 
         // ACT
-        List<Boolean> processResult = processor.execute(transformationResults);
+        List<Boolean> processResult = processor.execute(transmutations, emptyList());
 
         // ASSERT
         assertThat(processResult, hasSize(0));
@@ -105,7 +107,7 @@ public class AbstractMeteredLoadProcessorTest {
         }
 
         @Override
-        public List<Boolean> process(List<TransformationResult> data, List<LoadImpl> destinations) {
+        public List<Boolean> process(List<Transmutation> data, List<LoadImpl> destinations) {
             // ASSERT
             assertThat("Expected transformation result(s)", data, hasSize(assertNumberOfElements));
             if (assertNumberOfElements > 0) {

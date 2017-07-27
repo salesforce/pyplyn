@@ -8,9 +8,13 @@
 
 package com.salesforce.pyplyn.model;
 
-import com.salesforce.pyplyn.model.builder.ETLMetadataBuilder;
+import com.salesforce.pyplyn.annotations.PyplynImmutableStyle;
+import org.immutables.value.Value;
 
+import javax.annotation.Nullable;
 import java.time.ZonedDateTime;
+import java.util.List;
+import java.util.Map;
 
 /**
  * This class is a model that is used to hold extract data while all {@link Transform}s are applied and until
@@ -21,66 +25,61 @@ import java.time.ZonedDateTime;
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
  * @since 3.0
  */
-public class TransformationResult {
-    private final ZonedDateTime time;
-    private final String name;
-    private final Number value;
-    private final Number originalValue;
-    private final ETLMetadata metadata;
-
-    /**
-     * Default constructor
-     *   used when no metadata exists (defaults to empty {@link ETLMetadata} object
-     */
-    public TransformationResult(ZonedDateTime time, String name, Number value, Number originalValue) {
-        this(time, name, value, originalValue, new ETLMetadataBuilder().build());
-    }
-
-    /**
-     * Class constructor used to specify all parameters, including {@link ETLMetadata}, which should not be null
-     */
-    public TransformationResult(ZonedDateTime time, String name, Number value, Number originalValue, ETLMetadata metadata) {
-        this.time = time;
-        this.name = name;
-        this.value = value;
-        this.originalValue = originalValue;
-        this.metadata = metadata;
-    }
-
+@Value.Immutable
+@Value.Enclosing
+@PyplynImmutableStyle
+public abstract class Transmutation {
     /**
      * @return the time that this result represents
      */
-    public ZonedDateTime time() {
-        return time;
-    }
+    public abstract ZonedDateTime time();
 
     /**
      * @return the name of this result, as returned by the {@link Extract} stage
      */
-    public String name() {
-        return name;
-    }
+    public abstract String name();
 
     /**
      * @return the value returned from the remote endpoint during the {@link Extract} stage
      */
-    public Number value() {
-        return value;
-    }
+    public abstract Number value();
 
     /**
      * @return the original value returned by the remote endpoint; this will ensure the original value is always available,
      *         even after the value changed by applying {@link Transform}s
      */
-    public Number originalValue() {
-        return originalValue;
-    }
+    public abstract Number originalValue();
+
 
     /**
      * @return metadata specific to this result; different {@link Transform}s may add details that could be used by a
      *         {@link com.salesforce.pyplyn.processor.LoadProcessor} and passed to the destination endpoint
      */
-    public ETLMetadata metadata() {
-        return metadata;
+    public abstract Metadata metadata();
+
+    @Value.Immutable
+    @PyplynImmutableStyle
+    public static abstract class Metadata {
+        /**
+         * @return message code passed
+         */
+        @Nullable
+        public abstract String messageCode();
+
+        /**
+         * @return all defined messages
+         */
+        public abstract List<String> messages();
+
+        /**
+         * @return all defined tags
+         */
+        public abstract Map<String, String> tags();
+
+        /**
+         * @return the source data used to generate this datapoint
+         */
+        @Nullable
+        public abstract Object source();
     }
 }

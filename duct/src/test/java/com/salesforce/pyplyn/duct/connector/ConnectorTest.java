@@ -8,11 +8,14 @@
 
 package com.salesforce.pyplyn.duct.connector;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Injector;
-import com.salesforce.pyplyn.configuration.AbstractConnector;
+import com.salesforce.pyplyn.cache.CacheFactory;
+import com.salesforce.pyplyn.configuration.Connector;
+import com.salesforce.pyplyn.configuration.ConnectorInterface;
+import com.salesforce.pyplyn.configuration.ImmutableConnector;
 import com.salesforce.pyplyn.duct.app.BootstrapException;
 import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapFixtures;
-import com.salesforce.pyplyn.util.SerializationHelper;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -21,7 +24,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static com.salesforce.pyplyn.duct.connector.AppConnector.DUPLICATE_CONNECTOR_ERROR;
+import static com.salesforce.pyplyn.duct.connector.AppConnectors.DUPLICATE_CONNECTOR_ERROR;
+import static com.salesforce.pyplyn.util.SerializationHelper.loadResourceInsecure;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.*;
@@ -33,7 +37,7 @@ import static org.testng.Assert.fail;
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
  * @since 5.0
  */
-public class SimpleConnectorConfigTest {
+public class ConnectorTest {
     public static final String ONE_CONNECTOR = "/connectors/one-connector.json";
     public static final String DUPLICATE_CONNECTORS = "/connectors/duplicate-connectors.json";
 
@@ -49,14 +53,14 @@ public class SimpleConnectorConfigTest {
     public void testConnectorFields() throws Exception {
         // ARRANGE
         Injector injector = fixtures.initializeFixtures().injector();
-        SerializationHelper serializer = injector.getProvider(SerializationHelper.class).get();
+        ObjectMapper mapper = injector.getProvider(ObjectMapper.class).get();
 
         // ACT
-        SimpleConnectorConfig[] connectors = serializer.deserializeJsonFile(ONE_CONNECTOR, SimpleConnectorConfig[].class);
+        Connector[] connectors = mapper.readValue(loadResourceInsecure(ONE_CONNECTOR), Connector[].class);
 
         // ASSERT
         assertConnectorsWereDeserialized(connectors);
-        assertThat(connectors[0].connectorId(), equalTo("id"));
+        assertThat(connectors[0].id(), equalTo("id"));
         assertThat(connectors[0].endpoint(), equalTo("endpoint"));
         assertThat(connectors[0].username(), equalTo("username"));
         assertThat(connectors[0].proxyHost(), equalTo("proxyHost"));
@@ -64,46 +68,25 @@ public class SimpleConnectorConfigTest {
     }
 
     @Test
-    public void testPasswordIsNotCached() throws Exception {
-        // ARRANGE
-        Injector injector = fixtures.initializeFixtures().injector();
-        SerializationHelper serializer = injector.getProvider(SerializationHelper.class).get();
-
-        // ACT
-        SimpleConnectorConfig[] connectors = serializer.deserializeJsonFile(ONE_CONNECTOR, SimpleConnectorConfig[].class);
-
-        // ASSERT
-        assertConnectorsWereDeserialized(connectors);
-
-        // ARRANGE
-        SimpleConnectorConfig connector = spy(connectors[0]);
-        connector.setConnectorFilePath(ONE_CONNECTOR);
-
-        // ASSERT
-        assertThat(connector.password(), equalTo("password".getBytes()));
-        verify(connector, times(1)).connectorFilePath();
-    }
-
-    @Test
     public void testDuplicateConnectors() throws Exception {
         // ARRANGE
         Injector injector = fixtures.initializeFixtures().injector();
-        SerializationHelper serializer = injector.getProvider(SerializationHelper.class).get();
+        ObjectMapper mapper = injector.getProvider(ObjectMapper.class).get();
 
         // ACT
         // deserialize connectors into expected type, then add to a set
-        SimpleConnectorConfig[] connectors = serializer.deserializeJsonFile(DUPLICATE_CONNECTORS, SimpleConnectorConfig[].class);
-        Set<List<AbstractConnector>> connectorSet = createConnectorSet(connectors);
+        Connector[] connectors = mapper.readValue(loadResourceInsecure(DUPLICATE_CONNECTORS), Connector[].class);
+        Set<List<ConnectorInterface>> connectorSet = createConnectorSet(connectors);
 
         try {
-            new AppConnector(connectorSet);
+            new AppConnectors(connectorSet, mock(CacheFactory.class));
             fail("Expected this test to fail as we don't allow duplicate connector ids");
 
         } catch (BootstrapException e) {
             // ASSERT
             assertConnectorsWereDeserialized(connectors);
             assertThat(e.getMessage(), containsString(String.format(DUPLICATE_CONNECTOR_ERROR,
-                    SimpleConnectorConfig.class.getSimpleName(), connectors[0].connectorId())));
+                    ImmutableConnector.class.getSimpleName(), connectors[0].id())));
         }
     }
 
@@ -111,35 +94,35 @@ public class SimpleConnectorConfigTest {
     public void testAppConnectorCanBeInitialized() throws Exception {
         // ARRANGE
         Injector injector = fixtures.initializeFixtures().injector();
-        SerializationHelper serializer = injector.getProvider(SerializationHelper.class).get();
+        ObjectMapper mapper = injector.getProvider(ObjectMapper.class).get();
 
         // ACT
         // deserialize connectors into expected type, then add to a set
-        SimpleConnectorConfig[] connectors = serializer.deserializeJsonFile(ONE_CONNECTOR, SimpleConnectorConfig[].class);
-        Set<List<AbstractConnector>> connectorSet = createConnectorSet(connectors);
+        ConnectorInterface[] connectors = mapper.readValue(loadResourceInsecure(ONE_CONNECTOR), Connector[].class);
+        Set<List<ConnectorInterface>> connectorSet = createConnectorSet(connectors);
 
-        // initialize the AppConnector object
-        AppConnector appConnector = new AppConnector(connectorSet);
+        // initialize the AppConnectors object
+        AppConnectors appConnectors = new AppConnectors(connectorSet, mock(CacheFactory.class));
 
         assertConnectorsWereDeserialized(connectors);
-        assertThat(appConnector.get("invalid-unknown-id"), nullValue());
-        assertThat(appConnector.get(connectors[0].connectorId()), notNullValue());
+        assertThat(appConnectors.findConnector("invalid-unknown-id"), nullValue());
+        assertThat(appConnectors.findConnector(connectors[0].id()), notNullValue());
     }
 
 
     /**
      * Asserts that we can expect at least one valid connector in the array
      */
-    private static void assertConnectorsWereDeserialized(SimpleConnectorConfig[] connectors) {
+    private static void assertConnectorsWereDeserialized(ConnectorInterface[] connectors) {
         assertThat(connectors, notNullValue());
         assertThat(connectors.length, greaterThan(0));
     }
 
     /**
-     * Creates a connector set that can be used to initialize an {@link AppConnector} object
+     * Creates a connector set that can be used to initialize an {@link AppConnectors} object
      */
-    public static Set<List<AbstractConnector>> createConnectorSet(AbstractConnector[] connectors) {
-        Set<List<AbstractConnector>> connectorSet = new HashSet<>();
+    public static Set<List<ConnectorInterface>> createConnectorSet(ConnectorInterface[] connectors) {
+        Set<List<ConnectorInterface>> connectorSet = new HashSet<>();
         connectorSet.add(Arrays.asList(connectors));
         return connectorSet;
     }

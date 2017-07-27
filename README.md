@@ -18,6 +18,8 @@ Providing _**health**_ information using line charts is pretty hard and requires
 This is where [Refocus steps in](https://medium.com/salesforce-open-source/take-a-moment-to-refocus-86b6546c90c#c169) 
  and **why Pyplyn exists today**, to complement Refocus' visualization capabilities by providing a robust pipeline that feeds dashboards with fresh data!
 
+Since 10.0.0, Pyplyn versions follow the [Semantic versioning](http://semver.org/) guidelines.
+
 
 # Key features
 

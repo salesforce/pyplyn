@@ -10,19 +10,16 @@ package com.salesforce.pyplyn.duct.etl.extract.refocus;
 import com.codahale.metrics.Timer;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.salesforce.argus.ArgusClient;
 import com.salesforce.pyplyn.cache.Cache;
-import com.salesforce.pyplyn.cache.CacheFactory;
-import com.salesforce.pyplyn.cache.ConcurrentCacheMap;
 import com.salesforce.pyplyn.client.UnauthorizedException;
 import com.salesforce.pyplyn.duct.app.ShutdownHook;
-import com.salesforce.pyplyn.duct.connector.AppConnector;
-import com.salesforce.pyplyn.model.TransformationResult;
-import com.salesforce.pyplyn.model.builder.TransformationResultBuilder;
+import com.salesforce.pyplyn.duct.connector.AppConnectors;
+import com.salesforce.pyplyn.model.ImmutableTransmutation;
+import com.salesforce.pyplyn.model.Transmutation;
 import com.salesforce.pyplyn.processor.AbstractMeteredExtractProcessor;
 import com.salesforce.refocus.RefocusClient;
+import com.salesforce.refocus.model.ImmutableSample;
 import com.salesforce.refocus.model.Sample;
-import com.salesforce.refocus.model.builder.SampleBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,8 +27,10 @@ import java.text.ParseException;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeParseException;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static com.salesforce.pyplyn.util.FormatUtils.*;
@@ -50,17 +49,12 @@ public class RefocusExtractProcessor extends AbstractMeteredExtractProcessor<Ref
     private static final Logger logger = LoggerFactory.getLogger(RefocusExtractProcessor.class);
     public static final String RESPONSE_TIMEOUT = "Timeout";
 
-    private final ConcurrentHashMap<String, RefocusClient> endpoints = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<RefocusClient, ConcurrentCacheMap<Sample>> caches = new ConcurrentHashMap<>();
-
-    private final AppConnector appConnector;
-    private final CacheFactory cacheFactory;
+    private final AppConnectors appConnectors;
     private final ShutdownHook shutdownHook;
 
     @Inject
-    public RefocusExtractProcessor(AppConnector appConnector, CacheFactory cacheFactory, ShutdownHook shutdownHook) {
-        this.appConnector = appConnector;
-        this.cacheFactory = cacheFactory;
+    public RefocusExtractProcessor(AppConnectors appConnectors, ShutdownHook shutdownHook) {
+        this.appConnectors = appConnectors;
         this.shutdownHook = shutdownHook;
     }
 
@@ -68,7 +62,7 @@ public class RefocusExtractProcessor extends AbstractMeteredExtractProcessor<Ref
      * Processes a list of Refocus expressions and returns their results
      */
     @Override
-    public List<List<TransformationResult>> process(List<Refocus> data) {
+    public List<List<Transmutation>> process(List<Refocus> data) {
         return data.stream()
                 // group by Refocus endpoint
                 .collect(Collectors.groupingBy(Refocus::endpoint))
@@ -81,12 +75,21 @@ public class RefocusExtractProcessor extends AbstractMeteredExtractProcessor<Ref
                     final String endpointId = endpointExpressions.getKey();
 
                     // retrieve Refocus client and cache for the specified endpoint
-                    final RefocusClient client = client(endpointId);
-                    final Cache<Sample> endpointCache = cache(client);
+                    AppConnectors.ClientAndCache<RefocusClient, Sample> cc = appConnectors.retrieveOrBuildClient(endpointId, RefocusClient.class, Sample.class);
+                    final RefocusClient client = cc.client();
+                    final Cache<Sample> endpointCache = cc.cache();
 
-                    // stop here if we cannot find an endpoint
-                    if (isNull(client)) {
+                    // TODO: move this someplace better
+                    try {
+                        client.authenticate();
+
+                    } catch (UnauthorizedException e) {
+                        // log auth failure if this exception type was thrown
+                        authenticationFailure();
                         failed();
+
+                        // stop here if we cannot authenticate
+                        logger.warn("", e);
                         return null;
                     }
 
@@ -128,17 +131,17 @@ public class RefocusExtractProcessor extends AbstractMeteredExtractProcessor<Ref
                                                 logger.info("Cached {} samples for {}, endpoint {}", cachedSamples, refocus.name(), endpointId);
                                             }
 
-                                            // find the required sample by cacheKey
+                                            // find the required sample by endpoint
                                             sample = samples.stream().filter(s -> Objects.equals(s.cacheKey(), refocus.cacheKey())).findFirst().orElse(null);
                                         }
 
                                         // if a null response was returned or the response is timed out, and we have a default value specified, generate a sample from it
                                         if ((isNull(sample) || isTimedOut(sample)) && nonNull(refocus.defaultValue())) {
                                             String now = ZonedDateTime.now(ZoneOffset.UTC).toString();
-                                            sample = new SampleBuilder()
-                                                    .withName(refocus.filteredName())
-                                                    .withValue(formatNumber(refocus.defaultValue()))
-                                                    .withUpdatedAt(now)
+                                            sample = ImmutableSample.builder()
+                                                    .name(refocus.filteredName())
+                                                    .value(formatNumber(refocus.defaultValue()))
+                                                    .updatedAt(now)
                                                     .build();
                                             logger.info("Default data provided for sample {}={}, endpoint {}", sample.name(), sample.value(), endpointId);
                                             isDefault = true;
@@ -164,7 +167,7 @@ public class RefocusExtractProcessor extends AbstractMeteredExtractProcessor<Ref
                                 }
 
                                 // at this point we either have a valid cached sample or we loaded a new one from the endpoint
-                                TransformationResult result = createResult(sample, endpointId);
+                                Transmutation result = createResult(sample, endpointId);
 
                                 // if a transform result could not be created (due to various reasons) mark as failure and stop here
                                 if (isNull(result)) {
@@ -176,9 +179,11 @@ public class RefocusExtractProcessor extends AbstractMeteredExtractProcessor<Ref
                                 if (isDefault) {
                                     String defaultValueMessage =
                                             generateDefaultValueMessage(refocus.name(), refocus.defaultValue());
-                                    result = new TransformationResultBuilder(result)
-                                            .metadata((metadata) -> metadata
-                                                    .addMessage(defaultValueMessage))
+                                    result = ImmutableTransmutation.builder().from(result)
+                                            .metadata(ImmutableTransmutation.Metadata.builder()
+                                                    .from(result.metadata())
+                                                    .addMessages(defaultValueMessage)
+                                                    .build())
                                             .build();
                                 }
 
@@ -209,12 +214,13 @@ public class RefocusExtractProcessor extends AbstractMeteredExtractProcessor<Ref
      *
      * @return null if either time or value could not be passed, or the passed sample was null
      */
-    TransformationResult createResult(Sample sample, String endpointId) {
+    Transmutation createResult(Sample sample, String endpointId) {
         try {
             // try to parse time and value and return a TransformResultStage object
             ZonedDateTime parsedTime = parseUTCTime(sample.updatedAt());
             Number parsedNumber = parseNumber(sample.value());
-            return new TransformationResult(parsedTime, sample.name(), parsedNumber, parsedNumber);
+            return ImmutableTransmutation.of(parsedTime, sample.name(), parsedNumber, parsedNumber,
+                    ImmutableTransmutation.Metadata.builder().build());
 
         } catch (DateTimeParseException e) {
             logger.warn("No data for {}, endpoint {}; invalid time: {}", sample.name(), endpointId, e.getMessage());
@@ -240,41 +246,6 @@ public class RefocusExtractProcessor extends AbstractMeteredExtractProcessor<Ref
     private static boolean isTimedOut(Sample sample) {
         return RESPONSE_TIMEOUT.equals(sample.value());
     }
-
-    /**
-     * Returns a previously initialized client for the specified endpoint
-     * or initializes one and returns it
-     */
-    public RefocusClient client(String endpointId) {
-        return endpoints.computeIfAbsent(endpointId, key -> {
-            RefocusClient client = new RefocusClient(appConnector.get(endpointId));
-            try {
-                client.auth();
-
-                // init cache and processing queue
-                caches.computeIfAbsent(client, k -> cacheFactory.newCache());
-
-                return client;
-
-            } catch (UnauthorizedException e) {
-                // log auth failure if this exception type was thrown
-                authenticationFailure();
-
-                logger.warn("", e);
-                return null;
-            }
-        });
-    }
-
-    /**
-     * @return a {@link Cache} for the corresponding {@link ArgusClient}
-     * initializes the cache if not previously
-     */
-    public Cache<Sample> cache(RefocusClient client) {
-        return Optional.ofNullable(caches.get(client)).orElseThrow(() ->
-                new IllegalStateException("Cannot proceed with un-initialized cache for " + client.cacheKey()));
-    }
-
     @Override
     public Class<Refocus> filteredType() {
         return Refocus.class;

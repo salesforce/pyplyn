@@ -8,8 +8,7 @@
 
 package com.salesforce.pyplyn.client;
 
-import com.salesforce.pyplyn.configuration.AbstractConnector;
-import org.slf4j.Logger;
+import com.salesforce.pyplyn.configuration.ConnectorInterface;
 import retrofit2.Call;
 import retrofit2.http.GET;
 
@@ -20,12 +19,10 @@ import retrofit2.http.GET;
  * @since 3.0
  */
 public class AbstractRemoteClientImpl extends AbstractRemoteClient<AbstractRemoteClientImpl.RetroService> {
-    private final Logger logger;
     private boolean isAuth;
 
-    public AbstractRemoteClientImpl(AbstractConnector connector, Class<RetroService> cls, Logger logger) {
+    public AbstractRemoteClientImpl(ConnectorInterface connector, Class<RetroService> cls) {
         super(connector, cls);
-        this.logger = logger;
     }
 
     public void setAuth(boolean auth) {
@@ -43,8 +40,8 @@ public class AbstractRemoteClientImpl extends AbstractRemoteClient<AbstractRemot
     }
 
     @Override
-    protected Logger logger() {
-        return logger;
+    protected void resetAuth() {
+        isAuth = false;
     }
 
     /**

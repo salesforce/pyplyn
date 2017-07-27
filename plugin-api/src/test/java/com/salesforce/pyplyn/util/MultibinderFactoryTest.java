@@ -11,7 +11,8 @@ package com.salesforce.pyplyn.util;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.multibindings.Multibinder;
-import com.salesforce.pyplyn.configuration.AbstractConnector;
+import com.salesforce.pyplyn.configuration.Connector;
+import com.salesforce.pyplyn.configuration.ConnectorInterface;
 import com.salesforce.pyplyn.model.Extract;
 import com.salesforce.pyplyn.model.Load;
 import com.salesforce.pyplyn.model.Transform;
@@ -59,7 +60,7 @@ public class MultibinderFactoryTest {
      * Module implementation that makes use of Guice's Binder to create all expected Multibinders
      */
     private static class Module extends AbstractModule {
-        Multibinder<List<AbstractConnector>> appConnectors;
+        Multibinder<List<ConnectorInterface>> appConnectors;
         Multibinder<Class<? extends Extract>> extractDatasources;
         Multibinder<ExtractProcessor<? extends Extract>> extractProcessors;
         Multibinder<Class<? extends Load>> loadDestinations;

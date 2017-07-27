@@ -9,18 +9,24 @@
 package com.salesforce.pyplyn.duct.connector;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.Inject;
+import com.salesforce.pyplyn.duct.appconfig.AppConfig;
 import com.salesforce.pyplyn.util.MultibinderFactory;
 
 /**
- * Defines the {@link AppConnector} binding and the default file-based connector configuration provider
+ * Defines the {@link AppConnectors} binding and the default file-based connector configuration provider
  *
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
  * @since 3.0
  */
 public class AppConnectorModule extends AbstractModule {
+    // TODO: configure the provider directly in the module, using self-inject for AppConfig
+    @Inject
+    AppConfig appConfig;
+
     @Override
     protected void configure() {
-        bind(AppConnector.class).asEagerSingleton();
+        bind(AppConnectors.class).asEagerSingleton();
 
         // multibinder for all connector configuration types
         //   this allows extenders of this library to define other connectors using Guice modules

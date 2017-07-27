@@ -8,6 +8,7 @@
 
 package com.salesforce.pyplyn.status;
 
+import com.salesforce.pyplyn.model.StatusCode;
 import org.testng.annotations.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -24,14 +25,14 @@ public class StatusMessageTest {
     @Test
     public void testCreateStatusMessage() throws Exception {
         // ARRANGE
-        StatusMessage message = new StatusMessage(AlertLevel.ERR, "error 1.23");
+        StatusMessage message = new StatusMessage(StatusCode.ERR, "error 1.23");
 
         // ACT
-        AlertLevel level = message.level();
+        StatusCode level = message.level();
         String messageBody = message.toString();
 
         // ASSERT
-        assertThat(level, equalTo(AlertLevel.ERR));
+        assertThat(level, equalTo(StatusCode.ERR));
         assertThat(messageBody, allOf(containsString("error"), containsString("1.23")));
     }
 }

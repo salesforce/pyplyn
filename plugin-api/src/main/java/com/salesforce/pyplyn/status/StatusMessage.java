@@ -8,6 +8,8 @@
 
 package com.salesforce.pyplyn.status;
 
+import com.salesforce.pyplyn.model.StatusCode;
+
 import java.util.List;
 
 /**
@@ -17,7 +19,7 @@ public class StatusMessage {
     /**
      * Alert level
      */
-    private final AlertLevel level;
+    private final StatusCode level;
 
     /**
      * Alert message
@@ -27,7 +29,7 @@ public class StatusMessage {
     /**
      * Simplified message constructor used when a rate is not required
      */
-    public StatusMessage(AlertLevel level, String message) {
+    public StatusMessage(StatusCode level, String message) {
         this.level = level;
         this.message = message;
     }
@@ -35,7 +37,7 @@ public class StatusMessage {
     /**
      * @return the alert's level
      */
-    public AlertLevel level() {
+    public StatusCode level() {
         return level;
     }
 

@@ -8,11 +8,14 @@
 
 package com.salesforce.pyplyn.duct.etl.transform.standard;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.salesforce.pyplyn.annotations.PyplynImmutableStyle;
+import com.salesforce.pyplyn.model.ImmutableTransmutation;
 import com.salesforce.pyplyn.model.Transform;
-import com.salesforce.pyplyn.model.TransformationResult;
-import com.salesforce.pyplyn.model.builder.TransformationResultBuilder;
+import com.salesforce.pyplyn.model.Transmutation;
+import org.immutables.value.Value;
 
-import java.io.Serializable;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -26,22 +29,25 @@ import java.util.stream.Collectors;
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
  * @since 3.0
  */
-public class InfoStatus implements Transform, Serializable {
+@Value.Immutable
+@PyplynImmutableStyle
+@JsonDeserialize(as = ImmutableInfoStatus.class)
+@JsonSerialize(as = ImmutableInfoStatus.class)
+public abstract class InfoStatus implements Transform {
     private static final long serialVersionUID = -1927779729819920375L;
 
-
     /**
-     * Applies this transformation and returns a new {@link TransformationResult} matrix
+     * Applies this transformation and returns a new {@link Transmutation} matrix
      */
     @Override
-    public List<List<TransformationResult>> apply(List<List<TransformationResult>> input) {
+    public List<List<Transmutation>> apply(List<List<Transmutation>> input) {
         // for all rows and columns
         return input.stream()
                 .map(rows -> rows.stream()
                         .map(point -> {
                             // if the value indicates a status of OK, remap to a status of 1 (INFO)
                             if (point.value().intValue() == 0) {
-                                return new TransformationResultBuilder(point).withValue(1).build();
+                                return ImmutableTransmutation.builder().from(point).value(1).build();
                             }
 
                             // otherwise, return the point as is
@@ -50,16 +56,5 @@ public class InfoStatus implements Transform, Serializable {
                         .collect(Collectors.toList())
                 )
                 .collect(Collectors.toList());
-    }
-
-
-    @Override
-    public boolean equals(Object o) {
-        return !(o == null || getClass() != o.getClass());
-    }
-
-    @Override
-    public int hashCode() {
-        return InfoStatus.class.hashCode();
     }
 }

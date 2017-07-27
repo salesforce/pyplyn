@@ -8,16 +8,17 @@
 
 package com.salesforce.pyplyn.duct.etl.transform.standard;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.salesforce.pyplyn.model.ETLMetadata;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.salesforce.pyplyn.annotations.PyplynImmutableStyle;
+import com.salesforce.pyplyn.model.ImmutableTransmutation;
 import com.salesforce.pyplyn.model.Transform;
-import com.salesforce.pyplyn.model.TransformationResult;
-import com.salesforce.pyplyn.model.builder.TransformationResultBuilder;
+import com.salesforce.pyplyn.model.Transmutation;
+import org.immutables.value.Value;
 
-import java.io.Serializable;
+import javax.annotation.Nullable;
 import java.math.BigDecimal;
-import java.time.ZonedDateTime;
 import java.util.*;
 
 import static com.salesforce.pyplyn.util.FormatUtils.formatNumberFiveCharLimit;
@@ -31,36 +32,30 @@ import static com.salesforce.pyplyn.util.FormatUtils.formatNumberFiveCharLimit;
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
  * @since 3.0
  */
-public class HighestValue implements Transform, Serializable {
+@Value.Immutable
+@PyplynImmutableStyle
+@JsonDeserialize(as = ImmutableHighestValue.class)
+@JsonSerialize(as = ImmutableHighestValue.class)
+public abstract class HighestValue implements Transform {
     private static final long serialVersionUID = 5858149783326921054L;
     private static final String ORIGINAL_TIME_TEMPLATE = "Original time: %s";
 
-    @JsonProperty("messageCodeSource")
-    private Display tagMessageCode;
-
-    @JsonProperty
-    private Display tagMessageBody;
-
-
     /**
-     * Default constructor
-     * @param tagMessageCode if specified, will decide what to set in the {@link TransformationResult}'s
-     *   {@link ETLMetadata}
+     * if specified, will decide what to set in {@link Transmutation.Metadata}
      */
-    @JsonCreator
-    public HighestValue(@JsonProperty("tagMessageCode") Display tagMessageCode,
-                        @JsonProperty("tagMessageBody") Display tagMessageBody) {
-        this.tagMessageCode = tagMessageCode;
-        this.tagMessageBody = tagMessageBody;
-    }
+    @Nullable
+    @JsonProperty("messageCodeSource")
+    public abstract Display tagMessageCode();
 
+    @Nullable
+    public abstract Display tagMessageBody();
 
     /**
-     * Applies this transformation and returns a new {@link TransformationResult} matrix
+     * Applies this transformation and returns a new {@link Transmutation} matrix
      */
     @Override
-    public List<List<TransformationResult>> apply(List<List<TransformationResult>> stageInput) {
-        final List<TransformationResult> stageResult = new ArrayList<>();
+    public List<List<Transmutation>> apply(List<List<Transmutation>> stageInput) {
+        final List<Transmutation> stageResult = new ArrayList<>();
 
         // find highest value and if present, return, also setting the message code according to specified rules
         stageInput.stream().flatMap(Collection::stream)
@@ -74,59 +69,28 @@ public class HighestValue implements Transform, Serializable {
      * Sets the message code according to the rule specified in the <b>messageCodeSource</b> parameter
      *   or returns the unchanged result if no rule is specified
      */
-    private TransformationResult processMetadata(TransformationResult result) {
-        TransformationResultBuilder builder = new TransformationResultBuilder(result);
+    private Transmutation processMetadata(Transmutation result) {
+        ImmutableTransmutation.Builder response = ImmutableTransmutation.builder().from(result);
+        ImmutableTransmutation.Metadata.Builder metadata = ImmutableTransmutation.Metadata.builder().from(result.metadata());
 
-        if (tagMessageCode == Display.ORIGINAL_VALUE) {
-            applyOriginalValue(builder, result.originalValue());
+        // Creates a five character message code and sets it in the results's metadata
+        if (tagMessageCode() == Display.ORIGINAL_VALUE) {
+            metadata.messageCode(formatNumberFiveCharLimit(result.originalValue()));
         }
 
-        if (tagMessageBody == Display.ORIGINAL_TIMESTAMP) {
-            addDateToMessageBody(builder, result.time());
+        // Tags the result with the original metric's timestamp
+        if (tagMessageBody() == Display.ORIGINAL_TIMESTAMP) {
+            metadata.addMessages(String.format(ORIGINAL_TIME_TEMPLATE, result.time().toString()));
         }
 
-        return builder.build();
+        return response.metadata(metadata.build()).build();
     }
 
     /**
-     * Holds different options for setting {@link TransformationResult} metadata
+     * Holds different options for setting {@link Transmutation} metadata
      */
     public enum Display{
         ORIGINAL_VALUE,
         ORIGINAL_TIMESTAMP
-    }
-
-    /**
-     * Creates a five character message code and sets it in the results's metadata
-     */
-    private void applyOriginalValue(TransformationResultBuilder builder, Number originalValue) {
-        final String messageCode = formatNumberFiveCharLimit(originalValue);
-        builder.metadata((metadata) -> metadata.setMessageCode(messageCode));
-    }
-
-    /**
-     * Tags the result with the original metric's timestamp
-     */
-    private void addDateToMessageBody(TransformationResultBuilder builder, ZonedDateTime time) {
-        String originalDateTime = String.format(ORIGINAL_TIME_TEMPLATE, time.toString());
-        builder.metadata((metadata) -> metadata.addMessage(originalDateTime));
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        HighestValue that = (HighestValue) o;
-
-        if (tagMessageCode != that.tagMessageCode) return false;
-        return tagMessageBody == that.tagMessageBody;
-    }
-
-    @Override
-    public int hashCode() {
-        int result = tagMessageCode != null ? tagMessageCode.hashCode() : 0;
-        result = 31 * result + (tagMessageBody != null ? tagMessageBody.hashCode() : 0);
-        return result;
     }
 }

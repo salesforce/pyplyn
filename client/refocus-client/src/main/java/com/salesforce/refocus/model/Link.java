@@ -8,10 +8,15 @@
 
 package com.salesforce.refocus.model;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.salesforce.pyplyn.annotations.PyplynImmutableStyle;
+import org.immutables.value.Value;
 
 import java.io.Serializable;
+
+import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY;
 
 /**
  * Link model
@@ -19,23 +24,15 @@ import java.io.Serializable;
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
  * @since 1.0
  */
-public class Link implements Serializable {
+@Value.Immutable
+@PyplynImmutableStyle
+@JsonDeserialize(as = ImmutableLink.class)
+@JsonSerialize(as = ImmutableLink.class)
+@JsonInclude(NON_EMPTY)
+public abstract class Link implements Serializable {
     private static final long serialVersionUID = -6786252096633818767L;
 
-    @JsonProperty
-    private final String name;
+    public abstract String name();
 
-    @JsonProperty
-    private final String url;
-
-    @JsonCreator
-    public Link(@JsonProperty("name") String name, @JsonProperty("url") String url) {
-        this.name = name;
-        this.url = url;
-    }
-
-    @Override
-    public String toString() {
-        return "Link{" + name + ": " + url + '}';
-    }
+    public abstract String url();
 }

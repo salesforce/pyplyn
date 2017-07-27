@@ -14,6 +14,7 @@ import com.codahale.metrics.Timer;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.salesforce.pyplyn.duct.appconfig.AppConfig;
+import com.salesforce.pyplyn.model.StatusCode;
 import com.salesforce.pyplyn.status.*;
 import com.salesforce.pyplyn.util.FormatUtils;
 import org.slf4j.Logger;
@@ -23,8 +24,8 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import static com.salesforce.pyplyn.status.AlertType.GREATER_THAN;
-import static com.salesforce.pyplyn.status.AlertType.LESS_THAN;
+import static com.salesforce.pyplyn.model.ThresholdType.GREATER_THAN;
+import static com.salesforce.pyplyn.model.ThresholdType.LESS_THAN;
 
 /**
  * System status monitor
@@ -107,8 +108,8 @@ public class SystemStatusRunnable implements SystemStatus {
             registry.remove(meterName);
 
             // define optionals for checking ERR/WARN
-            Optional<StatusMessage> errMessage = checkRateOfMeter(meterName, AlertLevel.ERR, meterValue);
-            Optional<StatusMessage> warnMessage = checkRateOfMeter(meterName, AlertLevel.WARN, meterValue);
+            Optional<StatusMessage> errMessage = checkRateOfMeter(meterName, StatusCode.ERR, meterValue);
+            Optional<StatusMessage> warnMessage = checkRateOfMeter(meterName, StatusCode.WARN, meterValue);
 
             // add any messages to the list
             if (errMessage.isPresent()) {
@@ -120,7 +121,7 @@ public class SystemStatusRunnable implements SystemStatus {
 
         // if no messages have been logged, report status OK
         if (messages.isEmpty()) {
-            messages.add(new StatusMessage(AlertLevel.OK, SYSTEM_STATUS + " " + AlertLevel.OK.name()));
+            messages.add(new StatusMessage(StatusCode.OK, SYSTEM_STATUS + " " + StatusCode.OK.name()));
         }
 
         // iterate through all registered timers
@@ -158,7 +159,7 @@ public class SystemStatusRunnable implements SystemStatus {
      *
      * @return WARN/ERR message or empty if not triggered
      */
-    private Optional<StatusMessage> checkRateOfMeter(String meterName, AlertLevel level, double meterValue) {
+    private Optional<StatusMessage> checkRateOfMeter(String meterName, StatusCode level, double meterValue) {
         // get meter type or stop if not found
         Optional<MeterType> meterType = getMeterType(meterName);
         if (!meterType.isPresent()) {
@@ -184,7 +185,7 @@ public class SystemStatusRunnable implements SystemStatus {
         }
 
         // log each metric's current value
-        logStatusMessage(createMeterStatusMessage(SYSTEM_STATUS + " " + meterName, AlertLevel.OK, meterValue));
+        logStatusMessage(createMeterStatusMessage(SYSTEM_STATUS + " " + meterName, StatusCode.OK, meterValue));
 
         return Optional.empty();
     }
@@ -193,7 +194,7 @@ public class SystemStatusRunnable implements SystemStatus {
      * @return a {@link StatusMessage} that reports system status based on {@link Meter} values
      *         using thresholds specified in {@link AppConfig.Alert}
      */
-    private static StatusMessage createMeterStatusMessage(String meterName, AlertLevel level, double fiveMinuteRate) {
+    private static StatusMessage createMeterStatusMessage(String meterName, StatusCode level, double fiveMinuteRate) {
         return new StatusMessage(level, String.format(METER_TEMPLATE, level.name(), meterName, fiveMinuteRate));
     }
 
@@ -201,7 +202,7 @@ public class SystemStatusRunnable implements SystemStatus {
      * @return a {@link StatusMessage} that reports {@link Timer} values
      */
     private static StatusMessage createTimerStatusMessage(String timerName, long percentileMillis) {
-        return new StatusMessage(AlertLevel.OK, String.format(TIMER_TEMPLATE, timerName, FormatUtils.formatMillisOrSeconds(percentileMillis)));
+        return new StatusMessage(StatusCode.OK, String.format(TIMER_TEMPLATE, timerName, FormatUtils.formatMillisOrSeconds(percentileMillis)));
     }
 
     /**
@@ -217,9 +218,9 @@ public class SystemStatusRunnable implements SystemStatus {
      * <p/>If the threshold is not found, it will return an empty optional
      *
      * @param name concatenated string such as <i>MeterNameAlertName</i>
-     * @param threshold name of the {@link AlertLevel} to retrieve the threshold for
+     * @param threshold name of the {@link StatusCode} to retrieve the threshold for
      */
-    private Optional<Double> getThresholdFor(String name, AlertLevel threshold) {
+    private Optional<Double> getThresholdFor(String name, StatusCode threshold) {
         return Optional.ofNullable(thresholds.get(name + threshold.name()));
     }
 }

@@ -8,15 +8,16 @@
 
 package com.salesforce.pyplyn.duct.etl.configuration;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Injector;
 import com.salesforce.pyplyn.configuration.Configuration;
+import com.salesforce.pyplyn.configuration.Connector;
 import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapFixtures;
-import com.salesforce.pyplyn.duct.connector.SimpleConnectorConfig;
-import com.salesforce.pyplyn.util.SerializationHelper;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import static com.salesforce.pyplyn.duct.connector.SimpleConnectorConfigTest.ONE_CONNECTOR;
+import static com.salesforce.pyplyn.duct.connector.ConnectorTest.ONE_CONNECTOR;
+import static com.salesforce.pyplyn.util.SerializationHelper.loadResourceInsecure;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsNull.notNullValue;
 
@@ -29,22 +30,21 @@ import static org.hamcrest.core.IsNull.notNullValue;
 public class JsonConfigDeserializeTest {
     public static final String ONE_CONFIGURATION = "/configuration.example.json";
     private AppBootstrapFixtures fixtures;
-    private SerializationHelper serializer;
+    private ObjectMapper mapper;
 
     @BeforeMethod
     public void setUp() throws Exception {
         // ARRANGE
         fixtures = new AppBootstrapFixtures();
+
+        Injector injector = fixtures.initializeFixtures().injector();
+        mapper = injector.getProvider(ObjectMapper.class).get();
     }
 
     @Test
     public void testDeserializeConfiguration() throws Exception {
-        // ARRANGE
-        Injector injector = fixtures.initializeFixtures().injector();
-        serializer = injector.getProvider(SerializationHelper.class).get();
-
         // ACT
-        Configuration[] configuration = serializer.deserializeJsonFile(ONE_CONFIGURATION, Configuration[].class);
+        Configuration[] configuration = mapper.readValue(loadResourceInsecure(ONE_CONFIGURATION), Configuration[].class);
 
         // ASSERT
         assertThat(configuration, notNullValue());
@@ -52,12 +52,8 @@ public class JsonConfigDeserializeTest {
 
     @Test
     public void testDeserializeConnector() throws Exception {
-        // ARRANGE
-        Injector injector = fixtures.initializeFixtures().injector();
-        serializer = injector.getProvider(SerializationHelper.class).get();
-
         // ACT
-        SimpleConnectorConfig[] appConnectors = serializer.deserializeJsonFile(ONE_CONNECTOR, SimpleConnectorConfig[].class);
+        Connector[] appConnectors = mapper.readValue(loadResourceInsecure(ONE_CONNECTOR), Connector[].class);
 
         // ASSERT
         assertThat(appConnectors, notNullValue());

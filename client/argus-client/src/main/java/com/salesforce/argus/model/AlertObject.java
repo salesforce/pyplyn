@@ -8,14 +8,19 @@
 
 package com.salesforce.argus.model;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.salesforce.pyplyn.annotations.PyplynImmutableStyle;
+import org.immutables.value.Value;
 
-import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
+import javax.annotation.Nullable;
+import java.util.List;
+
+import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY;
 import static com.fasterxml.jackson.annotation.JsonProperty.Access.WRITE_ONLY;
-import static com.salesforce.pyplyn.util.CollectionUtils.nullableArrayCopy;
 
 /**
  * Argus alert object model
@@ -27,137 +32,55 @@ import static com.salesforce.pyplyn.util.CollectionUtils.nullableArrayCopy;
  * @author thomas.harris
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
  */
+@Value.Immutable
+@PyplynImmutableStyle
+@JsonDeserialize(as = ImmutableAlertObject.class)
+@JsonSerialize(as = ImmutableAlertObject.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@JsonInclude(NON_NULL)
-public class AlertObject {
+@JsonInclude(NON_EMPTY)
+public abstract class AlertObject {
+    @Nullable
     @JsonProperty(access = WRITE_ONLY)
-    private final Long id;
+    public abstract Long id();
 
+    @Nullable
     @JsonProperty(access = WRITE_ONLY)
-    private final Long createdById;
+    public abstract Long createdById();
 
+    @Nullable
     @JsonProperty(access = WRITE_ONLY)
-    private final Long createdDate;
+    public abstract Long createdDate();
 
+    @Nullable
     @JsonProperty(access = WRITE_ONLY)
-    private final Long modifiedById;
+    public abstract Long modifiedById();
 
+    @Nullable
     @JsonProperty(access = WRITE_ONLY)
-    private final Long modifiedDate;
+    public abstract Long modifiedDate();
 
-    @JsonProperty
-    private final String name;
+    @Nullable
+    public abstract String name();
 
-    @JsonProperty
-    private final String expression;
+    @Nullable
+    public abstract String expression();
 
-    @JsonProperty
-    private final String cronEntry;
+    @Nullable
+    public abstract String cronEntry();
 
-    @JsonProperty
-    private final Boolean enabled;
+    @Nullable
+    public abstract Boolean enabled();
 
-    @JsonProperty
-    private final Boolean missingDataNotificationEnabled;
+    @Nullable
+    public abstract Boolean missingDataNotificationEnabled();
 
-    @JsonProperty
-    private final Long[] notificationsIds;
+    public abstract List<Long> notificationsIds();
 
-    @JsonProperty
-    private final Long[] triggersIds;
+    public abstract List<Long> triggersIds();
 
-    @JsonProperty
-    private final String ownerName;
+    @Nullable
+    public abstract String ownerName();
 
-    @JsonProperty
-    private final Boolean shared;
-
-    @JsonCreator
-    public AlertObject(@JsonProperty("id") Long id,
-                       @JsonProperty("createdById") Long createdById,
-                       @JsonProperty("createdDate") Long createdDate,
-                       @JsonProperty("modifiedById") Long modifiedById,
-                       @JsonProperty("modifiedDate") Long modifiedDate,
-                       @JsonProperty("name") String name,
-                       @JsonProperty("expression") String expression,
-                       @JsonProperty("cronEntry") String cronEntry,
-                       @JsonProperty("enabled") Boolean enabled,
-                       @JsonProperty("missingDataNotificationEnabled") Boolean missingDataNotificationEnabled,
-                       @JsonProperty("notificationsIds") Long[] notificationsIds,
-                       @JsonProperty("triggersIds") Long[] triggersIds,
-                       @JsonProperty("ownerName") String ownerName,
-                       @JsonProperty("shared") Boolean shared) {
-        this.id = id;
-        this.createdById = createdById;
-        this.createdDate = createdDate;
-        this.modifiedById = modifiedById;
-        this.modifiedDate = modifiedDate;
-        this.name = name;
-        this.expression = expression;
-        this.cronEntry = cronEntry;
-        this.enabled = enabled;
-        this.missingDataNotificationEnabled = missingDataNotificationEnabled;
-        this.notificationsIds = nullableArrayCopy(notificationsIds);
-        this.triggersIds = nullableArrayCopy(triggersIds);
-        this.ownerName = ownerName;
-        this.shared = shared;
-    }
-
-    /* Getters */
-
-    public Long id() {
-        return id;
-    }
-
-    public Long createdById() {
-        return createdById;
-    }
-
-    public Long createdDate() {
-        return createdDate;
-    }
-
-    public Long modifiedById() {
-        return modifiedById;
-    }
-
-    public Long modifiedDate() {
-        return modifiedDate;
-    }
-
-    public String name() {
-        return name;
-    }
-
-    public String expression() {
-        return expression;
-    }
-
-    public String cronEntry() {
-        return cronEntry;
-    }
-
-    public Boolean isEnabled() {
-        return enabled;
-    }
-
-    public Boolean isMissingDataNotificationEnabled() {
-        return missingDataNotificationEnabled;
-    }
-
-    public Long[] notificationsIds() {
-        return nullableArrayCopy(notificationsIds);
-    }
-
-    public Long[] triggersIds() {
-        return nullableArrayCopy(triggersIds);
-    }
-
-    public String ownerName() {
-        return ownerName;
-    }
-
-    public Boolean isShared() {
-        return shared;
-    }
+    @Nullable
+    public abstract Boolean shared();
 }

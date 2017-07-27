@@ -8,8 +8,10 @@
 
 package com.salesforce.pyplyn.status;
 
-import static com.salesforce.pyplyn.status.AlertType.GREATER_THAN;
-import static com.salesforce.pyplyn.status.AlertType.LESS_THAN;
+import com.salesforce.pyplyn.model.ThresholdType;
+
+import static com.salesforce.pyplyn.model.ThresholdType.GREATER_THAN;
+import static com.salesforce.pyplyn.model.ThresholdType.LESS_THAN;
 
 /**
  * Predefined alert meter types, defined on Metered processors ({@link com.salesforce.pyplyn.processor.AbstractMeteredExtractProcessor}
@@ -27,20 +29,20 @@ public enum MeterType {
     AuthenticationFailure(GREATER_THAN),
     ConfigurationUpdateFailure(GREATER_THAN);
 
-    private final AlertType alertType;
+    private final ThresholdType alertType;
 
     /**
      * Enum constructor
      */
-    MeterType(AlertType alertType) {
+    MeterType(ThresholdType alertType) {
         this.alertType = alertType;
     }
 
     /**
      * @return the alert's type
-     * @see AlertType
+     * @see ThresholdType
      */
-    public AlertType alertType() {
+    public ThresholdType alertType() {
         return alertType;
     }
 }

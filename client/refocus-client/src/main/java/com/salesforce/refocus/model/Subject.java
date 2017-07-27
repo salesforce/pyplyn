@@ -8,15 +8,20 @@
 
 package com.salesforce.refocus.model;
 
-import com.fasterxml.jackson.annotation.*;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.salesforce.pyplyn.annotations.PyplynImmutableStyle;
+import org.immutables.value.Value;
 
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
 
-import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
+import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY;
 import static com.fasterxml.jackson.annotation.JsonProperty.Access.WRITE_ONLY;
-import static com.salesforce.pyplyn.util.CollectionUtils.immutableListOrNull;
-import static com.salesforce.pyplyn.util.CollectionUtils.immutableOrEmptyList;
 
 /**
  * Subject model
@@ -24,121 +29,54 @@ import static com.salesforce.pyplyn.util.CollectionUtils.immutableOrEmptyList;
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
  * @since 1.0
  */
+@Value.Immutable
+@PyplynImmutableStyle
+@JsonDeserialize(as = ImmutableSubject.class)
+@JsonSerialize(as = ImmutableSubject.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@JsonInclude(NON_NULL)
-public class Subject {
+@JsonInclude(NON_EMPTY)
+public abstract class Subject {
+    @Nullable
     @JsonProperty(access = WRITE_ONLY)
-    private final String id;
+    public abstract String id();
 
-    @JsonProperty
-    private final String parentId;
+    @Nullable
+    public abstract String parentId();
 
-    @JsonProperty
-    private final String name;
+    public abstract String name();
 
+    @Nullable
     @JsonProperty(access = WRITE_ONLY)
-    private final String absolutePath;
+    public abstract String absolutePath();
 
+    @Nullable
     @JsonProperty(access = WRITE_ONLY)
-    private final String parentAbsolutePath;
+    public abstract String parentAbsolutePath();
 
-    @JsonProperty
-    private final String description;
+    @Nullable
+    public abstract String description();
 
-    @JsonProperty
-    private final Boolean isPublished;
-
-    @JsonProperty(access = WRITE_ONLY)
-    private final List<Subject> children;
-
-    @JsonProperty
-    private final List<String> tags;
+    public abstract boolean isPublished();
 
     @JsonProperty(access = WRITE_ONLY)
-    private final List<Sample> samples;
+    public abstract List<Subject> children();
 
-    @JsonProperty
-    private final List<Link> relatedLinks;
+    public abstract List<String> tags();
 
-    @JsonCreator
-    public Subject(@JsonProperty("id") String id,
-                   @JsonProperty("parentId") String parentId,
-                   @JsonProperty("name") String name,
-                   @JsonProperty("absolutePath") String absolutePath,
-                   @JsonProperty("parentAbsolutePath") String parentAbsolutePath,
-                   @JsonProperty("description") String description,
-                   @JsonProperty("isPublished") boolean isPublished,
-                   @JsonProperty("children") List<Subject> children,
-                   @JsonProperty("tags") List<String> tags,
-                   @JsonProperty("samples") List<Sample> samples,
-                   @JsonProperty("relatedLinks") List<Link> relatedLinks) {
-        this.id = id;
-        this.parentId = parentId;
-        this.name = name;
-        this.absolutePath = absolutePath;
-        this.parentAbsolutePath = parentAbsolutePath;
-        this.description = description;
-        this.isPublished = isPublished;
-        this.children = immutableListOrNull(children);
-        this.tags = immutableListOrNull(tags);
-        this.samples = immutableListOrNull(samples);
-        this.relatedLinks = immutableListOrNull(relatedLinks);
-    }
+    @JsonProperty(access = WRITE_ONLY)
+    public abstract List<Sample> samples();
 
-    public String id() {
-        return id;
-    }
-
-    public String parentId() {
-        return parentId;
-    }
-
-    public String name() {
-        return name;
-    }
-
-    public String absolutePath() {
-        return absolutePath;
-    }
-
-    public String parentAbsolutePath() {
-        return parentAbsolutePath;
-    }
-
-    public List<Subject> children() {
-        return immutableOrEmptyList(children);
-    }
-
-    public List<String> tags() {
-        return immutableOrEmptyList(tags);
-    }
-
-    public String description() {
-        return description;
-    }
-
-    @JsonIgnore
-    public boolean isPublished() {
-        return isPublished;
-    }
-
-    public List<Sample> samples() {
-        return immutableOrEmptyList(samples);
-    }
-
-    public List<Link> relatedLinks() {
-        return immutableOrEmptyList(relatedLinks);
-    }
+    public abstract List<Link> relatedLinks();
 
     @Override
     public String toString() {
         return new StringBuilder()
                 .append("Subject{")
-                .append(Objects.toString(absolutePath, name))
+                .append(Objects.toString(absolutePath(), name()))
                 .append(", parent=")
-                .append(Objects.toString(parentAbsolutePath, "null"))
+                .append(Objects.toString(parentAbsolutePath(), "N/A"))
                 .append(", parentId=")
-                .append(Objects.toString(parentId, "null"))
+                .append(Objects.toString(parentId(), "N/A"))
                 .append('}')
                 .toString();
     }

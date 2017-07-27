@@ -8,10 +8,10 @@
 
 package com.salesforce.pyplyn.duct.etl.configuration;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.salesforce.pyplyn.configuration.Configuration;
 import com.salesforce.pyplyn.duct.app.BootstrapException;
-import com.salesforce.pyplyn.util.SerializationHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,6 +24,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import static com.salesforce.pyplyn.util.SerializationHelper.loadResourceInsecure;
 import static java.util.Objects.isNull;
 
 /**
@@ -37,12 +38,12 @@ public class ConfigurationIntake {
 
     private static final Logger logger = LoggerFactory.getLogger(ConfigurationIntake.class);
     private final List<Throwable> errors = new ArrayList<>();
-    private final SerializationHelper serializer;
+    private final ObjectMapper mapper;
 
 
     @Inject
-    public ConfigurationIntake(SerializationHelper serializer) {
-        this.serializer = serializer;
+    public ConfigurationIntake(ObjectMapper mapper) {
+        this.mapper = mapper;
     }
 
     /**
@@ -52,7 +53,7 @@ public class ConfigurationIntake {
      * @return List of all configuration files
      * @throws IOException on any errors when deserializing {@link Configuration}s
      */
-    public List<String> getAllConfigurationsFromDisk(String dir) throws IOException {
+    List<String> getAllConfigurationsFromDisk(String dir) throws IOException {
         // nothing to do if configuration not passed
         if (isNull(dir)) {
             logger.warn("Null configuration dir passed, returning empty configuration list");
@@ -60,7 +61,7 @@ public class ConfigurationIntake {
         }
 
         try (DirectoryStream<Path> configurationsDirectory = Files.newDirectoryStream(Paths.get(dir))) {
-            return StreamSupport.stream(configurationsDirectory.spliterator(),true)
+            return StreamSupport.stream(configurationsDirectory.spliterator(), true)
                     .filter(ConfigurationIntake::isJsonFile)
                     .map(Path::toAbsolutePath)
                     .map(Path::toString)
@@ -82,11 +83,19 @@ public class ConfigurationIntake {
     /**
      * Parses all configuration files and deserializes the {@link Configuration} objects
      *
-     * @param configurations List of configuration files
-     * @return
+     * @param configurationsPath Path to configurations dir
      */
-    public Set<Configuration> parseAll(List<String> configurations) {
-        return configurations.stream().map(this::parseConfigurationFile).flatMap(Collection::stream).collect(Collectors.toSet());
+    public Set<Configuration> parseAll(String configurationsPath) {
+        try {
+            return getAllConfigurationsFromDisk(configurationsPath).stream()
+                    .map(this::parseConfigurationFile)
+                    .flatMap(Collection::stream)
+                    .collect(Collectors.toSet());
+
+        } catch (IOException e) {
+            addError(new ReadError("Unexpected exception when reading from " + configurationsPath, e));
+            return Collections.emptySet();
+        }
     }
 
     /**
@@ -97,11 +106,11 @@ public class ConfigurationIntake {
      */
     private Set<Configuration> parseConfigurationFile(String file) {
         try {
-            return new HashSet<>(Arrays.asList(serializer.deserializeJsonFile(file, Configuration[].class)));
+            return new HashSet<>(Arrays.asList(mapper.readValue(loadResourceInsecure(file), Configuration[].class)));
 
         } catch (IOException e) {
             // store error and return empty list
-            addError(e);
+            addError(new ReadError("Could not deserialize " + file, e));
 
             return Collections.emptySet();
         }
@@ -136,6 +145,20 @@ public class ConfigurationIntake {
             errors.stream().skip(1).forEach(ex::addSuppressed);
 
             throw ex;
+        }
+    }
+
+    /**
+     * Thrown when {@link ConfigurationIntake} cannot deserialize a configuration file
+     *
+     * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
+     * @since 10.0.0
+     */
+    private static class ReadError extends RuntimeException {
+        private static final long serialVersionUID = 3316687913735158436L;
+
+        public ReadError(String message, Throwable cause) {
+            super(message, cause);
         }
     }
 }

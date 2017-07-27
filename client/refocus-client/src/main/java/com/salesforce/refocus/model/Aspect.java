@@ -8,17 +8,19 @@
 
 package com.salesforce.refocus.model;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.salesforce.pyplyn.annotations.PyplynImmutableStyle;
+import org.immutables.value.Value;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
-import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
+import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY;
 import static com.fasterxml.jackson.annotation.JsonProperty.Access.WRITE_ONLY;
-import static com.salesforce.pyplyn.util.CollectionUtils.immutableOrEmptyList;
-import static com.salesforce.pyplyn.util.CollectionUtils.nullableArrayCopy;
 
 /**
  * Aspect model
@@ -26,135 +28,44 @@ import static com.salesforce.pyplyn.util.CollectionUtils.nullableArrayCopy;
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
  * @since 3.0
  */
+@Value.Immutable
+@PyplynImmutableStyle
+@JsonDeserialize(as = ImmutableAspect.class)
+@JsonSerialize(as = ImmutableAspect.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@JsonInclude(NON_NULL)
-public class Aspect {
+@JsonInclude(NON_EMPTY)
+public abstract class Aspect {
+    @Nullable
     @JsonProperty(access = WRITE_ONLY)
-    private final String id;
+    public abstract String id();
 
-    @JsonProperty
-    private final String name;
+    @Nullable
+    public abstract String name();
 
-    @JsonProperty
-    private final String description;
+    @Nullable
+    public abstract String description();
 
-    @JsonProperty
-    private final String helpEmail;
+    @Nullable
+    public abstract String helpEmail();
 
-    @JsonProperty
-    private final Boolean isPublished;
+    @Nullable
+    public abstract Boolean isPublished();
 
-    @JsonProperty
-    private final double[] criticalRange;
+    public abstract List<Double> criticalRange();
 
-    @JsonProperty
-    private final double[] warningRange;
+    public abstract List<Double> warningRange();
 
-    @JsonProperty
-    private final double[] infoRange;
+    public abstract List<Double> infoRange();
 
-    @JsonProperty
-    private final double[] okRange;
+    public abstract List<Double> okRange();
 
-    @JsonProperty
-    private final String timeout;
+    @Nullable
+    public abstract String timeout();
 
-    @JsonProperty
-    private final String valueType;
+    @Nullable
+    public abstract String valueType();
 
-    @JsonProperty
-    private final List<String> tags;
+    public abstract List<String> tags();
 
-    @JsonProperty
-    private final List<Link> relatedLinks;
-
-
-    @JsonCreator
-    public Aspect(@JsonProperty("id") String id,
-                  @JsonProperty("name") String name,
-                  @JsonProperty("description") String description,
-                  @JsonProperty("helpEmail") String helpEmail,
-                  @JsonProperty("isPublished") Boolean isPublished,
-                  @JsonProperty("criticalRange") double[] criticalRange,
-                  @JsonProperty("warningRange") double[] warningRange,
-                  @JsonProperty("infoRange") double[] infoRange,
-                  @JsonProperty("okRange") double[] okRange,
-                  @JsonProperty("timeout") String timeout,
-                  @JsonProperty("valueType") String valueType,
-                  @JsonProperty("tags") List<String> tags,
-                  @JsonProperty("relatedLinks") List<Link> relatedLinks) {
-        this.id = id;
-        this.name = name;
-        this.description = description;
-        this.helpEmail = helpEmail;
-        this.isPublished = isPublished;
-        this.criticalRange = nullableArrayCopy(criticalRange);
-        this.warningRange = nullableArrayCopy(warningRange);
-        this.infoRange = nullableArrayCopy(infoRange);
-        this.okRange = nullableArrayCopy(okRange);
-        this.timeout = timeout;
-        this.valueType = valueType;
-        this.tags = tags;
-        this.relatedLinks = relatedLinks;
-    }
-
-
-    /* Getters */
-
-    public String id() {
-        return id;
-    }
-
-    public String name() {
-        return name;
-    }
-
-    public String description() {
-        return description;
-    }
-
-    public String helpEmail() {
-        return helpEmail;
-    }
-
-    public Boolean isPublished() {
-        return isPublished;
-    }
-
-    public double[] criticalRange() {
-        return nullableArrayCopy(criticalRange);
-    }
-
-    public double[] warningRange() {
-        return nullableArrayCopy(warningRange);
-    }
-
-    public double[] infoRange() {
-        return nullableArrayCopy(infoRange);
-    }
-
-    public double[] okRange() {
-        return nullableArrayCopy(okRange);
-    }
-
-    public String timeout() {
-        return timeout;
-    }
-
-    public String valueType() {
-        return valueType;
-    }
-
-    public List<String> tags() {
-        return immutableOrEmptyList(tags);
-    }
-
-    public List<Link> relatedLinks() {
-        return immutableOrEmptyList(relatedLinks);
-    }
-
-    @Override
-    public String toString() {
-        return "Aspect{" + name + '}';
-    }
+    public abstract List<Link> relatedLinks();
 }

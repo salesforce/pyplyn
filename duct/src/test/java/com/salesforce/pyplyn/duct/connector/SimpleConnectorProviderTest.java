@@ -9,7 +9,8 @@
 package com.salesforce.pyplyn.duct.connector;
 
 import com.google.inject.Injector;
-import com.salesforce.pyplyn.configuration.AbstractConnector;
+import com.salesforce.pyplyn.configuration.Connector;
+import com.salesforce.pyplyn.configuration.ConnectorInterface;
 import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapFixtures;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -38,12 +39,12 @@ public class SimpleConnectorProviderTest {
     public void testProviderLoadsOneConnector() throws Exception {
         // ARRANGE
         fixtures.appConfigMocks()
-                .connectorsPath(SimpleConnectorConfigTest.ONE_CONNECTOR);
+                .connectorsPath(ConnectorTest.ONE_CONNECTOR);
         Injector injector = fixtures.initializeFixtures().injector();
         SimpleConnectorProvider provider = injector.getProvider(SimpleConnectorProvider.class).get();
 
         // ACT
-        List<AbstractConnector> connectors = provider.get();
+        List<ConnectorInterface> connectors = provider.get();
 
         // ASSERT
         assertThat(connectors, notNullValue());
@@ -57,7 +58,7 @@ public class SimpleConnectorProviderTest {
         SimpleConnectorProvider provider = injector.getProvider(SimpleConnectorProvider.class).get();
 
         // ACT
-        List<AbstractConnector> connectors = provider.get();
+        List<ConnectorInterface> connectors = provider.get();
 
         // ASSERT
         assertThat(connectors, notNullValue());

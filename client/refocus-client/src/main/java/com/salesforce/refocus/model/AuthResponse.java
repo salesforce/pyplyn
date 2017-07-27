@@ -8,8 +8,19 @@
 
 package com.salesforce.refocus.model;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.salesforce.pyplyn.annotations.PyplynImmutableStyle;
+import com.salesforce.pyplyn.util.SensitiveByteArrayDeserializer;
+import com.salesforce.pyplyn.util.SensitiveByteArraySerializer;
+import org.immutables.value.Value;
+
+import javax.annotation.Nullable;
+
+import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY;
 
 /**
  * Refocus authentication response object
@@ -17,37 +28,23 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
  * @since 3.0
  */
-public class AuthResponse {
-
+@Value.Immutable
+@PyplynImmutableStyle
+@JsonDeserialize(as = ImmutableAuthResponse.class)
+@JsonSerialize(as = ImmutableAuthResponse.class)
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonInclude(NON_EMPTY)
+public abstract class AuthResponse {
     @JsonProperty("Success")
-    private final String success;
+    public abstract String success();
 
-    @JsonProperty
-    private final String message;
+    @Nullable
+    @Value.Redacted
+    public abstract String message();
 
-    @JsonProperty
-    private final String token;
-
-    @JsonCreator
-    public AuthResponse(@JsonProperty("success") String success,
-                        @JsonProperty("message") String message,
-                        @JsonProperty("token") String token) {
-        this.success = success;
-        this.message = message;
-        this.token = token;
-    }
-
-    /* Getters */
-
-    public String success() {
-        return success;
-    }
-
-    public String message() {
-        return message;
-    }
-
-    public String token() {
-        return token;
-    }
+    @Nullable
+    @Value.Redacted
+    @JsonSerialize(using=SensitiveByteArraySerializer.class)
+    @JsonDeserialize(using=SensitiveByteArrayDeserializer.class)
+    public abstract byte[] token();
 }

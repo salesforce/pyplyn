@@ -8,7 +8,7 @@
 
 package com.salesforce.pyplyn.util;
 
-import com.salesforce.pyplyn.model.TransformationResult;
+import com.salesforce.pyplyn.model.Transmutation;
 
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
@@ -28,7 +28,7 @@ import java.util.Optional;
 public final class FormatUtils {
 
     /**
-     * Used to tag {@link TransformationResult}s, when provided values are defaults
+     * Used to tag {@link Transmutation}s, when provided values are defaults
      *   and not actual values retrieved from the specified endpoints
      */
     private static String DEFAULT_VALUE_MESSAGE_TEMPLATE = "Default value %s=%s";

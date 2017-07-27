@@ -5,25 +5,22 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.salesforce.pyplyn.client.UnauthorizedException;
 import com.salesforce.pyplyn.duct.app.ShutdownHook;
-import com.salesforce.pyplyn.duct.connector.AppConnector;
-import com.salesforce.pyplyn.model.ETLMetadata;
-import com.salesforce.pyplyn.model.TransformationResult;
+import com.salesforce.pyplyn.duct.connector.AppConnectors;
+import com.salesforce.pyplyn.model.Transmutation;
 import com.salesforce.pyplyn.processor.AbstractMeteredLoadProcessor;
 import com.salesforce.refocus.RefocusClient;
+import com.salesforce.refocus.model.ImmutableSample;
 import com.salesforce.refocus.model.Link;
 import com.salesforce.refocus.model.Sample;
-import com.salesforce.refocus.model.builder.SampleBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import static com.salesforce.pyplyn.util.FormatUtils.formatNumber;
-import static java.util.Objects.isNull;
 
 /**
  * Pushes data into Refocus
@@ -36,14 +33,12 @@ import static java.util.Objects.isNull;
 public class RefocusLoadProcessor extends AbstractMeteredLoadProcessor<Refocus> {
     private static final Logger logger = LoggerFactory.getLogger(RefocusLoadProcessor.class);
 
-    private final ConcurrentHashMap<String, RefocusClient> endpoints = new ConcurrentHashMap<>();
-
-    private final AppConnector appConnector;
+    private final AppConnectors appConnectors;
     private final ShutdownHook shutdownHook;
 
     @Inject
-    public RefocusLoadProcessor(AppConnector appConnector, ShutdownHook shutdownHook) {
-        this.appConnector = appConnector;
+    public RefocusLoadProcessor(AppConnectors appConnectors, ShutdownHook shutdownHook) {
+        this.appConnectors = appConnectors;
         this.shutdownHook = shutdownHook;
     }
 
@@ -53,7 +48,7 @@ public class RefocusLoadProcessor extends AbstractMeteredLoadProcessor<Refocus> 
      * @return Empty list if nothing was processed
      */
     @Override
-    public List<Boolean> process(final List<TransformationResult> data, List<Refocus> destinations) {
+    public List<Boolean> process(final List<Transmutation> data, List<Refocus> destinations) {
         // if data is empty, stop here as there is nothing to do
         if (data.isEmpty()) {
             return Collections.emptyList();
@@ -71,9 +66,20 @@ public class RefocusLoadProcessor extends AbstractMeteredLoadProcessor<Refocus> 
                     String endpointId = destinationEntry.getKey();
                     final List<Refocus> loadDestinations = destinationEntry.getValue();
 
-                    final RefocusClient client = client(endpointId);
-                    if (isNull(client)) {
-                        // stop here if we couldn't get a client
+                    // retrieve Refocus client and cache for the specified endpoint
+                    AppConnectors.ClientAndCache<RefocusClient, Sample> cc = appConnectors.retrieveOrBuildClient(endpointId, RefocusClient.class, Sample.class);
+                    final RefocusClient client = cc.client();
+
+                    // TODO: move this someplace better
+                    try {
+                        client.authenticate();
+
+                    } catch (UnauthorizedException e) {
+                        // log auth failure if this exception type was thrown
+                        authenticationFailure();
+
+                        // stop here if we could not authenticate
+                        logger.warn("", e);
                         return Boolean.FALSE;
                     }
 
@@ -87,16 +93,16 @@ public class RefocusLoadProcessor extends AbstractMeteredLoadProcessor<Refocus> 
 
                                 return data.stream().map(result -> {
                                     // create message code and body, based on previously defined values
-                                    ETLMetadata metadata = result.metadata();
+                                    Transmutation.Metadata metadata = result.metadata();
                                     String messageCodeString = Optional.ofNullable(metadata.messageCode()).orElse(defaultMessageCode);
                                     String messageBodyString = Optional.ofNullable(convertMessagesToString(metadata.messages())).orElse(defaultMessageBody);
 
-                                    return new SampleBuilder()
-                                            .withName(sampleName)
-                                            .withValue(formatNumber(result.value()))
-                                            .withRelatedLinks(relatedLinks)
-                                            .withMessageCode(messageCodeString)
-                                            .withMessageBody(messageBodyString)
+                                    return ImmutableSample.builder()
+                                            .name(sampleName)
+                                            .value(formatNumber(result.value()))
+                                            .relatedLinks(relatedLinks)
+                                            .messageCode(messageCodeString)
+                                            .messageBody(messageBodyString)
                                             .build();
                                 });
                             })
@@ -150,29 +156,6 @@ public class RefocusLoadProcessor extends AbstractMeteredLoadProcessor<Refocus> 
         }
 
         return messages.stream().collect(Collectors.joining("\n"));
-    }
-
-
-    /**
-     * Returns a previously initialized client for the specified endpoint
-     *   or initializes one and returns it
-     */
-    public RefocusClient client(String endpointId) {
-        // TODO: move this at interface level and abstract just the factory
-        return endpoints.computeIfAbsent(endpointId, key -> {
-            RefocusClient refocusClient = new RefocusClient(appConnector.get(endpointId));
-            try {
-                refocusClient.auth();
-                return refocusClient;
-
-            } catch (UnauthorizedException e) {
-                // log auth failure if this exception type was thrown
-                authenticationFailure();
-
-                logger.warn("", e);
-                return null;
-            }
-        });
     }
 
     @Override

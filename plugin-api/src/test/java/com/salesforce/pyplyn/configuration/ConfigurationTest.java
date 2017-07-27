@@ -8,12 +8,14 @@
 
 package com.salesforce.pyplyn.configuration;
 
-import com.salesforce.pyplyn.model.Extract;
-import com.salesforce.pyplyn.model.ExtractImpl;
-import com.salesforce.pyplyn.model.Load;
-import com.salesforce.pyplyn.model.Transform;
+import com.salesforce.pyplyn.model.*;
 import org.testng.annotations.Test;
 
+import java.util.Collections;
+import java.util.List;
+
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
@@ -27,8 +29,8 @@ public class ConfigurationTest {
     @Test
     public void testEmptyConfigurationsAreEqual() throws Exception {
         // ARRANGE
-        Configuration configuration1 = new Configuration(0, new Extract[]{}, new Transform[]{}, new Load[]{}, false);
-        Configuration configuration2 = new Configuration(0, new Extract[]{}, new Transform[]{}, new Load[]{}, false);
+        Configuration configuration1 = ImmutableConfiguration.of(0, emptyList(), emptyList(), emptyList(), false);
+        Configuration configuration2 = ImmutableConfiguration.of(0, emptyList(), emptyList(), emptyList(), false);
 
         // ACT/ASSERT
         assertConfigurationsEqual(configuration1, configuration2);
@@ -37,8 +39,8 @@ public class ConfigurationTest {
     @Test
     public void testConfigurationsWithSameEmptyETLAreEqual() throws Exception {
         // ARRANGE
-        Configuration configuration1 = new Configuration(0, new Extract[]{}, new Transform[]{}, new Load[]{}, false);
-        Configuration configuration2 = new Configuration(1, new Extract[]{}, new Transform[]{}, new Load[]{}, true);
+        Configuration configuration1 = ImmutableConfiguration.of(0, emptyList(), emptyList(), emptyList(), false);
+        Configuration configuration2 = ImmutableConfiguration.of(1, emptyList(), emptyList(), emptyList(), true);
 
         // ACT/ASSERT
         assertConfigurationsEqual(configuration1, configuration2);
@@ -50,8 +52,8 @@ public class ConfigurationTest {
         Extract e1 = new ExtractImpl("same");
         Extract e2 = new ExtractImpl("same");
 
-        Configuration configuration1 = new Configuration(0, new Extract[]{e1}, new Transform[]{}, new Load[]{}, false);
-        Configuration configuration2 = new Configuration(0, new Extract[]{e2}, new Transform[]{}, new Load[]{}, false);
+        Configuration configuration1 = ImmutableConfiguration.of(0, singletonList(e1), emptyList(), emptyList(), false);
+        Configuration configuration2 = ImmutableConfiguration.of(0, singletonList(e2), emptyList(), emptyList(), false);
 
         // ACT/ASSERT
         assertConfigurationsEqual(configuration1, configuration2);
@@ -63,8 +65,8 @@ public class ConfigurationTest {
         // ARRANGE
         Extract e = new ExtractImpl("same");
 
-        Configuration configuration1 = new Configuration(0, new Extract[]{e}, new Transform[]{}, new Load[]{}, false);
-        Configuration configuration2 = new Configuration(0, new Extract[]{}, new Transform[]{}, new Load[]{}, false);
+        Configuration configuration1 = ImmutableConfiguration.of(0, singletonList(e), emptyList(), emptyList(), false);
+        Configuration configuration2 = ImmutableConfiguration.of(0, emptyList(), emptyList(), emptyList(), false);
 
         // ACT/ASSERT
         assertConfigurationsAreNotEqual(configuration1, configuration2);
@@ -74,18 +76,18 @@ public class ConfigurationTest {
     @Test
     public void testConfigurationGetters() throws Exception {
         // ARRANGE
-        Extract[] extracts = {};
-        Transform[] transforms = {};
-        Load[] loads = {};
+        List<Extract> extracts = singletonList(new Extract() {});
+        List<Transform> transforms = singletonList((Transform) input -> null);
+        List<Load> loads = singletonList(new Load() {});
 
-        Configuration configuration = new Configuration(100L, extracts, transforms, loads, true);
+        Configuration configuration = ImmutableConfiguration.of(100L, extracts, transforms, loads, true);
 
         // ACT
-        boolean enabled = configuration.isEnabled();
+        boolean enabled = !configuration.disabled();
         long repeatIntervalMillis = configuration.repeatIntervalMillis();
-        Extract[] extract = configuration.extract();
-        Transform[] transform = configuration.transform();
-        Load[] load = configuration.load();
+        List<Extract> extract = configuration.extract();
+        List<Transform> transform = configuration.transform();
+        List<Load> load = configuration.load();
 
         // ASSERT
         assertThat("Configuration should be disabled", enabled, is(false));

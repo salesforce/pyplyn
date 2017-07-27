@@ -9,22 +9,28 @@
 package com.salesforce.pyplyn.client;
 
 import com.google.common.base.Preconditions;
-import com.salesforce.pyplyn.cache.Cacheable;
-import com.salesforce.pyplyn.configuration.AbstractConnector;
+import com.salesforce.pyplyn.configuration.Connector;
+import com.salesforce.pyplyn.configuration.ConnectorInterface;
 import okhttp3.Headers;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import retrofit2.Call;
 import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.jackson.JacksonConverterFactory;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
+import java.nio.charset.Charset;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
+
+import static java.util.Objects.isNull;
 
 /**
  * Generic contract for Remote clients implemented in Pyplyn
@@ -34,14 +40,17 @@ import java.util.concurrent.TimeUnit;
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
  * @since 3.0
  */
-public abstract class AbstractRemoteClient<S> implements Cacheable {
+public abstract class AbstractRemoteClient<S> implements RemoteClient {
+    private static final Logger logger = LoggerFactory.getLogger(AbstractRemoteClient.class);
+    private ReentrantLock authLock = new ReentrantLock();
+
     private static int UNAUTHORIZED = 401;
     private static int ERR_CODES = 400;
 
     /**
      * Reference to the connector used by the current instance
      */
-    private final AbstractConnector connector;
+    private final ConnectorInterface connector;
 
     /**
      * The service object performing remote API operations
@@ -62,16 +71,48 @@ public abstract class AbstractRemoteClient<S> implements Cacheable {
     protected abstract boolean auth() throws UnauthorizedException;
 
     /**
-     * Override this method and return the implementing class' logger, to make the messages contextually relevant
-     *
-     * @return logger to use for reporting errors
+     * Implementations of this method should clear any authentication artifacts,
+     *   in order to force a new authentication operation to take place
      */
-    protected abstract Logger logger();
+    protected abstract void resetAuth();
+
+    /**
+     * This method should be used to authenticate the client to its endpoint
+     *   to prevent duplicate operations from multiple parallel threads
+     * <p/>
+     * <p/> It uses a latch to ensure only one operation is performed
+     * @return true if the operation has succeeded
+     * @throws UnauthorizedException
+     */
+    public boolean authenticate() throws UnauthorizedException {
+        authLock.lock();
+        try {
+            // if another thread has performed the authentication, do not repeat the operation
+            return isAuthenticated() || auth();
+
+        } finally {
+            authLock.unlock();
+        }
+    }
+
+    /**
+     * Generates a header by combining a prefix with a byte[] token
+     *
+     * @return empty string, if a null token was passed
+     */
+    public static String prefixTokenHeader(byte[] token, @Nonnull String prefix) {
+        // return empty string if token could not be retrieved
+        if (isNull(token)) {
+            return "";
+        }
+
+        return prefix + new String(token, Charset.defaultCharset());
+    }
 
     /**
      * Class constructor that allows setting timeout parameters
      */
-    public AbstractRemoteClient(AbstractConnector connector, Class<S> cls) {
+    protected AbstractRemoteClient(ConnectorInterface connector, Class<S> cls) {
         Preconditions.checkNotNull(connector, "Passed connector is null for " + this.getClass().getSimpleName());
 
         // Extended timeouts are needed to deal with extremely slow response times for some Argus API endpoints.
@@ -86,6 +127,7 @@ public abstract class AbstractRemoteClient<S> implements Cacheable {
 
         // build the retrofit service implementation, using a specified client and relying on Jackson serialization/deserialization
         this.connector = connector;
+
         this.svc = new Retrofit.Builder()
                 .baseUrl(connector.endpoint())
                 .client(client)
@@ -104,7 +146,7 @@ public abstract class AbstractRemoteClient<S> implements Cacheable {
     /**
      * Initializes an {@link OkHttpClient.Builder} object, with the specified timeouts
      */
-    private static OkHttpClient.Builder httpClientBuilder(AbstractConnector connector) {
+    private static OkHttpClient.Builder httpClientBuilder(ConnectorInterface connector) {
         return new OkHttpClient().newBuilder()
                     .connectTimeout(connector.connectTimeout(), TimeUnit.SECONDS)
                     .readTimeout(connector.readTimeout(), TimeUnit.SECONDS)
@@ -115,14 +157,29 @@ public abstract class AbstractRemoteClient<S> implements Cacheable {
      * Creates a proxy object that will be used to send any service calls through
      *
      * @return a {@link Proxy} object initialized with the values specified in this endpoint's corresponding
-     *         {@link AbstractConnector}
+     *         {@link Connector}
      */
-    private Proxy createProxy(AbstractConnector connector) {
+    private Proxy createProxy(ConnectorInterface connector) {
         return new Proxy(Proxy.Type.HTTP, new InetSocketAddress(connector.proxyHost(), connector.proxyPort()));
     }
 
     /**
      * Executes the remote call and returns the response or returns <b>defaultFailureResponse</b> if the operation fails
+     *
+     * @return if successful, returns the result of calling {@link Response}.body() on the resulting response
+     * @throws UnauthorizedException if the endpoint could not be authenticated
+     */
+    protected <T> T executeNoRetry(Call<T> call, T defaultFailResponse) throws UnauthorizedException {
+        return Optional.ofNullable(executeCallInternal(call))
+                .map(Response::body)
+                .orElse(defaultFailResponse);
+    }
+
+    /**
+     * Executes the remote call and returns the response or returns <b>defaultFailureResponse</b> if the operation fails
+     * <p/>
+     * <p/>The call is retried once if the operation fails due to an {@link UnauthorizedException}.
+     * Authentication is attempted before the retry to account for expired tokens.
      *
      * @return if successful, returns the result of calling {@link Response}.body() on the resulting response
      * @throws UnauthorizedException if the endpoint could not be authenticated
@@ -138,7 +195,7 @@ public abstract class AbstractRemoteClient<S> implements Cacheable {
      *
      * @throws UnauthorizedException if the endpoint could not be authenticated
      */
-    protected  <T> Headers executeAndRetrieveHeaders(Call<T> call) throws UnauthorizedException {
+    protected <T> Headers executeAndRetrieveHeaders(Call<T> call) throws UnauthorizedException {
         return Optional.ofNullable(executeCallInternal(call))
                 .map(Response::headers)
                 .orElse(null);
@@ -156,8 +213,10 @@ public abstract class AbstractRemoteClient<S> implements Cacheable {
             return executeCallInternal(call);
 
         } catch (UnauthorizedException e) {
-            auth();
-            return executeCallInternal(call);
+            // resets any authentication tokens and attempts to re-authenticate
+            resetAuth();
+            authenticate();
+            return executeCallInternal(call.clone());
         }
     }
 
@@ -175,27 +234,36 @@ public abstract class AbstractRemoteClient<S> implements Cacheable {
 
             // success
             if(response.code() < ERR_CODES && response.isSuccessful()) {
-                logger().info("Successful remote call {} {}; response={}", requestMethod, requestUrl, response.body());
+                logger.info("Successful remote call {}/{} {}; response={}",
+                    getClass().getSimpleName(), requestMethod, requestUrl, response);
                 return response;
             }
 
             // check if we are not authorized
             if (response.code() == UNAUTHORIZED) {
-                throw new UnauthorizedException(generateExceptionDetails(response));
+                try {
+                    throw new UnauthorizedException(generateExceptionDetails(response));
+
+                } finally {
+                    call.cancel();
+                }
             }
 
             // log any failures
             final String errorBody = response.errorBody().string();
-            logger().info("Unsuccessful remote call {} {}; response={}", requestMethod, requestUrl, errorBody);
+            logger.info("Unsuccessful remote call {}/{} {}; response={}",
+                getClass().getSimpleName(), requestMethod, requestUrl, errorBody);
 
         } catch (IOException e) {
-            logger().error("Error during remote call {} {}: {}", requestMethod, requestUrl, e.getMessage());
-            logger().debug("Error during remote call " + requestMethod + " " + requestUrl + " [stacktrace]: ", e);
+            logger.error("Error during remote call {}/{} {}: {}",
+                getClass().getSimpleName(), requestMethod, requestUrl, e.getMessage());
+            logger.debug("Error during remote call " + requestMethod + " " + requestUrl + " [stacktrace]: ", e);
             call.cancel();
         }
 
         return null;
     }
+
 
     /**
      * Generates a standardized exception string from details passed in a {@link Response} object
@@ -222,7 +290,7 @@ public abstract class AbstractRemoteClient<S> implements Cacheable {
     /**
      * @return connector used by the current instance
      */
-    public final AbstractConnector connector() {
+    public final ConnectorInterface connector() {
         return connector;
     }
 
@@ -231,7 +299,8 @@ public abstract class AbstractRemoteClient<S> implements Cacheable {
      *   since connector endpoint ids are implicitly unique
      */
     @Override
-    public String cacheKey() {
-        return connector.connectorId();
+    public String endpoint() {
+        return connector.id();
     }
 }
+

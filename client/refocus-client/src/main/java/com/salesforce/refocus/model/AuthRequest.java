@@ -8,55 +8,34 @@
 
 package com.salesforce.refocus.model;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.salesforce.pyplyn.annotations.PyplynImmutableStyle;
 import com.salesforce.pyplyn.util.SensitiveByteArraySerializer;
+import org.immutables.value.Value;
 
-import java.util.Arrays;
+import javax.annotation.Nullable;
 
-import static com.salesforce.pyplyn.util.CollectionUtils.nullableArrayCopy;
+import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY;
 
 /**
  * Auth request model
+ * <p/>The password is kept as a byte array to make it harder to extract from a heap dump (byte arrays can be zeroed out)
  *
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
  * @since 3.0
  */
-public class AuthRequest {
-    @JsonProperty
-    private final String username;
+@Value.Immutable
+@PyplynImmutableStyle
+@JsonDeserialize(as = ImmutableAuthRequest.class)
+@JsonSerialize(as = ImmutableAuthRequest.class)
+@JsonInclude(NON_EMPTY)
+public abstract class AuthRequest {
+    @Nullable
+    public abstract String username();
 
-    @JsonProperty
+    @Value.Redacted
     @JsonSerialize(using=SensitiveByteArraySerializer.class)
-    private final byte[] password;
-
-    /**
-     * Constructs an Auth Request
-     * <p/>
-     * <p/>The password is kept as a byte array to make it harder to extract from a heap dump (byte arrays can be nulled-out)
-     */
-    @JsonCreator
-    public AuthRequest(@JsonProperty("username") String username,
-                       @JsonProperty("password") byte[] password) {
-        this.username = username;
-        this.password = nullableArrayCopy(password);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        AuthRequest that = (AuthRequest) o;
-
-        if (username != null ? !username.equals(that.username) : that.username != null) return false;
-        return Arrays.equals(password, that.password);
-    }
-
-    @Override
-    public int hashCode() {
-        int result = username != null ? username.hashCode() : 0;
-        return 31 * result + Arrays.hashCode(password);
-    }
+    public abstract byte[] password();
 }

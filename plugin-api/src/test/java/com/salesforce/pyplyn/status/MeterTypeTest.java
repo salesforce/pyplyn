@@ -8,6 +8,7 @@
 
 package com.salesforce.pyplyn.status;
 
+import com.salesforce.pyplyn.model.ThresholdType;
 import org.testng.annotations.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -28,11 +29,11 @@ public class MeterTypeTest {
 
 
         // ACT
-        AlertType successAlertType = success.alertType();
-        AlertType failureAlertType = failure.alertType();
+        ThresholdType successAlertType = success.alertType();
+        ThresholdType failureAlertType = failure.alertType();
 
         // ASSERT
-        assertThat(successAlertType, equalTo(AlertType.LESS_THAN));
-        assertThat(failureAlertType, equalTo(AlertType.GREATER_THAN));
+        assertThat(successAlertType, equalTo(ThresholdType.LESS_THAN));
+        assertThat(failureAlertType, equalTo(ThresholdType.GREATER_THAN));
     }
 }

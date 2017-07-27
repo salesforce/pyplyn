@@ -13,9 +13,12 @@ import com.salesforce.pyplyn.duct.app.ShutdownHook;
 import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapFixtures;
 import com.salesforce.pyplyn.duct.etl.extract.argus.Argus;
 import com.salesforce.pyplyn.duct.etl.extract.argus.ArgusExtractProcessor;
+import com.salesforce.pyplyn.duct.etl.extract.argus.ImmutableArgus;
+import com.salesforce.pyplyn.duct.etl.extract.refocus.ImmutableRefocus;
 import com.salesforce.pyplyn.duct.etl.extract.refocus.Refocus;
 import com.salesforce.pyplyn.duct.etl.extract.refocus.RefocusExtractProcessor;
-import com.salesforce.pyplyn.model.TransformationResult;
+import com.salesforce.pyplyn.model.ImmutableTransmutation;
+import com.salesforce.pyplyn.model.Transmutation;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.testng.annotations.BeforeMethod;
@@ -39,14 +42,16 @@ public class DuctExtractTest {
     private ShutdownHook shutdownHook;
 
     private AppBootstrapFixtures fixtures;
-    private TransformationResult result;
+    private Transmutation result;
 
     @BeforeMethod
     public void setUp() throws Exception {
         //ARRANGE
         MockitoAnnotations.initMocks(this);
         Number num = 1;
-        result = new TransformationResult(ZonedDateTime.now(), ACTUAL_NAME, num, num);
+
+        Transmutation.Metadata metadata = ImmutableTransmutation.Metadata.builder().build();
+        result = ImmutableTransmutation.of(ZonedDateTime.now(),  ACTUAL_NAME, num, num, metadata);
 
         fixtures = new AppBootstrapFixtures().initializeFixtures();
     }
@@ -55,12 +60,12 @@ public class DuctExtractTest {
     public void processArgus() throws Exception {
         //ARRANGE
         @SuppressWarnings("unchecked")
-        ArgusExtractProcessor argusExtractprocessor = spy(new ArgusExtractProcessor(fixtures.appConnector(), fixtures.cacheFactory(), shutdownHook));
-        Argus argus = new Argus("endpoint", "expression", "name", 1, 2d);
+        ArgusExtractProcessor argusExtractprocessor = spy(new ArgusExtractProcessor(fixtures.appConnectors(), shutdownHook));
+        Argus argus = ImmutableArgus.of("endpoint", "expression", "name", 1, 2d);
 
         //ACT
         doReturn(Collections.singletonList(Collections.singletonList(result))).when(argusExtractprocessor).process(Collections.singletonList(any()));
-        List<List<TransformationResult>> results = argusExtractprocessor.process(Collections.singletonList(argus));
+        List<List<Transmutation>> results = argusExtractprocessor.process(Collections.singletonList(argus));
 
         //ASSERT
         assertThat(results, hasSize(1));
@@ -72,12 +77,12 @@ public class DuctExtractTest {
     public void processRefocus() throws Exception {
         //ARRANGE
         @SuppressWarnings("unchecked")
-        RefocusExtractProcessor refocusExtractProcessor = spy(new RefocusExtractProcessor(fixtures.appConnector(), fixtures.cacheFactory(), shutdownHook));
-        Refocus refocus = new Refocus("endpoint", "subject", null, "aspect", 1, 2d);
+        RefocusExtractProcessor refocusExtractProcessor = spy(new RefocusExtractProcessor(fixtures.appConnectors(), shutdownHook));
+        Refocus refocus = ImmutableRefocus.of("endpoint", "subject", null, "aspect", 1, 2d);
 
         //ACT
         doReturn(Collections.singletonList(Collections.singletonList(result))).when(refocusExtractProcessor).process(Collections.singletonList(any()));
-        List<List<TransformationResult>> results = refocusExtractProcessor.process(Collections.singletonList(refocus));
+        List<List<Transmutation>> results = refocusExtractProcessor.process(Collections.singletonList(refocus));
 
         //ASSERT
         assertThat(results, hasSize(1));

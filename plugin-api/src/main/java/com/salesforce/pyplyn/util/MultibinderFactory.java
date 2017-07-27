@@ -12,7 +12,9 @@ import com.google.inject.Binder;
 import com.google.inject.Guice;
 import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.Multibinder;
-import com.salesforce.pyplyn.configuration.AbstractConnector;
+import com.salesforce.pyplyn.client.AbstractRemoteClient;
+import com.salesforce.pyplyn.configuration.Connector;
+import com.salesforce.pyplyn.configuration.ConnectorInterface;
 import com.salesforce.pyplyn.model.Extract;
 import com.salesforce.pyplyn.model.Load;
 import com.salesforce.pyplyn.model.Transform;
@@ -36,12 +38,12 @@ public final class MultibinderFactory {
     private MultibinderFactory() { }
 
     /**
-     * Used to bind lists of {@link AbstractConnector} implementations
-     *   this is a Set<List<AbstractConnector>> since plugins might need to define new connectors that are
+     * Used to bind lists of {@link ConnectorInterface} implementations
+     *   this is a Set<List<Connector>> since plugins might need to define new connectors that are
      *   implemented differently
      */
-    public static Multibinder<List<AbstractConnector>> appConnectors(Binder binder) {
-         return Multibinder.newSetBinder(binder, new TypeLiteral<List<AbstractConnector>>() {});
+    public static Multibinder<List<ConnectorInterface>> appConnectors(Binder binder) {
+         return Multibinder.newSetBinder(binder, new TypeLiteral<List<ConnectorInterface>>() {});
     }
 
     /**
@@ -85,5 +87,10 @@ public final class MultibinderFactory {
      */
     public static Multibinder<SystemStatusConsumer> statusConsumers(Binder binder) {
         return Multibinder.newSetBinder(binder, SystemStatusConsumer.class);
+    }
+
+
+    public static <S> Multibinder<AbstractRemoteClient<S>> apiClients(Binder binder) {
+        return Multibinder.newSetBinder(binder, new TypeLiteral<AbstractRemoteClient<S>>(){});
     }
 }

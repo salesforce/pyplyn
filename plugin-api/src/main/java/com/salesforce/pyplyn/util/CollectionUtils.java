@@ -29,7 +29,7 @@ public final class CollectionUtils {
      * Copies all elements from the input array and returns a new array
      *   or null, if null was passed for input
      */
-    public static <T> T[] nullableArrayCopy(T... input) {
+    public static <T> T[] nullableArrayCopy(T[] input) {
         return Optional.ofNullable(input).map(s -> Arrays.copyOf(s, s.length)).orElse(null);
     }
 

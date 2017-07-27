@@ -6,16 +6,17 @@
  *    or https://opensource.org/licenses/BSD-3-Clause
  */
 
-package com.salesforce.pyplyn.status;
+package com.salesforce.pyplyn.client;
 
 /**
- * Determines which type of check we should apply
- * <p/>
- * <p/>Alerts are triggered when they are either greater or less than the specified thresholds
+ * Represents remote clients that can connect to multiple endpoints
  *
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
- * @since 3.0
+ * @since 10.0.0
  */
-public enum AlertType {
-    GREATER_THAN, LESS_THAN
+public interface RemoteClient {
+    /**
+     * @return the endpoint to which the implementing client points to
+     */
+    String endpoint();
 }

@@ -58,7 +58,7 @@ public abstract class AbstractMeteredExtractProcessor<T extends Extract> impleme
     }
 
     /**
-     * Call this method when attempting to authenticate the endpoint failed
+     * Call this method when attempting to authenticate to the endpoint failed
      */
     protected void authenticationFailure() {
         systemStatus.meter(meterName(), MeterType.AuthenticationFailure).mark();

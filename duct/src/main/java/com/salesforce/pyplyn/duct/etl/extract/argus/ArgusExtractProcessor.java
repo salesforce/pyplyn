@@ -14,13 +14,11 @@ import com.google.inject.Singleton;
 import com.salesforce.argus.ArgusClient;
 import com.salesforce.argus.model.MetricResponse;
 import com.salesforce.pyplyn.cache.Cache;
-import com.salesforce.pyplyn.cache.CacheFactory;
-import com.salesforce.pyplyn.cache.ConcurrentCacheMap;
 import com.salesforce.pyplyn.client.UnauthorizedException;
 import com.salesforce.pyplyn.duct.app.ShutdownHook;
-import com.salesforce.pyplyn.duct.connector.AppConnector;
-import com.salesforce.pyplyn.model.TransformationResult;
-import com.salesforce.pyplyn.model.builder.TransformationResultBuilder;
+import com.salesforce.pyplyn.duct.connector.AppConnectors;
+import com.salesforce.pyplyn.model.ImmutableTransmutation;
+import com.salesforce.pyplyn.model.Transmutation;
 import com.salesforce.pyplyn.processor.AbstractMeteredExtractProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +28,6 @@ import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -49,17 +46,12 @@ import static java.util.Objects.nonNull;
 public class ArgusExtractProcessor extends AbstractMeteredExtractProcessor<Argus> {
     private static final Logger logger = LoggerFactory.getLogger(ArgusExtractProcessor.class);
 
-    private final AppConnector appConnector;
-    private final CacheFactory cacheFactory;
+    private final AppConnectors appConnectors;
     private final ShutdownHook shutdownHook;
 
-    private final Map<String, ArgusClient> endpoints = new ConcurrentHashMap<>();
-    private final Map<ArgusClient, ConcurrentCacheMap<MetricResponse>> caches = new HashMap<>();
-
     @Inject
-    public ArgusExtractProcessor(AppConnector appConnector, CacheFactory cacheFactory, ShutdownHook shutdownHook) {
-        this.appConnector = appConnector;
-        this.cacheFactory = cacheFactory;
+    public ArgusExtractProcessor(AppConnectors appConnectors, ShutdownHook shutdownHook) {
+        this.appConnectors = appConnectors;
         this.shutdownHook = shutdownHook;
     }
 
@@ -67,7 +59,7 @@ public class ArgusExtractProcessor extends AbstractMeteredExtractProcessor<Argus
      * @return a list of metrics returned by executing the passed Argus expressions
      */
     @Override
-    public List<List<TransformationResult>> process(List<Argus> data) {
+    public List<List<Transmutation>> process(List<Argus> data) {
         // prepare a map of the datapoints that can be cached
         final Map<String, Integer> cacheSettings = data.stream().filter(argus -> argus.cacheMillis() > 0).collect(Collectors.toMap(Argus::cacheKey, Argus::cacheMillis));
 
@@ -87,12 +79,21 @@ public class ArgusExtractProcessor extends AbstractMeteredExtractProcessor<Argus
                     final String endpointId = endpointExpressions.getKey();
 
                     // retrieve Argus client and cache for the specified endpoint
-                    final ArgusClient client = client(endpointId);
-                    final Cache<MetricResponse> endpointCache = cache(client);
+                    AppConnectors.ClientAndCache<ArgusClient, MetricResponse> cc = appConnectors.retrieveOrBuildClient(endpointId, ArgusClient.class, MetricResponse.class);
+                    final ArgusClient client = cc.client();
+                    final Cache<MetricResponse> endpointCache = cc.cache();
 
-                    // stop here if we cannot initialize an endpoint for this client
-                    if (isNull(client)) {
+                    // TODO: move this someplace better
+                    try {
+                        client.authenticate();
+
+                    } catch (UnauthorizedException e) {
+                        // log auth failure if this exception type was thrown
+                        authenticationFailure();
                         failed();
+
+                        // stop here if we cannot authenticate
+                        logger.warn("", e);
                         return null;
                     }
 
@@ -137,7 +138,7 @@ public class ArgusExtractProcessor extends AbstractMeteredExtractProcessor<Argus
                             metricResponses.stream()
                                     // we are not caching results with no data
                                     .filter(ArgusExtractProcessor::responseHasDatapoints)
-                                    .forEach(result -> tryCache(result, client, cacheSettings));
+                                    .forEach(result -> tryCache(endpointCache, result, cacheSettings));
                         } else {
                             metricResponses = Collections.emptyList();
                         }
@@ -167,7 +168,7 @@ public class ArgusExtractProcessor extends AbstractMeteredExtractProcessor<Argus
                                         logger.warn("No data for {}, endpoint {}", result.metric(), endpointId);
                                         noData();
 
-                                        // stop here, cannot create a TransformationResult from no points
+                                        // stop here, cannot create a Transmutation from no points
                                         return null;
                                     }
 
@@ -186,13 +187,19 @@ public class ArgusExtractProcessor extends AbstractMeteredExtractProcessor<Argus
                                                     result.metric(),
                                                     endpointId))
 
+                                            // tag each datapoint with the originating MetricResponse object
+                                            .map(transmutation -> addOriginalDatapoint(transmutation, result))
+
                                             // add a default message
                                             .map(transResult -> {
                                                 logger.info("Default data provided for {}={}, endpoint {}", result.metric(), transResult.value(), endpointId);
-                                                return new TransformationResultBuilder(transResult)
-                                                        .metadata((metadata) -> metadata
-                                                                .addMessage(defaultValueMessage))
+                                                return ImmutableTransmutation.builder().from(transResult)
+                                                        .metadata(ImmutableTransmutation.Metadata.builder()
+                                                                .from(transResult.metadata())
+                                                                .addMessages(defaultValueMessage)
+                                                                .build())
                                                         .build();
+
                                             })
 
                                             // and map to a list, which is the expected return type
@@ -225,13 +232,13 @@ public class ArgusExtractProcessor extends AbstractMeteredExtractProcessor<Argus
     }
 
     /**
-     * Maps datapoints returned by Argus as a {@link TransformationResult} matrix
+     * Maps datapoints returned by Argus as a {@link Transmutation} matrix
      */
-    private List<TransformationResult> mapDatapointsAsResults(MetricResponse metricResponse, String endpointId) {
+    private List<Transmutation> mapDatapointsAsResults(MetricResponse metricResponse, String endpointId) {
         // store metric name, as it's the same for all data points
         final String metricName = metricResponse.metric();
 
-        // map each datapoint to a TransformationResult object
+        // map each datapoint to a Transmutation object
         return metricResponse.datapoints().entrySet().stream()
                 // create TransformResultStage object
                 .map(metricEntry -> createResult(metricEntry.getKey(), metricEntry.getValue(), metricName, endpointId))
@@ -240,15 +247,28 @@ public class ArgusExtractProcessor extends AbstractMeteredExtractProcessor<Argus
                 .filter(Objects::nonNull)
 
                 // tag each datapoint with the originating MetricResponse object
-                .map(result -> new TransformationResultBuilder(result)
-                        // TODO: do this for Refocus too, and/or define global flag for skipping this step (non Gadget flows do not need it)
-                        //       alternatively, either specify this flag per configuration (+1) or detect if it will be required (based on some annotation
-                        //       implemented by Transforms - i.e.: @RequiresSourceObject
-                        .metadata((metadata) -> metadata.addSource(metricResponse))
-                        .build())
+                .map(result -> addOriginalDatapoint(result, metricResponse))
 
                 .collect(Collectors.toList());
     }
+
+    /**
+     * Adds a reference to the original datapoint in the {@link Transmutation}'s metadata
+     */
+    private Transmutation addOriginalDatapoint(Transmutation input, Object source) {
+        return ImmutableTransmutation.builder().from(input)
+                .metadata(ImmutableTransmutation.Metadata.builder()
+                        .from(input.metadata())
+                        // TODO: do this for Refocus too, and/or define global flag for skipping this step
+                        //       alternatively, either specify this flag per configuration (+1) or detect if it will be required (based on some annotation
+                        //       implemented by Transforms - i.e.: @RequiresSourceObject
+                        .source(source)
+                        .build())
+                .build();
+
+    }
+
+
 
     /**
      * Creates a datapoint map, containing a single result
@@ -292,11 +312,12 @@ public class ArgusExtractProcessor extends AbstractMeteredExtractProcessor<Argus
      * @param metric name of data point
      * @return Null if either time or value could not be parsed
      */
-    private TransformationResult createResult(String time, String value, String metric, String endpointId) {
+    private Transmutation createResult(String time, String value, String metric, String endpointId) {
         try {
             ZonedDateTime parsedTime = parseUTCTime(time);
             Number parsedNumber = parseNumber(value);
-            return new TransformationResult(parsedTime, metric, parsedNumber, parsedNumber);
+            return ImmutableTransmutation.of(parsedTime, metric, parsedNumber, parsedNumber,
+                    ImmutableTransmutation.Metadata.builder().build());
 
         } catch (DateTimeParseException |ParseException e) {
             logger.warn("No data for {}, endpoint {}; invalid time or value: {}", metric, endpointId, e.getMessage());
@@ -308,49 +329,15 @@ public class ArgusExtractProcessor extends AbstractMeteredExtractProcessor<Argus
     /**
      * Attempts to cache getMetrics responses, if they are registered for caching
      *
+     * @param endpointCache
      * @param metric MetricResponse to cache
      * @param howLongToCacheFor Cache duration map, per each cacheable metric key
      */
-    private void tryCache(MetricResponse metric, ArgusClient client, Map<String, Integer> howLongToCacheFor) {
+    private void tryCache(Cache<MetricResponse> endpointCache, MetricResponse metric, Map<String, Integer> howLongToCacheFor) {
         if (howLongToCacheFor.containsKey(metric.cacheKey())) {
             // retrieves the MetricResponse cache object and caches the specified metric for the specified duration
-            cache(client).cache(metric, howLongToCacheFor.get(metric.cacheKey()));
+            endpointCache.cache(metric, howLongToCacheFor.get(metric.cacheKey()));
         }
-    }
-
-
-    /**
-     * Returns a previously initialized client for the specified endpoint
-     *   or initializes one and returns it
-     */
-    public ArgusClient client(String endpointId) {
-        return endpoints.computeIfAbsent(endpointId, key -> {
-            ArgusClient client = new ArgusClient(appConnector.get(endpointId));
-            try {
-                client.auth();
-
-                // init cache and processing queue
-                caches.computeIfAbsent(client, k -> cacheFactory.newCache());
-
-                return client;
-
-            } catch (UnauthorizedException e) {
-                // log auth failure if this exception type was thrown
-                authenticationFailure();
-
-                logger.warn("", e);
-                return null;
-            }
-        });
-    }
-
-    /**
-     * @return a {@link Cache} for the corresponding {@link ArgusClient}
-     * @throws IllegalStateException if a cache does not exist for this client
-     */
-    public Cache<MetricResponse> cache(ArgusClient client) {
-        return Optional.ofNullable(caches.get(client)).orElseThrow(() ->
-                new IllegalStateException("Cannot proceed with un-initialized cache for " + client.cacheKey()));
     }
 
     @Override

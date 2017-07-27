@@ -36,10 +36,11 @@ public interface Filterable<T extends S, S> {
      * @param objects array that might contain elements of subtypes of <b>S</b> other than <b>T</b>
      * @return guaranteed to return List&lt;<b>T</b>&gt;
      */
-    default List<T> filter(S... objects) {
+    default List<T> filter(List<S> objects) {
         Class<T> cls = filteredType();
-        return Arrays.stream(objects)
-                .filter(load -> load.getClass().equals(cls))
+
+        return objects.stream()
+                .filter(cls::isInstance)
                 .map(cls::cast)
                 .collect(Collectors.toList());
     }

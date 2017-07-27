@@ -8,14 +8,11 @@
 
 package com.salesforce.pyplyn.configuration;
 
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
-import static org.mockito.Mockito.doReturn;
 
 /**
  * Test class
@@ -23,21 +20,22 @@ import static org.mockito.Mockito.doReturn;
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
  * @since 3.0
  */
-public class AbstractConnectorTest {
-    @Mock
-    private AbstractConnector connector;
+public class ConnectorTest {
+    private Connector connector;
 
     @BeforeMethod
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
+        connector = ImmutableConnector.builder()
+                .id("connector")
+                .endpoint("endpoint")
+                .proxyHost("proxyHost")
+                .proxyPort(1)
+                .password("password".getBytes())
+                .build();
     }
 
     @Test
     public void testProxyEnabledWhenParamsAreDefined() throws Exception {
-        // ARRANGE
-        doReturn("proxy").when(connector).proxyHost();
-        doReturn(10000).when(connector).proxyPort();
-
         // ACT
         boolean proxyEnabled = connector.isProxyEnabled();
 
@@ -48,8 +46,11 @@ public class AbstractConnectorTest {
     @Test
     public void testProxyDisabled() throws Exception {
         // ARRANGE
-        doReturn(null).when(connector).proxyHost();
-        doReturn(0).when(connector).proxyPort();
+        connector = ImmutableConnector.builder()
+                .id("connector1")
+                .endpoint("endpoint")
+                .password("".getBytes())
+                .build();
 
         // ACT
         boolean proxyEnabled = connector.isProxyEnabled();
@@ -61,8 +62,17 @@ public class AbstractConnectorTest {
     @Test
     public void testEquals() throws Exception {
         // ARRANGE
-        AbstractConnector connector = new AbstractConnectorImpl("connector1");
-        AbstractConnector anotherConnector = new AbstractConnectorImpl("connector1");
+        Connector connector = ImmutableConnector.builder()
+                .id("connector")
+                .endpoint("endpoint1")
+                .password("".getBytes())
+                .build();
+
+        Connector anotherConnector = ImmutableConnector.builder()
+                .id("connector")
+                .endpoint("endpoint2")
+                .password("".getBytes())
+                .build();
 
         // ACT
         boolean equal = connector.equals(anotherConnector);
@@ -77,13 +87,30 @@ public class AbstractConnectorTest {
     @Test
     public void testDifferent() throws Exception {
         // ARRANGE
-        AbstractConnector connector = new AbstractConnectorImpl("connector1");
-        AbstractConnector anotherConnector = new AbstractConnectorImpl("connector2");
+        Connector connector = ImmutableConnector.builder()
+                .id("connector1")
+                .endpoint("endpoint")
+                .password("".getBytes())
+                .build();
+
+        Connector anotherConnector = ImmutableConnector.builder()
+                .id("connector2")
+                .endpoint("endpoint")
+                .password("".getBytes())
+                .build();
 
         // ACT
         boolean equal = connector.equals(anotherConnector);
 
         // ASSERT
         assertThat("Expecting connectors with different ids to be different", equal, is(false));
+    }
+
+    @Test
+    public void testPasswordNotExposed() throws Exception {
+        // ACT
+        String connectorAsString = connector.toString();
+
+        assertThat(connectorAsString, not(containsString("connectorAsString")));
     }
 }

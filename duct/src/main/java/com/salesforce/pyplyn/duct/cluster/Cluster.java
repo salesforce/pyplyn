@@ -12,10 +12,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.Member;
+import com.hazelcast.core.*;
 import com.hazelcast.util.Preconditions;
 import com.salesforce.pyplyn.duct.app.ShutdownHook;
 import com.salesforce.pyplyn.duct.appconfig.AppConfig;
@@ -65,6 +62,22 @@ public class Cluster {
             shutdownHook.registerOperation(hazelcast::shutdown);
             clusterEnabled = true;
         }
+    }
+
+    /**
+     * Registers a listener, allowing fine-grained management of cluster events
+     */
+    public void registerListener(MembershipListener membershipListener) {
+        guardAgainstInitializationFailures();
+        hazelcast.getCluster().addMembershipListener(membershipListener);
+    }
+
+    /**
+     * Registers a listener, allowing fine-grained management of cluster events
+     */
+    public void registerListener(MigrationListener clusterMigrationListener) {
+        guardAgainstInitializationFailures();
+        hazelcast.getPartitionService().addMigrationListener(clusterMigrationListener);
     }
 
     /**

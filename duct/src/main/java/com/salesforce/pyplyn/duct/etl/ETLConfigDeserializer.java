@@ -17,10 +17,12 @@ import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
@@ -40,31 +42,36 @@ import static java.util.Objects.nonNull;
 public class ETLConfigDeserializer<T> extends StdDeserializer<T> {
     private static final long serialVersionUID = 1494795072400801666L;
     private final String typeField;
-    private Map<String, Class<? extends T>> knownTypes = new ConcurrentHashMap<>();
+    private final Map<String, Class<? extends T>> knownTypes;
 
 
     /**
-     * Constructs a deserializer for the specified class object, using the field name specified in <b>typeField</b>
-     *   to load the actual class name we should deserialize as (should extend T)
+     * Constructs a deserializer for the specified class object,
+     *   using the field name specified in <b>typeField</b>
+     *   to load the actual class name to deserialize as.
+     *
+     * <b>Types</b> specify the list of possible deserialization targets
+     * If typeField doesn't match any classes listed in <b>types</b>,
+     *   a {@link JsonMappingException} will be thrown
      */
-    public ETLConfigDeserializer(Class<T> cls, String typeField) {
+    public ETLConfigDeserializer(Class<T> cls, String typeField, Set<Class<? extends T>> types) {
         super(cls);
         this.typeField = typeField;
+        this.knownTypes = Collections.unmodifiableMap(types.stream().collect(
+                Collectors.toMap(Class::getSimpleName, Function.identity())));
     }
 
     /**
      * Registers known types which will be used to identify known serialization formats
      *   if the method is called multiple times, it will override previously defined mappings
      */
-    public void registerTypes(Set<Class<? extends T>> types) {
-        types.forEach(cls -> knownTypes.put(cls.getSimpleName(), cls));
-    }
 
     /**
      * Performs the deserialization logic, that identifies the target type from <b>typeField</b>
      *   and matches it against <b>knownTypes</b> for this object
      *
-     * @throws IOException on any issues
+     * @throws JsonMappingException if <b>typeField</b> cannot be matched to any <b>knownTypes</b>
+     * @throws IOException on any other issues
      */
     @Override
     public T deserialize(JsonParser jsonParser, DeserializationContext ctx) throws IOException {

@@ -8,11 +8,10 @@
 
 package com.salesforce.argus;
 
+import com.google.common.collect.Iterables;
 import com.salesforce.argus.model.*;
-import com.salesforce.argus.model.builder.*;
 import com.salesforce.pyplyn.client.UnauthorizedException;
-import com.salesforce.pyplyn.configuration.AbstractConnector;
-import okhttp3.Headers;
+import com.salesforce.pyplyn.configuration.Connector;
 import okhttp3.MediaType;
 import okhttp3.Request;
 import okhttp3.ResponseBody;
@@ -23,10 +22,11 @@ import org.testng.annotations.Test;
 import retrofit2.Call;
 import retrofit2.Response;
 
+import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.List;
 
-import static org.hamcrest.MatcherAssert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.any;
@@ -40,15 +40,20 @@ import static org.mockito.Mockito.*;
  */
 public class ArgusClientTest {
 	private static final long LONG_ID = 1L;
+	private static final List<Long> LIST_OF_LONG_ID = Collections.singletonList(LONG_ID);
+	private static final String NAME = "name";
+	private static final String OWNER_NAME = "owner";
+	private static final String TRIGGER_NAME = "triggerName";
+	private static final String AUTHORIZATION_HEADER = "Authorization: Bearer of_fake_tokens";
 
     @Mock
 	private ArgusService svc;
 
     @Mock
-    private AbstractConnector connector;
+    private Connector connector;
 
-    ArgusClient argus;
-	Request request;
+    private ArgusClient argus;
+	private Request request;
 
 
 	@BeforeMethod
@@ -56,64 +61,223 @@ public class ArgusClientTest {
         MockitoAnnotations.initMocks(this);
 
         // ARRANGE
-        doReturn("http://localhost/").when(connector).endpoint();
+		doReturn("http://localhost/").when(connector).endpoint();
+		doReturn("password".getBytes(Charset.defaultCharset())).when(connector).password();
 
         argus = spy(new ArgusClient(connector));
-        doReturn(svc).when(argus).svc(); // FindBugs: RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT - IGNORE
+        doReturn(svc).when(argus).svc();
 
 		// build a dummy request object
 		Request.Builder builder = new Request.Builder();
 		builder.url("http://tests/");
 		builder.method("MOCK", null);
 		request = builder.build();
+
+		// mock auth
+		doReturn(AUTHORIZATION_HEADER).when(argus).authorizationHeader();
 	}
 
-    @Test
-    public void auth() throws Exception {
-        // ARRANGE
-		Headers headers = Headers.of("Set-Cookie", "expected;");
-        Response<ResponseBody> response = Response.success(mock(ResponseBody.class), headers);
+	@Test
+	public void authenticateWithToken() throws Exception {
+		// ARRANGE
+		AuthToken token = ImmutableAuthToken.of("access".getBytes(Charset.defaultCharset()), "refresh".getBytes(Charset.defaultCharset()));
 
-        @SuppressWarnings("unchecked")
-        Call<ResponseBody> responseCall = mock(Call.class);
-        doReturn(response).when(responseCall).execute();
+		Response<AuthToken> response = Response.success(token);
+
+		@SuppressWarnings("unchecked")
+		Call<AuthToken> responseCall = mock(Call.class);
+		doReturn(response).when(responseCall).execute();
 		doReturn(request).when(responseCall).request();
-		doReturn(responseCall).when(svc).auth(any());
+		doReturn(responseCall).when(svc).refresh(any());
 
-        // ACT
-        argus.auth();
+		doReturn(null).when(argus).authorizationHeader();
 
-        // ASSERT
+		// ACT
+		argus.authenticate();
+
+		// ASSERT
 		assertThat(argus.isAuthenticated(), equalTo(true));
-        verify(argus).storeAuthenticationCookie("expected;");
-    }
+		verify(svc, times(0)).login(any()); // did not log in with user/pass
+		verify(svc).refresh(any()); // refreshed the token
+
+		// should be called twice, as the method recursively calls itself
+		verify(argus, times(2)).auth();
+	}
 
 	@Test
-	public void failedAuth() throws Exception {
+	public void authenticateWithUserAndPass() throws Exception {
+		// ARRANGE
+		doReturn("username").when(connector).username();
+
+		AuthToken token = ImmutableAuthToken.of("access".getBytes(Charset.defaultCharset()), "refresh".getBytes(Charset.defaultCharset()));
+		Response<AuthToken> response = Response.success(token);
+
+		@SuppressWarnings("unchecked")
+		Call<AuthToken> responseCall = mock(Call.class);
+		doReturn(response).when(responseCall).execute();
+		doReturn(request).when(responseCall).request();
+		doReturn(responseCall).when(svc).login(any());
+
+		doReturn(null).when(argus).authorizationHeader();
+
+		// ACT
+		argus.authenticate();
+
+		// ASSERT
+		assertThat(argus.isAuthenticated(), equalTo(true));
+		verify(svc).login(any()); // logged in with user/pass
+		verify(svc, times(0)).refresh(any()); // did not refresh the token
+
+		// should be called only once
+		verify(argus, times(1)).auth();
+	}
+
+	@Test
+	public void reauthenticateIfAnOperationFailsWithAuthException() throws Exception {
+		// ARRANGE
+		// auth response
+		AuthToken token = ImmutableAuthToken.of("access".getBytes(Charset.defaultCharset()), "refresh".getBytes(Charset.defaultCharset()));
+		Response<AuthToken> authResponseToken = Response.success(token);
+
+		// token response call
+		@SuppressWarnings("unchecked")
+		Call<AuthToken> authResponseCall = mock(Call.class);
+		doReturn(authResponseToken).when(authResponseCall).execute();
+		doReturn(request).when(authResponseCall).request();
+		doReturn(authResponseCall).when(svc).refresh(any());
+
+		// alert object response
+		AlertObject alertObject = ImmutableAlertObject.builder().id(LONG_ID).build();
+		Response<AlertObject> response = Response.success(alertObject);
+
+		// authentication failure
+		ResponseBody errorBody = ResponseBody.create(MediaType.parse(""), "error");
+		Response<AlertObject> authFailedResponse = Response.error(401, errorBody);
+
+		// alert call
+		@SuppressWarnings("unchecked")
+		Call<AlertObject> responseCall = mock(Call.class);
+		doReturn(responseCall).when(responseCall).clone();
+		doReturn(authFailedResponse, response).when(responseCall).execute();
+		doReturn(request).when(responseCall).request();
+		doReturn(responseCall).when(svc).getAlert(any(), anyLong());
+
+
+		// ACT
+		AlertObject alert = argus.loadAlert(LONG_ID);
+
+
+		// ASSERT
+		verify(argus).resetAuth(); // cleared the old token
+		verify(argus, times(2)).auth(); // called twice for refresh token auth
+		verify(svc).refresh(any()); // refreshed the token
+		assertThat(argus.isAuthenticated(), equalTo(true));
+		assertThat(alert.id(), is(LONG_ID));
+	}
+
+
+	@Test
+	public void failedAuthWithToken() throws Exception {
 		// ARRANGE
 		ResponseBody fail = ResponseBody.create(MediaType.parse(""), "FAIL");
 		Response<String> failedResponse = Response.error(400, fail);
+
+		doReturn(null).when(argus).authorizationHeader();
 
 		@SuppressWarnings("unchecked")
 		Call<ResponseBody> responseCall = mock(Call.class);
 		doReturn(failedResponse).when(responseCall).execute();
 		doReturn(request).when(responseCall).request();
-		doReturn(responseCall).when(svc).auth(any());
+		doReturn(responseCall).when(svc).refresh(any());
 
 		// ACT
-		boolean authenticationResult = argus.auth();
+		boolean authenticationResult = argus.authenticate();
 
 		// ASSERT
+		verify(argus, times(2)).auth();
 		assertThat(authenticationResult, equalTo(false));
 		assertThat(argus.isAuthenticated(), equalTo(false));
-		verify(svc, times(1)).auth(any());
-		verify(argus, times(0)).storeAuthenticationCookie(any());
+		verify(svc, times(1)).refresh(any());
 	}
 
-    @Test
+	@Test(expectedExceptions = UnauthorizedException.class)
+	public void failedAuthWithUserAndPass() throws Exception {
+		// ARRANGE
+		doReturn("username").when(connector).username();
+
+		ResponseBody fail = ResponseBody.create(MediaType.parse(""), "FAIL");
+		Response<String> failedResponse = Response.error(401, fail);
+
+		doReturn(null).when(argus).authorizationHeader();
+
+		@SuppressWarnings("unchecked")
+		Call<ResponseBody> responseCall = mock(Call.class);
+		doReturn(failedResponse).when(responseCall).execute();
+		doReturn(request).when(responseCall).request();
+		doReturn(responseCall).when(svc).login(any());
+
+		// ACT
+		try {
+			argus.authenticate();
+
+		// ASSERT
+		} finally {
+			assertThat(argus.isAuthenticated(), equalTo(false));
+			verify(argus, times(1)).auth();
+			verify(svc, times(1)).login(any());
+		}
+	}
+
+	@Test(expectedExceptions = UnauthorizedException.class)
+	public void failedAuthWithTokenThrowsException() throws Exception {
+		// ARRANGE
+		doReturn(null).when(argus).authorizationHeader();
+
+		ResponseBody errorBody = ResponseBody.create(MediaType.parse(""), "error");
+		Response<AuthToken> response = Response.error(401, errorBody);
+
+		@SuppressWarnings("unchecked")
+		Call<AuthToken> responseCall = mock(Call.class);
+		doReturn(response).when(responseCall).execute();
+		doReturn(request).when(responseCall).request();
+		doReturn(responseCall).when(svc).refresh(any());
+
+		// ACT
+		try {
+			argus.authenticate();
+
+		// ASSERT
+		} finally {
+			assertThat(argus.isAuthenticated(), equalTo(false));
+			verify(svc, times(1)).refresh(any());
+			verify(argus, times(2)).auth();
+		}
+	}
+
+	@Test
+	public void failingAuthWithOtherError() throws Exception {
+		// ARRANGE
+		ResponseBody errorBody = ResponseBody.create(MediaType.parse(""), "error");
+		Response<AuthToken> response = Response.error(405, errorBody);
+
+		@SuppressWarnings("unchecked")
+		Call<AuthToken> responseCall = mock(Call.class);
+		doReturn(response).when(responseCall).execute();
+		doReturn(request).when(responseCall).request();
+		doReturn(responseCall).when(svc).refresh(any());
+
+		// ACT
+		boolean authResponse = argus.authenticate();
+
+		// ASSERT
+		assertThat(authResponse, is(false));
+		verify(svc).refresh(any());
+	}
+
+	@Test
     public void getMetrics() throws Exception {
         // ARRANGE
-        MetricResponse expectedMetric = new MetricResponseBuilder().withMetric("metric").build();
+        MetricResponse expectedMetric = ImmutableMetricResponse.builder().metric("metric").build();
         Response<List<MetricResponse>> response = Response.success(Collections.singletonList(expectedMetric));
 
         @SuppressWarnings("unchecked")
@@ -128,17 +292,18 @@ public class ArgusClientTest {
         // ASSERT
         assertThat(getMetrics, contains(expectedMetric));
         assertThat(expectedMetric.datapoints(), notNullValue());
-        assertThat(expectedMetric.datapoints().entrySet(), empty()); // Findbugs: PRMC_POSSIBLY_REDUNDANT_METHOD_CALLS - IGNORE
+        assertThat(expectedMetric.datapoints().entrySet(), empty());
         assertThat(expectedMetric.metric(), is("metric"));
     }
     
     @Test
     public void createAlert() throws Exception {
     	// ARRANGE
-    	String name = "cceDevils";
+    	String name = "name";
     	long dateTime = LONG_ID;
     	String cronExpr = "0 15 10 * * ? *";
-    	AlertObject alertObject = new AlertObjectBuilder().withName(name).withCreatedDate(dateTime).withCronEntry(cronExpr).build();
+
+    	AlertObject alertObject = ImmutableAlertObject.builder().name(name).createdDate(dateTime).cronEntry(cronExpr).build();
     	Response<AlertObject>response = Response.success(alertObject);
     	
     	// ACT
@@ -151,7 +316,7 @@ public class ArgusClientTest {
     	// ASSERT
     	AlertObject alert = argus.createAlert(alertObject);
     	assertThat(alert.name(), is(name));
-    	assertThat(alert.createdDate(), is(dateTime)); // Findbugs: PRMC_POSSIBLY_REDUNDANT_METHOD_CALLS - IGNORE
+    	assertThat(alert.createdDate(), is(dateTime));
     	assertThat(alert.cronEntry(), is(cronExpr));
     }
     
@@ -159,7 +324,7 @@ public class ArgusClientTest {
     public void updateAlert() throws Exception {
     	// ARRANGE
     	long id = LONG_ID;
-    	AlertObject alertObject = new AlertObjectBuilder().withId(id).build();
+    	AlertObject alertObject = ImmutableAlertObject.builder().id(id).build();
     	Response<AlertObject>response = Response.success(alertObject);
     	
     	// ACT
@@ -171,16 +336,15 @@ public class ArgusClientTest {
     	
     	// ASSERT
     	AlertObject alert = argus.updateAlert(alertObject);
-    	assertThat(alert.id(), is(id)); // Findbugs: PRMC_POSSIBLY_REDUNDANT_METHOD_CALLS - IGNORE
+    	assertThat(alert.id(), is(id));
     }
     
     @Test
     public void loadAlert() throws Exception {
         // ARRANGE
-        long id = LONG_ID;
-        AlertObject alertObject = new AlertObjectBuilder().withId(id).build();
-        Response<AlertObject> response = Response.success(alertObject);
-        
+		AlertObject alertObject = ImmutableAlertObject.builder().id(LONG_ID).build();
+		Response<AlertObject> response = Response.success(alertObject);
+
         // ACT
         @SuppressWarnings("unchecked")
         Call<AlertObject> responseCall = mock(Call.class);
@@ -189,15 +353,32 @@ public class ArgusClientTest {
         doReturn(responseCall).when(svc).getAlert(any(), anyLong());
         
         // ASSERT
-        AlertObject alert = argus.loadAlert(id);
-        assertThat(alert.id(), is(id)); // Findbugs: PRMC_POSSIBLY_REDUNDANT_METHOD_CALLS - IGNORE
+        AlertObject alert = argus.loadAlert(LONG_ID);
+        assertThat(alert.id(), is(LONG_ID));
     }
+
+	@Test
+	public void loadAllAlerts() throws Exception {
+		// ARRANGE
+		AlertObject alert = ImmutableAlertObject.builder().ownerName(OWNER_NAME).build();
+		Response<List<AlertObject>> response = Response.success(Collections.singletonList(alert));
+
+		// ACT
+		@SuppressWarnings("unchecked")
+		Call<List<AlertObject>> responseCall = (Call<List<AlertObject>>)mock(Call.class);
+		doReturn(response).when(responseCall).execute();
+		doReturn(request).when(responseCall).request();
+		doReturn(responseCall).when(svc).getAllAlerts(any());
+
+		// ASSERT
+		List<AlertObject> alerts = argus.loadAllAlerts();
+		assertThat(alerts, hasItem(alert));
+	}
 
 	@Test
 	public void loadAlertsByOwner() throws Exception {
 		// ARRANGE
-		String ownerName = "cceDevils";
-		AlertObject alert = new AlertObjectBuilder().withOwnerName(ownerName).build();
+		AlertObject alert = ImmutableAlertObject.builder().ownerName(OWNER_NAME).build();
 		Response<List<AlertObject>> response = Response.success(Collections.singletonList(alert));
 
 		// ACT
@@ -208,15 +389,15 @@ public class ArgusClientTest {
 		doReturn(responseCall).when(svc).getAlertsByOwner(any(), anyString());
 
 		// ASSERT
-		List<AlertObject> alerts = argus.loadAlertsByOwner(ownerName);
-		assertThat(alerts.get(0).ownerName(), is(ownerName));
+		List<AlertObject> alerts = argus.loadAlertsByOwner(OWNER_NAME);
+		assertThat(alerts.get(0).ownerName(), is(OWNER_NAME));
 	}
-    
-    @Test
+
+
+	@Test
     public void loadAlertMetadataByOwner() throws Exception {
         // ARRANGE
-        String ownerName = "cceDevils";
-        AlertObject alert = new AlertObjectBuilder().withOwnerName(ownerName).build();
+		AlertObject alert = ImmutableAlertObject.builder().ownerName(OWNER_NAME).build();
         Response<List<AlertObject>> response = Response.success(Collections.singletonList(alert));
         
         // ACT
@@ -224,11 +405,11 @@ public class ArgusClientTest {
         Call<List<AlertObject>> responseCall = mock(Call.class);
         doReturn(response).when(responseCall).execute();
         doReturn(request).when(responseCall).request();
-        doReturn(responseCall).when(svc).getAlertsByOwner(any(), anyString());
+        doReturn(responseCall).when(svc).getAlertMetadataByOwner(any(), anyString());
         
         // ASSERT
-        List<AlertObject> alerts = argus.loadAlertsByOwner(ownerName);
-        assertThat(alerts.get(0).ownerName(), is(ownerName));
+        List<AlertObject> alerts = argus.loadAlertsMetadataByOwner(OWNER_NAME);
+        assertThat(alerts.get(0).ownerName(), is(OWNER_NAME));
     }
     
     @Test
@@ -246,16 +427,16 @@ public class ArgusClientTest {
     	
     	// ASSERT
     	argus.deleteAlert(alertId);
-    	verify(svc).deleteAlert(null, alertId);
+    	verify(svc).deleteAlert(AUTHORIZATION_HEADER, alertId);
     	
     }
     
     @Test
     public void loadTriggersForAlert() throws Exception {
     	// ARRANGE
-    	String triggerName = "cceDevilsTrigger";
+    	String triggerName = "triggerName";
     	long id = LONG_ID;
-    	TriggerObject triggerObj = new TriggerObjectBuilder().withName(triggerName).withId(id).build();
+    	TriggerObject triggerObj = ImmutableTriggerObject.builder().name(triggerName).id(id).build();
     	Response<List<TriggerObject>> response = Response.success(Collections.singletonList(triggerObj));
     	
     	// ACT
@@ -268,7 +449,7 @@ public class ArgusClientTest {
     	// ASSERT
     	List<TriggerObject>triggerList = argus.loadTriggersForAlert(id);
     	assertThat(triggerList.get(0).name(), is(triggerName));
-    	assertThat(triggerList.get(0).id(), is(id)); // Findbugs: PRMC_POSSIBLY_REDUNDANT_METHOD_CALLS - IGNORE
+    	assertThat(triggerList.get(0).id(), is(id));
     	
     }
     
@@ -276,8 +457,8 @@ public class ArgusClientTest {
     public void createTrigger() throws Exception {
     	// ARRANGE
     	long alertId = LONG_ID;
-    	String triggerName = "cceDevilsTrigger";
-    	TriggerObject triggerObj = new TriggerObjectBuilder().withName(triggerName).withAlertId(alertId).build();
+    	String triggerName = "triggerName";
+    	TriggerObject triggerObj = ImmutableTriggerObject.builder().name(triggerName).alertId(alertId).build();
     	Response<List<TriggerObject>>response = Response.success(Collections.singletonList(triggerObj));
     	
     	// ACT
@@ -290,16 +471,13 @@ public class ArgusClientTest {
     	// ASSERT
     	List<TriggerObject>triggerList = argus.createTrigger(alertId, triggerObj);
     	assertThat(triggerList.get(0).name(), is(triggerName));
-    	assertThat(triggerList.get(0).alertId(), is(alertId)); // Findbugs: PRMC_POSSIBLY_REDUNDANT_METHOD_CALLS - IGNORE
+    	assertThat(triggerList.get(0).alertId(), is(alertId));
     }
     
     @Test
     public void updateTrigger() throws Exception {
     	// ARRANGE
-    	long alertId = LONG_ID;
-    	long triggerId = LONG_ID;
-    	String triggerName = "cceDevilsTrigger";
-    	TriggerObject triggerObj = new TriggerObjectBuilder().withName(triggerName).withAlertId(alertId).withId(triggerId).build(); // Findbugs: PRMC_POSSIBLY_REDUNDANT_METHOD_CALLS - IGNORE
+    	TriggerObject triggerObj = ImmutableTriggerObject.builder().name(TRIGGER_NAME).alertId(LONG_ID).id(LONG_ID).build();
     	Response<TriggerObject>response = Response.success(triggerObj);
     	
     	// ACT
@@ -308,18 +486,16 @@ public class ArgusClientTest {
     	doReturn(response).when(responseCall).execute();
 		doReturn(request).when(responseCall).request();
 		doReturn(responseCall).when(svc).updateTrigger(any(), anyLong(), anyLong(), any());
-    	
+
     	// ASSERT
-    	TriggerObject triggerList = argus.updateTrigger(alertId, triggerObj);
-    	assertThat(triggerList.name(), is(triggerName));
-    	assertThat(triggerList.alertId(), is(alertId));
+    	TriggerObject triggerList = argus.updateTrigger(LONG_ID, triggerObj);
+    	assertThat(triggerList.name(), is(TRIGGER_NAME));
+    	assertThat(triggerList.alertId(), is(LONG_ID));
     }
     
     @Test
     public void deleteTrigger() throws Exception {
     	// ARRANGE
-    	long alertId = LONG_ID;
-    	long triggerId = LONG_ID;
     	Response<Void>response = Response.success((new Void[1])[0]);
     	
     	// ACT
@@ -330,37 +506,35 @@ public class ArgusClientTest {
 		doReturn(responseCall).when(svc).deleteTrigger(any(), anyLong(), anyLong());
     	
     	// ASSERT
-    	argus.deleteTrigger(alertId, triggerId);
-    	verify(svc).deleteTrigger(null, alertId, triggerId);
+    	argus.deleteTrigger(LONG_ID, LONG_ID);
+    	verify(svc).deleteTrigger(AUTHORIZATION_HEADER, LONG_ID, LONG_ID);
     }
     
     
     @Test
     public void getNotification() throws Exception {
     	// ARRANGE
-    	long alertId = LONG_ID;
-    	long notificationId = LONG_ID;
-    	NotificationObject notificationObj = new NotificationObjectBuilder().withAlertId(alertId).withId(notificationId).build(); // Findbugs: PRMC_POSSIBLY_REDUNDANT_METHOD_CALLS - IGNORE
-    	Response<List<NotificationObject>> response = Response.success(Collections.singletonList(notificationObj));
+    	NotificationObject notificationObj = ImmutableNotificationObject.builder().alertId(LONG_ID).id(LONG_ID).build();
+    	Response<NotificationObject> response = Response.success(notificationObj);
     	
     	// ACT
     	@SuppressWarnings("unchecked")
 		Call<NotificationObject>responseCall = mock(Call.class);
     	doReturn(response).when(responseCall).execute();
 		doReturn(request).when(responseCall).request();
-		doReturn(responseCall).when(svc).getNotificationsForAlert(any(), anyLong());
+		doReturn(responseCall).when(svc).getNotification(any(), anyLong(), anyLong());
     	
     	// ASSERT
-    	List<NotificationObject> notificationList = argus.getNotification(alertId, notificationId);
-    	assertThat(notificationList.get(0).alertId(), is(alertId));
-    	assertThat(notificationList.get(0).id(), is(notificationId)); // Findbugs: PRMC_POSSIBLY_REDUNDANT_METHOD_CALLS - IGNORE
+    	NotificationObject notificationList = argus.getNotification(LONG_ID, LONG_ID);
+    	assertThat(notificationList.alertId(), is(LONG_ID));
+    	assertThat(notificationList.id(), is(LONG_ID));
     }
     
     @Test
     public void getNotificationsForAlert() throws Exception {
     	// ARRANGE
     	long alertId = LONG_ID;
-    	NotificationObject notificationObj = new NotificationObjectBuilder().withAlertId(alertId).build();
+    	NotificationObject notificationObj = ImmutableNotificationObject.builder().alertId(alertId).build();
     	Response<List<NotificationObject>> response = Response.success(Collections.singletonList(notificationObj));
     	
     	// ACT
@@ -372,15 +546,13 @@ public class ArgusClientTest {
     	
     	// ASSERT
     	List<NotificationObject> notificationList = argus.getNotificationsForAlert(alertId);
-    	assertThat(notificationList.get(0).alertId(), is(alertId)); // Findbugs: PRMC_POSSIBLY_REDUNDANT_METHOD_CALLS - IGNORE
+    	assertThat(notificationList.get(0).alertId(), is(alertId));
     }
     
     @Test
     public void createNotification() throws Exception {
     	// ARRANGE
-    	long alertId = LONG_ID;
-    	String name = "cceDevils";
-    	NotificationObject notificationObj = new NotificationObjectBuilder().withAlertId(alertId).withName(name).build();
+    	NotificationObject notificationObj = ImmutableNotificationObject.builder().alertId(LONG_ID).name(NAME).build();
     	Response<List<NotificationObject>> response = Response.success(Collections.singletonList(notificationObj));
     	
     	// ACT
@@ -391,18 +563,15 @@ public class ArgusClientTest {
 		doReturn(responseCall).when(svc).createNotification(any(), anyLong(), any());
     	
     	// ASSERT
-    	List<NotificationObject> notificationList = argus.createNotification(alertId, notificationObj);
-    	assertThat(notificationList.get(0).alertId(), is(alertId)); // Findbugs: PRMC_POSSIBLY_REDUNDANT_METHOD_CALLS - IGNORE
-    	assertThat(notificationList.get(0).name(), is(name));
+    	List<NotificationObject> notificationList = argus.createNotification(LONG_ID, notificationObj);
+    	assertThat(notificationList.get(0).alertId(), is(LONG_ID));
+    	assertThat(notificationList.get(0).name(), is(NAME));
     }
     
     @Test
     public void updateNotification() throws Exception {
     	// ARRANGE
-    	long alertId = LONG_ID;
-    	long notificationId = LONG_ID;
-    	String name = "cceDevils";
-    	NotificationObject notificationObj = new NotificationObjectBuilder().withAlertId(alertId).withId(notificationId).withName(name).build(); // Findbugs: PRMC_POSSIBLY_REDUNDANT_METHOD_CALLS - IGNORE
+    	NotificationObject notificationObj = ImmutableNotificationObject.builder().alertId(LONG_ID).id(LONG_ID).name(NAME).build();
     	Response<NotificationObject> response = Response.success(notificationObj);
     	
     	// ACT
@@ -413,19 +582,16 @@ public class ArgusClientTest {
 		doReturn(responseCall).when(svc).updateNotification(any(), anyLong(), anyLong(), any());
     	
     	// ASSERT
-    	NotificationObject notification = argus.updateNotification(alertId, notificationId, notificationObj);
-    	assertThat(notification.alertId(), is(alertId));
-    	assertThat(notification.name(), is(name));
-    	assertThat(notification.id(), is(notificationId)); // Findbugs: PRMC_POSSIBLY_REDUNDANT_METHOD_CALLS - IGNORE
+    	NotificationObject notification = argus.updateNotification(LONG_ID, LONG_ID, notificationObj);
+    	assertThat(notification.alertId(), is(LONG_ID));
+    	assertThat(notification.name(), is(NAME));
+    	assertThat(notification.id(), is(LONG_ID));
     }
     
     @Test
     public void deleteNotification() throws Exception {
     	// ARRANGE
-    	long alertId = LONG_ID;
-    	long notificationId = LONG_ID;
-    	String name = "cceDevils";
-    	NotificationObject notificationObj = new NotificationObjectBuilder().withAlertId(alertId).withId(notificationId).withName(name).build(); // Findbugs: PRMC_POSSIBLY_REDUNDANT_METHOD_CALLS - IGNORE
+    	NotificationObject notificationObj = ImmutableNotificationObject.builder().alertId(LONG_ID).id(LONG_ID).name(NAME).build();
     	Response<NotificationObject> response = Response.success(notificationObj);
     	
     	// ACT
@@ -436,18 +602,14 @@ public class ArgusClientTest {
 		doReturn(responseCall).when(svc).deleteNotification(any(), anyLong(), anyLong());
     	
     	// ASSERT
-    	argus.deleteNotification(alertId, notificationId);
-    	verify(svc).deleteNotification(null, alertId, notificationId);
+    	argus.deleteNotification(LONG_ID, LONG_ID);
+    	verify(svc).deleteNotification(AUTHORIZATION_HEADER, LONG_ID, LONG_ID);
     }
     
     @Test
     public void attachTriggerToNotification() throws Exception {
     	// ARRANGE
-    	long alertId = LONG_ID;
-    	Long notificationIds[] = new Long[1];
-    	notificationIds[0] = LONG_ID;
-    	long triggerId = LONG_ID;
-    	TriggerObject triggerObj = new TriggerObjectBuilder().withAlertId(alertId).withId(triggerId).withNotificationIds(notificationIds).build(); // Findbugs: PRMC_POSSIBLY_REDUNDANT_METHOD_CALLS - IGNORE
+		TriggerObject triggerObj = ImmutableTriggerObject.builder().alertId(LONG_ID).id(LONG_ID).notificationIds(LIST_OF_LONG_ID).build();
     	Response<TriggerObject> response = Response.success(triggerObj);
     	
     	// ACT
@@ -458,20 +620,16 @@ public class ArgusClientTest {
 		doReturn(responseCall).when(svc).attachTriggerToNotification(any(), anyLong(), anyLong(), anyLong());
     	
     	// ASSERT
-    	TriggerObject notification = argus.attachTriggerToNotification(alertId, notificationIds[0], triggerId);
-    	assertThat(notification.alertId(), is(alertId)); // Findbugs: PRMC_POSSIBLY_REDUNDANT_METHOD_CALLS - IGNORE
-    	assertThat(notification.notificationIds()[0], is(notificationIds[0]));
-    	assertThat(notification.id(), is(triggerId));
+    	TriggerObject notification = argus.attachTriggerToNotification(LONG_ID, Iterables.getOnlyElement(LIST_OF_LONG_ID), LONG_ID);
+    	assertThat(notification.alertId(), is(LONG_ID));
+    	assertThat(notification.notificationIds(), equalTo(LIST_OF_LONG_ID));
+    	assertThat(notification.id(), is(LONG_ID));
     }
     
     @Test
     public void removeTriggerFromNotification() throws Exception {
     	// ARRANGE
-    	long alertId = LONG_ID;
-    	Long notificationIds[] = new Long[1];
-    	notificationIds[0] = LONG_ID;
-    	long triggerId = LONG_ID;
-    	TriggerObject triggerObj = new TriggerObjectBuilder().withAlertId(alertId).withId(triggerId).withNotificationIds(notificationIds).build(); // Findbugs: PRMC_POSSIBLY_REDUNDANT_METHOD_CALLS - IGNORE
+    	TriggerObject triggerObj = ImmutableTriggerObject.builder().alertId(LONG_ID).id(LONG_ID).notificationIds(LIST_OF_LONG_ID).build();
     	Response<TriggerObject> response = Response.success(triggerObj);
     	
     	// ACT
@@ -482,15 +640,14 @@ public class ArgusClientTest {
 		doReturn(responseCall).when(svc).removeTriggerFromNotification(any(), anyLong(), anyLong(), anyLong());
     	
     	// ASSERT
-    	argus.removeTriggerFromNotification(alertId, notificationIds[0], triggerId);
-    	verify(svc).removeTriggerFromNotification(null, alertId, notificationIds[0], triggerId);
+    	argus.removeTriggerFromNotification(LONG_ID, Iterables.getOnlyElement(LIST_OF_LONG_ID), LONG_ID);
+    	verify(svc).removeTriggerFromNotification(AUTHORIZATION_HEADER, LONG_ID, Iterables.getOnlyElement(LIST_OF_LONG_ID), LONG_ID);
     }
     
     @Test
     public void getAllDashboards() throws Exception {
     	// ARRANGE
-    	String name = "cceDevils";
-    	DashboardObject dashboardObj = new DashboardObjectBuilder().withName(name).build();
+    	DashboardObject dashboardObj = ImmutableDashboardObject.builder().name(NAME).build();
     	Response<List<DashboardObject>> response = Response.success(Collections.singletonList(dashboardObj));
     	
     	// ACT
@@ -502,15 +659,13 @@ public class ArgusClientTest {
     	
     	// ASSERT
     	List<DashboardObject> dashboards = argus.getAllDashboards();
-    	assertThat(dashboards.get(0).name(), is(name));
+    	assertThat(dashboards.get(0).name(), is(NAME));
     }
     
     @Test
     public void getDashboardByName() throws Exception {
     	// ARRANGE
-    	String name = "cceDevilsDashboard";
-    	String owner = "cceDevils";
-    	DashboardObject dashboardObj = new DashboardObjectBuilder().withName(name).withOwnerName(owner).build();
+    	DashboardObject dashboardObj = ImmutableDashboardObject.builder().name(NAME).ownerName(OWNER_NAME).build();
     	Response<List<DashboardObject>> response = Response.success(Collections.singletonList(dashboardObj));
     	
     	// ACT
@@ -521,17 +676,15 @@ public class ArgusClientTest {
 		doReturn(responseCall).when(svc).getDashboardByName(any(), anyString(), anyString());
     	
     	// ASSERT
-    	DashboardObject dashboard = argus.getDashboardByName(owner, name);
-    	assertThat(dashboard.name(), is(name));
-    	assertThat(dashboard.ownerName(), is(owner));
+    	DashboardObject dashboard = argus.getDashboardByName(OWNER_NAME, NAME);
+    	assertThat(dashboard.name(), is(NAME));
+    	assertThat(dashboard.ownerName(), is(OWNER_NAME));
     }
     
     @Test
     public void createDashboard() throws Exception {
     	// ARRANGE
-    	String name = "cceDevilsDashboard";
-    	String owner = "cceDevils";
-    	DashboardObject dashboardObj = new DashboardObjectBuilder().withName(name).withOwnerName(owner).build();
+    	DashboardObject dashboardObj = ImmutableDashboardObject.builder().name(NAME).ownerName(OWNER_NAME).build();
     	Response<DashboardObject> response = Response.success(dashboardObj);
     	
     	// ACT
@@ -543,17 +696,14 @@ public class ArgusClientTest {
     	
     	// ASSERT
     	DashboardObject dashboard = argus.createDashboard(dashboardObj);
-    	assertThat(dashboard.name(), is(name));
-    	assertThat(dashboard.ownerName(), is(owner));
+    	assertThat(dashboard.name(), is(NAME));
+    	assertThat(dashboard.ownerName(), is(OWNER_NAME));
     }
     
     @Test
     public void updateDashboard() throws Exception {
     	// ARRANGE
-    	String name = "cceDevilsDashboard";
-    	String owner = "cceDevils";
-    	long dashboardId = LONG_ID;
-    	DashboardObject dashboardObj = new DashboardObjectBuilder().withName(name).withOwnerName(owner).withId(dashboardId).build();
+    	DashboardObject dashboardObj = ImmutableDashboardObject.builder().name(NAME).ownerName(OWNER_NAME).id(LONG_ID).build();
     	Response<DashboardObject> response = Response.success(dashboardObj);
     	
     	// ACT
@@ -564,19 +714,17 @@ public class ArgusClientTest {
 		doReturn(responseCall).when(svc).updateDashboard(any(), anyLong(), any());
     	
     	// ASSERT
-    	DashboardObject dashboard = argus.updateDashboard(dashboardId, dashboardObj);
-    	assertThat(dashboard.name(), is(name));
-    	assertThat(dashboard.ownerName(), is(owner));
-    	assertThat(dashboard.id(), is(dashboardId)); // Findbugs: PRMC_POSSIBLY_REDUNDANT_METHOD_CALLS - IGNORE
+    	DashboardObject dashboard = argus.updateDashboard(LONG_ID, dashboardObj);
+    	assertThat(dashboard.name(), is(NAME));
+    	assertThat(dashboard.ownerName(), is(OWNER_NAME));
+    	assertThat(dashboard.id(), is(LONG_ID));
     }
     
     @Test
     public void deleteDashboard() throws Exception {
     	// ARRANGE
-    	String name = "cceDevilsDashboard";
-    	String owner = "cceDevils";
     	long dashboardId = LONG_ID;
-    	DashboardObject dashboardObj = new DashboardObjectBuilder().withName(name).withOwnerName(owner).withId(dashboardId).build();
+    	DashboardObject dashboardObj = ImmutableDashboardObject.builder().name(NAME).ownerName(OWNER_NAME).id(dashboardId).build();
     	Response<DashboardObject> response = Response.success(dashboardObj);
     	
     	// ACT
@@ -588,14 +736,13 @@ public class ArgusClientTest {
     	
     	// ASSERT
     	argus.deleteDashboard(dashboardId);
-    	verify(svc).deleteDashboard(null, dashboardId);
+    	verify(svc).deleteDashboard(AUTHORIZATION_HEADER, dashboardId);
     }
     
     @Test
     public void getDashboardById() throws Exception {
     	// ARRANGE
-    	long dashboardId = LONG_ID;
-    	DashboardObject dashboardObj = new DashboardObjectBuilder().withId(dashboardId).build();
+    	DashboardObject dashboardObj = ImmutableDashboardObject.builder().id(LONG_ID).build();
     	Response<DashboardObject> response = Response.success(dashboardObj);
     	
     	// ACT
@@ -606,43 +753,7 @@ public class ArgusClientTest {
 		doReturn(responseCall).when(svc).getDashboardById(any(), anyLong());
     	
     	// ASSERT
-    	DashboardObject dashboard = argus.getDashboardById(dashboardId);
-    	assertThat(dashboard.id(), is(dashboardId)); // Findbugs: PRMC_POSSIBLY_REDUNDANT_METHOD_CALLS - IGNORE
-    }
-
-    @Test(expectedExceptions = UnauthorizedException.class)
-    public void failingAuth() throws Exception {
-        // ARRANGE
-        ResponseBody errorBody = ResponseBody.create(MediaType.parse(""), "error");
-        Response<ResponseBody> response = Response.error(401, errorBody);
-
-        @SuppressWarnings("unchecked")
-        Call<ResponseBody> responseCall = mock(Call.class);
-        doReturn(response).when(responseCall).execute();
-		doReturn(request).when(responseCall).request();
-		doReturn(responseCall).when(svc).auth(any());
-
-        // ACT
-        argus.auth();
-        verify(svc).auth(null);
-    }
-
-    @Test
-    public void failingAuthWithOtherError() throws Exception {
-        // ARRANGE
-        ResponseBody errorBody = ResponseBody.create(MediaType.parse(""), "error");
-        Response<ResponseBody> response = Response.error(405, errorBody);
-
-        @SuppressWarnings("unchecked")
-        Call<ResponseBody> responseCall = mock(Call.class);
-        doReturn(response).when(responseCall).execute();
-		doReturn(request).when(responseCall).request();
-		doReturn(responseCall).when(svc).auth(any());
-
-        // ACT
-        boolean authResponse = argus.auth();
-
-        // ASSERT
-        assertThat(authResponse, is(false));
+    	DashboardObject dashboard = argus.getDashboardById(LONG_ID);
+    	assertThat(dashboard.id(), is(LONG_ID));
     }
 }

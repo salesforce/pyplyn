@@ -11,10 +11,16 @@ package com.salesforce.argus.model;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.salesforce.pyplyn.annotations.PyplynImmutableStyle;
+import org.immutables.value.Value;
 
-import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
+import javax.annotation.Nullable;
+import java.util.List;
+
+import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY;
 import static com.fasterxml.jackson.annotation.JsonProperty.Access.WRITE_ONLY;
-import static com.salesforce.pyplyn.util.CollectionUtils.nullableArrayCopy;
 
 /**
  * Argus trigger object representation.
@@ -29,118 +35,50 @@ import static com.salesforce.pyplyn.util.CollectionUtils.nullableArrayCopy;
  * @author thomas.harris
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
  */
+@Value.Immutable
+@PyplynImmutableStyle
+@JsonDeserialize(as = ImmutableTriggerObject.class)
+@JsonSerialize(as = ImmutableTriggerObject.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@JsonInclude(NON_NULL)
-public class TriggerObject {
+@JsonInclude(NON_EMPTY)
+public abstract class TriggerObject {
+    @Nullable
 	@JsonProperty(access = WRITE_ONLY)
-    private final Long id;
+    public abstract Long id();
 
+    @Nullable
 	@JsonProperty(access = WRITE_ONLY)
-    private final Long createdById;
+    public abstract Long createdById();
 
+    @Nullable
 	@JsonProperty(access = WRITE_ONLY)
-    private final Long createdDate;
+    public abstract Long createdDate();
 
+    @Nullable
 	@JsonProperty(access = WRITE_ONLY)
-    private final Long modifiedById;
+    public abstract Long modifiedById();
 
+    @Nullable
 	@JsonProperty(access = WRITE_ONLY)
-    private final Long modifiedDate;
+    public abstract Long modifiedDate();
 
-    @JsonProperty
-    private final String type;
+    @Nullable
+    public abstract String type();
 
-    @JsonProperty
-    private final String name;
+    @Nullable
+    public abstract String name();
 
-    @JsonProperty
-    private final Double threshold;
+    @Nullable
+    public abstract Double threshold();
 
-    @JsonProperty
-    private final Double secondaryThreshold;
+    @Nullable
+    public abstract Double secondaryThreshold();
 
-    @JsonProperty
-    private final Long inertia;
+    @Nullable
+    public abstract Long inertia();
 
-    @JsonProperty
-    private final Long alertId;
+    @Nullable
+    public abstract Long alertId();
 
-    @JsonProperty
-    private final Long notificationIds[];
-
-	public TriggerObject(@JsonProperty("id") Long id,
-						 @JsonProperty("createdById") Long createdById,
-						 @JsonProperty("createdDate") Long createdDate,
-						 @JsonProperty("modifiedById") Long modifiedById,
-						 @JsonProperty("modifiedDate") Long modifiedDate,
-						 @JsonProperty("type") String type,
-						 @JsonProperty("name") String name,
-						 @JsonProperty("threshold") Double threshold,
-						 @JsonProperty("secondaryThreshold") Double secondaryThreshold,
-						 @JsonProperty("inertia") Long inertia,
-						 @JsonProperty("alertId") Long alertId,
-						 @JsonProperty("notificationIds") Long[] notificationIds) {
-		this.id = id;
-		this.createdById = createdById;
-		this.createdDate = createdDate;
-		this.modifiedById = modifiedById;
-		this.modifiedDate = modifiedDate;
-		this.type = type;
-		this.name = name;
-		this.threshold = threshold;
-		this.secondaryThreshold = secondaryThreshold;
-		this.inertia = inertia;
-		this.alertId = alertId;
-		this.notificationIds = nullableArrayCopy(notificationIds);
-	}
-
-    /* Getters */
-
-	public Long id() {
-		return id;
-	}
-
-	public Long createdById() {
-		return createdById;
-	}
-
-	public Long createdDate() {
-		return createdDate;
-	}
-
-	public Long modifiedById() {
-		return modifiedById;
-	}
-
-	public Long modifiedDate() {
-		return modifiedDate;
-	}
-
-	public String type() {
-		return type;
-	}
-
-	public String name() {
-		return name;
-	}
-
-	public Double threshold() {
-		return threshold;
-	}
-
-	public Double secondaryThreshold() {
-		return secondaryThreshold;
-	}
-
-	public Long inertia() {
-		return inertia;
-	}
-
-	public Long alertId() {
-		return alertId;
-	}
-
-	public Long[] notificationIds() {
-		return nullableArrayCopy(notificationIds);
-	}
+    public abstract List<Long> notificationIds();
 }

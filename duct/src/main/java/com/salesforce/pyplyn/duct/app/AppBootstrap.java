@@ -24,7 +24,7 @@ import com.salesforce.pyplyn.duct.etl.load.refocus.RefocusLoadProcessor;
 import com.salesforce.pyplyn.duct.etl.transform.standard.*;
 import com.salesforce.pyplyn.duct.providers.client.ArgusClientModule;
 import com.salesforce.pyplyn.duct.providers.client.RefocusClientModule;
-import com.salesforce.pyplyn.duct.providers.jackson.JacksonSerializationInitModule;
+import com.salesforce.pyplyn.duct.providers.jackson.PyplynObjectMapperModule;
 import com.salesforce.pyplyn.duct.systemstatus.SystemStatusModule;
 import com.salesforce.pyplyn.model.Extract;
 import com.salesforce.pyplyn.model.Load;
@@ -110,7 +110,7 @@ public class AppBootstrap {
                 ModuleBuilder.forLoad(com.salesforce.pyplyn.duct.etl.load.refocus.Refocus.class),
 
                 // Deserialization module
-                new JacksonSerializationInitModule()
+                new PyplynObjectMapperModule()
         ));
     }
 

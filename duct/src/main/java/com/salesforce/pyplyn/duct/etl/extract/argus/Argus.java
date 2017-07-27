@@ -8,81 +8,49 @@
 
 package com.salesforce.pyplyn.duct.etl.extract.argus;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.salesforce.pyplyn.annotations.PyplynImmutableStyle;
 import com.salesforce.pyplyn.model.Extract;
+import org.immutables.value.Value;
 
-import java.io.Serializable;
-import java.util.Optional;
+import javax.annotation.Nullable;
 
 /**
  * Argus datasource model
- * <p/> immutable
  *
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
  * @since 3.0
  */
-public class Argus implements Extract, Serializable {
+@Value.Immutable
+@PyplynImmutableStyle
+@JsonDeserialize(as = ImmutableArgus.class)
+@JsonSerialize(as = ImmutableArgus.class)
+public abstract class Argus implements Extract {
     private static final long serialVersionUID = 8271965988988568032L;
-
-    @JsonProperty(required = true)
-    private String endpoint;
-
-    @JsonProperty(required = true)
-    private String expression;
-
-    @JsonProperty(required = true)
-    private String name;
-
-    @JsonProperty(defaultValue = "0")
-    private Integer cacheMillis;
-
-    @JsonProperty
-    private Double defaultValue;
-
-
-    /**
-     * Default constructor
-     */
-    @JsonCreator
-    public Argus(@JsonProperty("endpoint") String endpoint,
-                 @JsonProperty("expression") String expression,
-                 @JsonProperty("name") String name,
-                 @JsonProperty("cacheMillis") Integer cacheMillis,
-                 @JsonProperty("defaultValue") Double defaultValue) {
-        this.endpoint = endpoint;
-        this.expression = expression;
-        this.name = name;
-        this.cacheMillis = cacheMillis;
-        this.defaultValue = defaultValue;
-    }
 
     /**
      * Endpoint where the expression should be executed on
      */
-    public String endpoint() {
-        return endpoint;
-    }
+    public abstract String endpoint();
 
     /**
      * Expression to load metrics for
      */
-    public String expression() {
-        return expression;
-    }
+    public abstract String expression();
 
     /**
      * Name of expression
      */
-    public String name() {
-        return name;
-    }
+    public abstract String name();
 
     /**
      * How long to cache this expression's results
      */
+    @Value.Default
+    @Value.Auxiliary
     public int cacheMillis() {
-        return Optional.ofNullable(cacheMillis).orElse(0);
+        return 0;
     }
 
     /**
@@ -90,43 +58,15 @@ public class Argus implements Extract, Serializable {
      *   having this parameter specified causes the processor to generate one datapoint
      *   with this value and the current time (at the time of execution)
      */
-    public Double defaultValue() {
-        return defaultValue;
-    }
+    @Nullable
+    @Value.Auxiliary
+    public abstract Double defaultValue();
 
     /**
-     * Returns the cache key for this object
-     *
-     * @return
+     * @return the cache key for this object
      */
+    @Value.Auxiliary
     public final String cacheKey() {
         return name();
-    }
-
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        Argus argus = (Argus) o;
-
-        if (!endpoint.equals(argus.endpoint)) {
-            return false;
-        }
-        if (!expression.equals(argus.expression)) {
-            return false;
-        }
-
-        return name.equals(argus.name);
-    }
-
-    @Override
-    public int hashCode() {
-        return 31 * (31 * endpoint.hashCode() + expression.hashCode()) + name.hashCode();
     }
 }

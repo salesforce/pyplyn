@@ -8,15 +8,17 @@
 
 package com.salesforce.pyplyn.duct.etl.transform.standard;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.collect.Iterables;
-import com.salesforce.pyplyn.duct.etl.transform.standard.Threshold.Type;
+import com.salesforce.pyplyn.annotations.PyplynImmutableStyle;
+import com.salesforce.pyplyn.model.ImmutableTransmutation;
+import com.salesforce.pyplyn.model.ThresholdType;
 import com.salesforce.pyplyn.model.Transform;
-import com.salesforce.pyplyn.model.TransformationResult;
-import com.salesforce.pyplyn.model.builder.TransformationResultBuilder;
+import com.salesforce.pyplyn.model.Transmutation;
+import org.immutables.value.Value;
 
-import java.io.Serializable;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Collections;
@@ -26,13 +28,13 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static com.salesforce.pyplyn.duct.etl.transform.standard.Threshold.Value.*;
 import static com.salesforce.pyplyn.duct.etl.transform.standard.Threshold.changeValue;
+import static com.salesforce.pyplyn.model.StatusCode.*;
 import static com.salesforce.pyplyn.util.FormatUtils.formatNumber;
 
 /**
- * Determine if the input time series data has matched the specified threshold
- * for the specified critial/warn/info duration, and return
+ * Determines if the input time series data has matched the threshold
+ * for the specified critical/warn/info duration, and return
  * critical/warning/info/ok status values respectively
  * 
  * <p/>
@@ -48,54 +50,29 @@ import static com.salesforce.pyplyn.util.FormatUtils.formatNumber;
  *
  * @since 6.0
  */
-public class ThresholdMetForDuration implements Transform, Serializable {
+@Value.Immutable
+@PyplynImmutableStyle
+@JsonDeserialize(as = ImmutableThresholdMetForDuration.class)
+@JsonSerialize(as = ImmutableThresholdMetForDuration.class)
+public abstract class ThresholdMetForDuration implements Transform {
     private static final long serialVersionUID = -4594665847342745577L;
     private static final String MESSAGE_TEMPLATE = "%s threshold hit by %s, with value=%s %s %.2f, duration longer than %s";
 
+    public abstract Double threshold();
 
-    @JsonProperty(required=true)
-    Double threshold;
+    public abstract ThresholdType type();
 
-    @JsonProperty
-    Type type;
+    public abstract Long criticalDurationMillis();
 
-    @JsonProperty(defaultValue = "0")
-    Long criticalDurationMillis;
+    public abstract Long warnDurationMillis();
 
-    @JsonProperty(defaultValue = "0")
-    Long warnDurationMillis;
-
-    @JsonProperty(defaultValue = "0")
-    Long infoDurationMillis;
-
+    public abstract Long infoDurationMillis();
 
     /**
-     * Default constructor
-     *
-     * @param threshold Threshold to match
-     * @param type Determines if the duration should be higher or lower than the threshold
-     * @param criticalDurationMillis Duration after which the status becomes "critical"
-     * @param warnDurationMillis Duration after which the status becomes "warning"
-     * @param infoDurationMillis Duration after which the status becomes "info"
-     */
-    @JsonCreator
-    public ThresholdMetForDuration(@JsonProperty("threshold") Double threshold,
-                                   @JsonProperty("type") Type type,
-                                   @JsonProperty("criticalDurationMillis") Long criticalDurationMillis,
-                                   @JsonProperty("warnDurationMillis") Long warnDurationMillis,
-                                   @JsonProperty("infoDurationMillis") Long infoDurationMillis) {
-        this.threshold = threshold;
-        this.type = type;
-        this.criticalDurationMillis = criticalDurationMillis;
-        this.warnDurationMillis = warnDurationMillis;
-        this.infoDurationMillis = infoDurationMillis;
-    }
-
-    /**
-     * Applies this transformation and returns a new {@link TransformationResult} matrix
+     * Applies this transformation and returns a new {@link Transmutation} matrix
      */
     @Override
-    public List<List<TransformationResult>> apply(List<List<TransformationResult>> input) {
+    public List<List<Transmutation>> apply(List<List<Transmutation>> input) {
         return input.stream()
                 .map(this::applyThreshold)
                 .filter(Objects::nonNull)
@@ -107,36 +84,36 @@ public class ThresholdMetForDuration implements Transform, Serializable {
      *   to pass the threshold for the critical/warn/info duration time period, change
      *   its the value to be critical/warn/info, otherwise, it's ok
      */
-    List<TransformationResult> applyThreshold(List<TransformationResult> points) {
+    List<Transmutation> applyThreshold(List<Transmutation> points) {
         // nothing to do
         if (points.isEmpty()) {
             return null;
         }
 
-        TransformationResult lastPoint = Iterables.getLast(points);
+        Transmutation lastPoint = Iterables.getLast(points);
         ZonedDateTime lastPointTS = lastPoint.time();
 
         // get the timestamp for the critical, warning, info durations
         //   if the millisecond unit is not supported, it will throw UnsupportedTemporalTypeException
-        ZonedDateTime infoDurationTS = lastPointTS.minus(infoDurationMillis, ChronoUnit.MILLIS);
-        ZonedDateTime warnDurationTS = lastPointTS.minus(warnDurationMillis, ChronoUnit.MILLIS);
-        ZonedDateTime criticalDurationTS = lastPointTS.minus(criticalDurationMillis, ChronoUnit.MILLIS);
+        ZonedDateTime infoDurationTS = lastPointTS.minus(infoDurationMillis(), ChronoUnit.MILLIS);
+        ZonedDateTime warnDurationTS = lastPointTS.minus(warnDurationMillis(), ChronoUnit.MILLIS);
+        ZonedDateTime criticalDurationTS = lastPointTS.minus(criticalDurationMillis(), ChronoUnit.MILLIS);
 
-        ListIterator<TransformationResult> iter = points.listIterator(points.size());
+        ListIterator<Transmutation> iter = points.listIterator(points.size());
         boolean matchThreshold = true;
         boolean atWarningLevel = false;
         boolean atInfoLevel = false;
 
         while (iter.hasPrevious() && matchThreshold) {
-            TransformationResult result = iter.previous();
+            Transmutation result = iter.previous();
             ZonedDateTime pointTS = result.time();
 
             Number value = result.value();
-            matchThreshold = type.matches(value, threshold);
+            matchThreshold = type().matches(value, threshold());
 
             if (matchThreshold) {
                 if (pointTS.compareTo(criticalDurationTS) <= 0) {
-                    return Collections.singletonList(appendMessage(changeValue(result, CRIT.value()), CRIT.code(), threshold, criticalDurationMillis));
+                    return Collections.singletonList(appendMessage(changeValue(result, ERR.value()), ERR.code(), threshold(), criticalDurationMillis()));
 
                 } else if (pointTS.compareTo(warnDurationTS) <= 0) {
                     atWarningLevel = true;
@@ -147,10 +124,10 @@ public class ThresholdMetForDuration implements Transform, Serializable {
 
             } else {
                 if (pointTS.compareTo(warnDurationTS) <= 0) {
-                    return Collections.singletonList(appendMessage(changeValue(result, WARN.value()), WARN.code(), threshold, warnDurationMillis));
+                    return Collections.singletonList(appendMessage(changeValue(result, WARN.value()), WARN.code(), threshold(), warnDurationMillis()));
 
                 } else if (pointTS.compareTo(infoDurationTS) <= 0) {
-                    return Collections.singletonList(appendMessage(changeValue(result, INFO.value()), INFO.code(), threshold, warnDurationMillis));
+                    return Collections.singletonList(appendMessage(changeValue(result, INFO.value()), INFO.code(), threshold(), warnDurationMillis()));
 
                 } else {
                     return Collections.singletonList(changeValue(result, OK.value())); // OK status
@@ -160,20 +137,23 @@ public class ThresholdMetForDuration implements Transform, Serializable {
 
         // critical, warning or info duration value is longer than available input time series
         return atWarningLevel
-                ? Collections.singletonList(appendMessage(changeValue(lastPoint, WARN.value()), WARN.code(), threshold, warnDurationMillis))
+                ? Collections.singletonList(appendMessage(changeValue(lastPoint, WARN.value()), WARN.code(), threshold(), warnDurationMillis()))
                 : (atInfoLevel
-                        ? Collections.singletonList(appendMessage(changeValue(lastPoint, INFO.value()), INFO.code(), threshold, warnDurationMillis))
+                        ? Collections.singletonList(appendMessage(changeValue(lastPoint, INFO.value()), INFO.code(), threshold(), warnDurationMillis()))
                         : Collections.singletonList(changeValue(lastPoint, OK.value())));
     }
 
     /**
      * Appends a message with the explanation of what threshold was hit
      */
-    TransformationResult appendMessage(TransformationResult result, String code, Double threshold, long durationMillis) {
+    Transmutation appendMessage(Transmutation result, String code, Double threshold, long durationMillis) {
         String thresholdHitAlert = String.format(MESSAGE_TEMPLATE, code, result.name(),
-                formatNumber(result.originalValue()), type.name(), threshold, convertToTimeDuration(durationMillis));
+                formatNumber(result.originalValue()), type().name(), threshold, convertToTimeDuration(durationMillis));
 
-        return new TransformationResultBuilder(result).metadata((metadata) -> metadata.addMessage(thresholdHitAlert))
+        return ImmutableTransmutation.builder().from(result)
+                .metadata(ImmutableTransmutation.Metadata.builder()
+                        .addMessages(thresholdHitAlert)
+                        .build())
                 .build();
     }
 
@@ -191,48 +171,6 @@ public class ThresholdMetForDuration implements Transform, Serializable {
                 TimeUnit.MILLISECONDS.toMinutes(milliseconds) % TimeUnit.HOURS.toMinutes(1),
                 TimeUnit.MILLISECONDS.toSeconds(milliseconds) % TimeUnit.MINUTES.toSeconds(1));
         return (days > 0 ? String.format("%02ddays ", days) : "") + hms;
-    }
-
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-
-        if (obj == null || getClass() != obj.getClass()) {
-            return false;
-        }
-
-        ThresholdMetForDuration other = (ThresholdMetForDuration) obj;
-
-        if (criticalDurationMillis != null ? !criticalDurationMillis.equals(other.criticalDurationMillis) : other.criticalDurationMillis != null) {
-            return false;
-        }
-
-        if (warnDurationMillis != null ? !warnDurationMillis.equals(other.warnDurationMillis) : other.warnDurationMillis != null) {
-            return false;
-        }
-
-        if (infoDurationMillis != null ? !infoDurationMillis.equals(other.warnDurationMillis) : other.infoDurationMillis != null) {
-            return false;
-        }
-
-        if (threshold != null ? !threshold.equals(other.threshold) : other.threshold != null) {
-            return false;
-        }
-
-        return type == other.type;
-    }
-
-    @Override
-    public int hashCode() {
-        int result = ((criticalDurationMillis == null) ? 0 : criticalDurationMillis.hashCode());
-        result = 31 * result + ((threshold == null) ? 0 : threshold.hashCode());
-        result = 31 * result + ((type == null) ? 0 : type.hashCode());
-        result = 31 * result + ((warnDurationMillis == null) ? 0 : warnDurationMillis.hashCode());
-        result = 31 * result + ((infoDurationMillis == null) ? 0 : infoDurationMillis.hashCode());
-        return result;
     }
 }
 

@@ -8,15 +8,16 @@
 
 package com.salesforce.argus.model;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.salesforce.pyplyn.util.CollectionUtils;
+import com.salesforce.pyplyn.annotations.PyplynImmutableStyle;
 import com.salesforce.pyplyn.util.SensitiveByteArraySerializer;
+import org.immutables.value.Value;
 
-import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
+import javax.annotation.Nullable;
+
+import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY;
 
 /**
  * Auth request model
@@ -24,27 +25,16 @@ import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
  * @since 3.0
  */
-@JsonIgnoreProperties(ignoreUnknown = true)
-@JsonInclude(NON_NULL)
-public class AuthRequest {
-    @JsonProperty
-    private final String username;
+@Value.Immutable
+@PyplynImmutableStyle
+@JsonDeserialize(as = ImmutableAuthRequest.class)
+@JsonSerialize(as = ImmutableAuthRequest.class)
+@JsonInclude(NON_EMPTY)
+public abstract class AuthRequest {
+    @Nullable
+    public abstract String username();
 
-    @JsonProperty
+    @Value.Redacted
     @JsonSerialize(using=SensitiveByteArraySerializer.class)
-    private final byte[] password;
-
-    /**
-     * Constructs an Auth Request
-     *   password is kept as byte to make it harder to extract from a heap dump (in plain text)
-     *
-     * @param username
-     * @param password
-     */
-    @JsonCreator
-    public AuthRequest(@JsonProperty("username") String username,
-                       @JsonProperty("password") byte[] password) {
-        this.username = username;
-        this.password = CollectionUtils.nullableArrayCopy(password);
-    }
+    public abstract byte[] password();
 }

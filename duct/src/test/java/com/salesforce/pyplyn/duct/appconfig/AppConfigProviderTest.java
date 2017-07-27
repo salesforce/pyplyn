@@ -8,6 +8,7 @@
 
 package com.salesforce.pyplyn.duct.appconfig;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Injector;
 import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapFixtures;
 import com.salesforce.pyplyn.util.SerializationHelper;
@@ -40,17 +41,17 @@ public class AppConfigProviderTest {
     @Test
     public void testReadAppConfig() throws Exception {
         // ARRANGE
-        SerializationHelper serializationHelper = fixSerializationHelper(fixtures);
+        ObjectMapper mapper = fixSerializationHelper(fixtures);
 
         // ACT
-        AppConfigProvider configProvider = new AppConfigProvider(CORRECT_APP_CONFIG, serializationHelper);
+        AppConfigProvider configProvider = new AppConfigProvider(CORRECT_APP_CONFIG, mapper);
         AppConfig appConfig = configProvider.get();
 
         // ASSERT
         assertThat(appConfig.global(), notNullValue());
         assertThat(appConfig.global().configurationsPath(), equalTo("configurationsPath"));
         assertThat(appConfig.global().connectorsPath(), equalTo("connectorsPath"));
-        assertThat(appConfig.global().minRepeatIntervalMillis(), equalTo(1L));
+        assertThat(appConfig.global().runOnce(), equalTo(false));
         assertThat(appConfig.global().updateConfigurationIntervalMillis(), equalTo(2L));
 
         assertThat(appConfig.hazelcast(), notNullValue());
@@ -66,17 +67,17 @@ public class AppConfigProviderTest {
     @Test(expectedExceptions = IOException.class)
     public void testDeserializationError() throws Exception {
         // ARRANGE
-        SerializationHelper serializationHelper = fixSerializationHelper(fixtures);
+        ObjectMapper mapper = fixSerializationHelper(fixtures);
 
         // ACT/ASSERT
-        new AppConfigProvider(INVALID_APP_CONFIG, serializationHelper);
+        new AppConfigProvider(INVALID_APP_CONFIG, mapper);
     }
 
     /**
      * Creates a fixture for {@link SerializationHelper}
      */
-    public static SerializationHelper fixSerializationHelper(AppBootstrapFixtures fixtures) {
+    public static ObjectMapper fixSerializationHelper(AppBootstrapFixtures fixtures) {
         Injector injector = fixtures.initializeFixtures().injector();
-        return injector.getInstance(SerializationHelper.class);
+        return injector.getInstance(ObjectMapper.class);
     }
 }

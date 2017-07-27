@@ -67,7 +67,6 @@ public class ClusterConfigurationUpdateManagerTest {
         assertThat(firstSet, hasSize(1));
         assertThat(secondSet, hasSize(1));
         assertThat(firstSet, not(hasItems(secondSet.toArray(new Configuration[]{}))));
-        //verify(configurationUpdateManager, times(0)).markFailure();
     }
 
     @Test

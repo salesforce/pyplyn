@@ -8,12 +8,13 @@
 
 package com.salesforce.pyplyn.duct.connector;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
-import com.salesforce.pyplyn.configuration.AbstractConnector;
+import com.salesforce.pyplyn.configuration.Connector;
+import com.salesforce.pyplyn.configuration.ConnectorInterface;
 import com.salesforce.pyplyn.duct.appconfig.AppConfig;
 import com.salesforce.pyplyn.util.CollectionUtils;
-import com.salesforce.pyplyn.util.SerializationHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,8 +23,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import static com.salesforce.pyplyn.util.SerializationHelper.loadResourceInsecure;
 import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
 
 /**
  * Reads all connector configurations from the input JSON and returns a list of connectors
@@ -31,12 +32,12 @@ import static java.util.Objects.nonNull;
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
  * @since 3.0
  */
-public class SimpleConnectorProvider implements Provider<List<AbstractConnector>> {
+public class SimpleConnectorProvider implements Provider<List<ConnectorInterface>> {
     private static final Logger logger = LoggerFactory.getLogger(SimpleConnectorProvider.class);
-    private final List<AbstractConnector> connectors;
+    private final List<ConnectorInterface> connectors;
 
     @Inject
-    public SimpleConnectorProvider(AppConfig appConfig, SerializationHelper serializer) throws IOException {
+    public SimpleConnectorProvider(AppConfig appConfig, ObjectMapper mapper) throws IOException {
         // if the connectors path is undefined, stop here
         String connectorPath = appConfig.global().connectorsPath();
         if (isNull(connectorPath)) {
@@ -45,7 +46,7 @@ public class SimpleConnectorProvider implements Provider<List<AbstractConnector>
             return;
         }
 
-        this.connectors = readFromConnectorsFile(serializer, connectorPath);
+        this.connectors = readFromConnectorsFile(mapper, connectorPath);
     }
 
     /**
@@ -54,29 +55,18 @@ public class SimpleConnectorProvider implements Provider<List<AbstractConnector>
      *
      * @throws IOException on any deserialization errors
      */
-    private List<AbstractConnector> readFromConnectorsFile(SerializationHelper serializer, String connectorPath) throws IOException {
+    private List<ConnectorInterface> readFromConnectorsFile(ObjectMapper mapper, String connectorPath) throws IOException {
         // first attempt to deserialize the connectors
-        SimpleConnectorConfig[] connectors = serializer.deserializeJsonFile(connectorPath, SimpleConnectorConfig[].class);
-
-        // if we have connectors, set the path
-        if (nonNull(connectors)) {
-            for (SimpleConnectorConfig connector : connectors) {
-                connector.setConnectorFilePath(connectorPath);
-            }
-
-        // or re-initialize the array as empty
-        } else {
-            connectors = new SimpleConnectorConfig[0];
-        }
+        ConnectorInterface[] connectors = mapper.readValue(loadResourceInsecure(connectorPath), Connector[].class);
 
         return CollectionUtils.immutableOrEmptyList(Arrays.asList(connectors));
     }
 
     /**
-     * @return the list of loaded {@link AbstractConnector}s
+     * @return the list of loaded {@link Connector}s
      */
     @Override
-    public List<AbstractConnector> get() {
+    public List<ConnectorInterface> get() {
         return connectors;
     }
 }

@@ -8,13 +8,13 @@
 
 package com.salesforce.pyplyn.duct.etl.extract.argus;
 
+import com.salesforce.argus.model.ImmutableMetricResponse;
 import com.salesforce.argus.model.MetricResponse;
-import com.salesforce.argus.model.builder.MetricResponseBuilder;
 import com.salesforce.pyplyn.client.UnauthorizedException;
 import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapFixtures;
 import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapLatches;
 import com.salesforce.pyplyn.duct.etl.configuration.ConfigurationUpdateManager;
-import com.salesforce.pyplyn.model.TransformationResult;
+import com.salesforce.pyplyn.model.Transmutation;
 import com.salesforce.pyplyn.status.MeterType;
 import org.mockito.ArgumentCaptor;
 import org.testng.annotations.BeforeMethod;
@@ -77,8 +77,8 @@ public class ArgusExtractProcessorTest {
     @Test
     public void testDefaultValueProvidedOnTimeout() throws Exception {
         // ARRANGE
-        MetricResponse response = new MetricResponseBuilder()
-                .withMetric("argus-metric")
+        MetricResponse response = ImmutableMetricResponse.builder()
+                .metric("argus-metric")
                 .build();
 
         // bootstrap
@@ -103,13 +103,13 @@ public class ArgusExtractProcessorTest {
         verify(fixtures.systemStatus(), times(0)).meter("Argus", MeterType.ExtractNoDataReturned);
 
         @SuppressWarnings("unchecked")
-        ArgumentCaptor<List<TransformationResult>> dataCaptor = ArgumentCaptor.forClass(List.class);
+        ArgumentCaptor<List<Transmutation>> dataCaptor = ArgumentCaptor.forClass(List.class);
         verify(fixtures.refocusLoadProcessor()).executeAsync(dataCaptor.capture(), any());
 
-        List<TransformationResult> data = dataCaptor.getValue();
+        List<Transmutation> data = dataCaptor.getValue();
         assertThat(data, hasSize(1));
 
-        TransformationResult result = data.get(0);
+        Transmutation result = data.get(0);
         assertThat(result.name(), equalTo("argus-metric"));
         assertThat(result.value(), equalTo(1.2d));
         assertThat(result.originalValue(), equalTo(1.2d));
@@ -120,9 +120,9 @@ public class ArgusExtractProcessorTest {
     public void testMetricResponsesAreCached() throws Exception {
         // ARRANGE
         String now = Long.valueOf(Instant.now().toEpochMilli()).toString();
-        MetricResponse response = new MetricResponseBuilder()
-                .withMetric("argus-metric")
-                .withDatapoints(new TreeMap<>(Collections.singletonMap(now, "1.2")))
+        MetricResponse response = ImmutableMetricResponse.builder()
+                .metric("argus-metric")
+                .datapoints(new TreeMap<>(Collections.singletonMap(now, "1.2")))
                 .build();
 
         // bootstrap
@@ -155,9 +155,9 @@ public class ArgusExtractProcessorTest {
     @Test
     public void testMetricResponsesWithNoDatapointsAreNotCached() throws Exception {
         // ARRANGE
-        MetricResponse response = new MetricResponseBuilder()
-                .withMetric("argus-metric")
-                .withDatapoints(Collections.emptySortedMap())
+        MetricResponse response = ImmutableMetricResponse.builder()
+                .metric("argus-metric")
+                .datapoints(Collections.emptySortedMap())
                 .build();
 
         // bootstrap
@@ -206,9 +206,9 @@ public class ArgusExtractProcessorTest {
     @Test
     public void testProcessShouldFailWithEmptyDatapoints() throws Exception {
         // create a sample
-        MetricResponse response = new MetricResponseBuilder()
-                .withMetric("argus-metric")
-                .withDatapoints(Collections.emptySortedMap())
+        MetricResponse response = ImmutableMetricResponse.builder()
+                .metric("argus-metric")
+                .datapoints(Collections.emptySortedMap())
                 .build();
 
         testWithMetricResponse(Collections.singletonList(response));
