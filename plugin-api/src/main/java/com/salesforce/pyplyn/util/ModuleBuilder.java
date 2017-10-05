@@ -45,7 +45,7 @@ public class ModuleBuilder {
      * Defines bindings for an {@link ExtractProcessor}
      * <p/>Creates a {@link com.google.inject.Guice} module overriding its {@link AbstractModule#configure()} method
      *
-     * @param processor The {@link ExtractProcessor} to handle models of type {@link T}
+     * @param processor The {@link ExtractProcessor} to handle models of type <strong>T</strong>
      * @param <T>       The extract model type for which the bindings are configured
      */
     public static <T extends Extract> AbstractModule forExtractProcessor(final Class<? extends ExtractProcessor<T>> processor) {
@@ -94,7 +94,7 @@ public class ModuleBuilder {
      * Defines bindings for a {@link LoadProcessor}
      * <p/>Creates a {@link com.google.inject.Guice} module overriding its {@link AbstractModule#configure()} method
      *
-     * @param processor The {@link LoadProcessor} to handle models of type {@link T}
+     * @param processor The {@link LoadProcessor} to handle models of type <strong>T</strong>
      * @param <T>       The load model type for which the bindings are configured
      */
     public static <T extends Load> AbstractModule forLoadProcessor(final Class<? extends LoadProcessor<T>> processor) {

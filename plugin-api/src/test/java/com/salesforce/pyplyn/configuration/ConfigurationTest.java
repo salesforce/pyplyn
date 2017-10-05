@@ -8,16 +8,19 @@
 
 package com.salesforce.pyplyn.configuration;
 
-import com.salesforce.pyplyn.model.*;
-import org.testng.annotations.Test;
-
-import java.util.Collections;
-import java.util.List;
-
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+
+import java.util.List;
+
+import org.testng.annotations.Test;
+
+import com.salesforce.pyplyn.model.Extract;
+import com.salesforce.pyplyn.model.ExtractImpl;
+import com.salesforce.pyplyn.model.Load;
+import com.salesforce.pyplyn.model.Transform;
 
 /**
  * Test class

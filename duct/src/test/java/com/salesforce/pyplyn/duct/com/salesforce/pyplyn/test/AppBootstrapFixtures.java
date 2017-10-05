@@ -8,6 +8,21 @@
 
 package com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test;
 
+import static java.util.Collections.emptyList;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
+import java.nio.charset.Charset;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.Timer;
 import com.google.inject.*;
@@ -17,9 +32,9 @@ import com.salesforce.argus.model.MetricResponse;
 import com.salesforce.pyplyn.cache.CacheFactory;
 import com.salesforce.pyplyn.cache.ConcurrentCacheMap;
 import com.salesforce.pyplyn.client.UnauthorizedException;
-import com.salesforce.pyplyn.configuration.Connector;
 import com.salesforce.pyplyn.configuration.Configuration;
-import com.salesforce.pyplyn.configuration.ConnectorInterface;
+import com.salesforce.pyplyn.configuration.Connector;
+import com.salesforce.pyplyn.configuration.EndpointConnector;
 import com.salesforce.pyplyn.configuration.ImmutableConfiguration;
 import com.salesforce.pyplyn.duct.app.AppBootstrap;
 import com.salesforce.pyplyn.duct.app.BootstrapException;
@@ -49,20 +64,8 @@ import com.salesforce.pyplyn.status.SystemStatusConsumer;
 import com.salesforce.pyplyn.util.MultibinderFactory;
 import com.salesforce.refocus.RefocusClient;
 import com.salesforce.refocus.model.Sample;
-import io.reactivex.Flowable;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import java.nio.charset.Charset;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
-import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-import static java.util.Collections.emptyList;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import io.reactivex.Flowable;
 
 /**
  * Test fixtures class
@@ -132,7 +135,7 @@ public class AppBootstrapFixtures {
     private IMap<Configuration, Configuration> hazelcastConfigurationMap;
 
     private AppConfigMocks appConfigMocks;
-    private List<ConnectorInterface> connectors = new ArrayList<>();
+    private List<EndpointConnector> connectors = new ArrayList<>();
     private Set<ExtractProcessor<? extends Extract>> extractProcessors = new HashSet<>();
     private Set<LoadProcessor<? extends Load>> loadProcessors = new HashSet<>();
     private Transmutation transmutation;
@@ -334,7 +337,7 @@ public class AppBootstrapFixtures {
      */
 
     private void initTaskManager() {
-        taskManager = spy(new TaskManagerWithLatches<>(appConfigMocks().appConfig, extractProcessors, loadProcessors, shutdownHook)).initLatches();
+        taskManager = spy(new TaskManagerWithLatches<>(appConfigMocks().appConfig, extractProcessors, loadProcessors, shutdownHook));
     }
 
     public AppBootstrapFixtures initConfigurationManager() {
@@ -383,13 +386,6 @@ public class AppBootstrapFixtures {
 
     public AppBootstrapFixtures oneArgusToRefocusConfigurationWithCache() {
         doReturn(new HashSet<>(Collections.singleton(new ConfigurationMocks().shouldCache(60000).argusExtract(null).build())))
-                .when(configurationLoader)
-                .load();
-        return this;
-    }
-
-    public AppBootstrapFixtures oneArgusToRefocusConfigurationWithCacheAndRepeatInterval(long millis) {
-        doReturn(new HashSet<>(Collections.singleton(new ConfigurationMocks().repeatIntervalMillis(millis).shouldCache(60000).argusExtract(null).build())))
                 .when(configurationLoader)
                 .load();
         return this;
@@ -748,7 +744,7 @@ public class AppBootstrapFixtures {
      */
     public static class ConfigurationMocks {
         Boolean isEnabled = false;
-        Long repeatIntervalMillis = 10000L;
+        Long repeatIntervalMillis = 10_000L;
         List<Extract> extract = new ArrayList<>();
         List<Transform> transform = new ArrayList<>();
         List<Load> load = new ArrayList<>();
@@ -812,28 +808,29 @@ public class AppBootstrapFixtures {
     }
 
     /**
-     * Interjects a latch to detect when all tasks have been processed
+     * Attaches a latch to detect when all tasks have been processed
      */
     private static class TaskManagerWithLatches<T extends Configuration> extends TaskManager<T> {
         public TaskManagerWithLatches(AppConfig config, Set<ExtractProcessor<? extends Extract>> extractProcessors, Set<LoadProcessor<? extends Load>> loadProcessors, ShutdownHook shutdownHook) {
             super(config, extractProcessors, loadProcessors, shutdownHook);
         }
 
-        private TaskManager<T> initLatches() {
-            doAnswer(invocation -> {
-                invocation.callRealMethod();
-                AppBootstrapLatches.appHasShutdown().countDown();
-                return null;
-            }).when(this).hookAfterTaskProcessed();
-            return this;
+        /**
+         * Calls the method then counts down the latch to allow the current test to stop
+         */
+        @Override
+        protected void notifyCompleted() {
+            super.notifyCompleted();
+            AppBootstrapLatches.appHasShutdown().countDown();
         }
 
         /**
-         * Expose the completion method in testing
+         * Calls the method then counts down the latch to allow the current test to stop
          */
         @Override
-        public void notifyCompleted() {
-            super.notifyCompleted();
+        protected void hookAfterTaskProcessed() {
+            super.hookAfterTaskProcessed();
+            AppBootstrapLatches.appHasShutdown().countDown();
         }
     }
 }

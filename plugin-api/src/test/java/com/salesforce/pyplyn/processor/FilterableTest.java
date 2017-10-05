@@ -8,14 +8,13 @@
 
 package com.salesforce.pyplyn.processor;
 
-import org.testng.annotations.Test;
-
-import java.util.Arrays;
-import java.util.List;
-
 import static java.util.Arrays.asList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+
+import java.util.List;
+
+import org.testng.annotations.Test;
 
 /**
  * Test class

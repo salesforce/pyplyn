@@ -8,13 +8,13 @@
 
 package com.salesforce.pyplyn.util;
 
-import org.testng.annotations.Test;
-
-import java.util.*;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.testng.Assert.fail;
+
+import java.util.*;
+
+import org.testng.annotations.Test;
 
 /**
  * Test class

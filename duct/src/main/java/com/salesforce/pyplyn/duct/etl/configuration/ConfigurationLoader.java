@@ -8,15 +8,14 @@
 
 package com.salesforce.pyplyn.duct.etl.configuration;
 
-import com.google.inject.Inject;
-import com.salesforce.pyplyn.configuration.Configuration;
-import com.salesforce.pyplyn.duct.app.BootstrapException;
-import com.salesforce.pyplyn.duct.appconfig.AppConfig;
+import java.util.Set;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.util.Set;
+import com.google.inject.Inject;
+import com.salesforce.pyplyn.configuration.Configuration;
+import com.salesforce.pyplyn.duct.appconfig.AppConfig;
 
 /**
  * Reads all known configurations from disk

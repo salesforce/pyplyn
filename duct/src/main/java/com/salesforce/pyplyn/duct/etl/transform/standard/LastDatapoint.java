@@ -8,20 +8,22 @@
 
 package com.salesforce.pyplyn.duct.etl.transform.standard;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.google.common.collect.Iterables;
-import com.salesforce.pyplyn.annotations.PyplynImmutableStyle;
-import com.salesforce.pyplyn.model.Transform;
-import com.salesforce.pyplyn.model.Transmutation;
-import org.immutables.value.Value;
+import static java.util.Objects.nonNull;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static java.util.Objects.nonNull;
+import org.immutables.value.Value;
+
+import com.fasterxml.jackson.annotation.JsonTypeName;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.google.common.collect.Iterables;
+import com.salesforce.pyplyn.annotations.PyplynImmutableStyle;
+import com.salesforce.pyplyn.model.Transform;
+import com.salesforce.pyplyn.model.Transmutation;
 
 /**
  * Filters out all but the last data point
@@ -37,6 +39,7 @@ import static java.util.Objects.nonNull;
 @PyplynImmutableStyle
 @JsonDeserialize(as = ImmutableLastDatapoint.class)
 @JsonSerialize(as = ImmutableLastDatapoint.class)
+@JsonTypeName("LastDatapoint")
 public abstract class LastDatapoint implements Transform {
     private static final long serialVersionUID = -2187464148729449576L;
 

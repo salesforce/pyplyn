@@ -8,12 +8,13 @@
 
 package com.salesforce.pyplyn.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import io.reactivex.Flowable;
-import io.reactivex.Scheduler;
-
 import java.io.Serializable;
 import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
+import io.reactivex.Flowable;
+import io.reactivex.Scheduler;
 
 /**
  * Transforms interface
@@ -28,7 +29,7 @@ import java.util.List;
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
  * @since 3.0
  */
-@JsonIgnoreProperties("name")
+@JsonTypeInfo(use=JsonTypeInfo.Id.NAME, include=JsonTypeInfo.As.PROPERTY, property="name")
 public interface Transform extends Serializable {
 
     /**
@@ -37,11 +38,24 @@ public interface Transform extends Serializable {
     List<List<Transmutation>> apply(List<List<Transmutation>> input);
 
     /**
+     * Override this method for any {@link Transform} that needs to not run when certain conditions are met
+     * <p/>
+     * <p/> This method analyzes the full dataset
+     */
+    default boolean skipTransform(List<List<Transmutation>> input) {
+        return false;
+    }
+
+    /**
      * Async transformation
      * <p/>
      * <p/> {@link Transform}s are observed on the specified {@link Scheduler}
      */
     default Flowable<List<List<Transmutation>>> applyAsync(List<List<Transmutation>> input, Scheduler scheduler) {
+        if (skipTransform(input)) {
+            return Flowable.just(input);
+        }
+
         return Flowable.just(input)
                 .observeOn(scheduler)
                 .map(this::apply);

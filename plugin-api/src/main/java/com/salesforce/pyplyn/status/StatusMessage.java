@@ -8,9 +8,9 @@
 
 package com.salesforce.pyplyn.status;
 
-import com.salesforce.pyplyn.model.StatusCode;
-
 import java.util.List;
+
+import com.salesforce.pyplyn.model.StatusCode;
 
 /**
  * Represents a system status message

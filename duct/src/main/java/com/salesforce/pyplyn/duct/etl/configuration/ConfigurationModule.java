@@ -8,6 +8,8 @@
 
 package com.salesforce.pyplyn.duct.etl.configuration;
 
+import java.util.Set;
+
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
@@ -15,8 +17,6 @@ import com.google.inject.TypeLiteral;
 import com.salesforce.pyplyn.configuration.Configuration;
 import com.salesforce.pyplyn.duct.app.ShutdownHook;
 import com.salesforce.pyplyn.duct.cluster.Cluster;
-
-import java.util.Set;
 
 /**
  * Binds the {@link ConfigurationLoader}, returning the set of {@link Configuration}s that should be processed

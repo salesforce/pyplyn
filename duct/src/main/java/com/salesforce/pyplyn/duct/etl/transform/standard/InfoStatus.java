@@ -8,16 +8,18 @@
 
 package com.salesforce.pyplyn.duct.etl.transform.standard;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.immutables.value.Value;
+
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.salesforce.pyplyn.annotations.PyplynImmutableStyle;
 import com.salesforce.pyplyn.model.ImmutableTransmutation;
 import com.salesforce.pyplyn.model.Transform;
 import com.salesforce.pyplyn.model.Transmutation;
-import org.immutables.value.Value;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Forces at least a status of INFO, if the status is currently OK
@@ -33,6 +35,7 @@ import java.util.stream.Collectors;
 @PyplynImmutableStyle
 @JsonDeserialize(as = ImmutableInfoStatus.class)
 @JsonSerialize(as = ImmutableInfoStatus.class)
+@JsonTypeName("InfoStatus")
 public abstract class InfoStatus implements Transform {
     private static final long serialVersionUID = -1927779729819920375L;
 

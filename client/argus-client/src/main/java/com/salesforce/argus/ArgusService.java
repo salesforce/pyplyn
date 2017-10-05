@@ -8,12 +8,13 @@
 
 package com.salesforce.argus;
 
+import java.util.List;
+
 import com.salesforce.argus.model.*;
+
 import retrofit2.Call;
 import retrofit2.Retrofit;
 import retrofit2.http.*;
-
-import java.util.List;
 
 /**
  * Argus REST service class

@@ -8,9 +8,9 @@
 
 package com.salesforce.pyplyn.util;
 
-import java.util.*;
-
 import static java.util.Objects.nonNull;
+
+import java.util.*;
 
 /**
  * Various utils used for manipulating collection and array data structures

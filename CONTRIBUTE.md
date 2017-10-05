@@ -41,6 +41,8 @@ What's important to you, the contributor is how you should approach contributing
 10. Manually test your change one last time
 11. Create a Pull Request and submit it for review
 
+Regarding version numbers, since *10.0.0*, Pyplyn releases follow [Semantic versioning](http://semver.org/) guidelines.
+
 
 ### Filing bugs
 
@@ -135,8 +137,8 @@ Third party software licenses come in a wide variety of forms, each with differe
 We can only accept the following license types, and so, if you're adding new libraries in the project, please make sure
  to check that they conform to the following list:
 
-* BSD
 * Apache 2.0
+* BSD
 * MIT
 * ISC
 * MPL

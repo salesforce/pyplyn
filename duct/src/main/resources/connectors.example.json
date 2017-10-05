@@ -8,6 +8,9 @@
     "proxyPort": null,
     "connectTimeout": 10,
     "readTimeout": 10,
-    "writeTimeout": 10
+    "writeTimeout": 10,
+    "keystorePath": null,
+    "keystorePassword": null,
+    "sslContextAlgorithm": "TLSv1.2"
   }
 ]

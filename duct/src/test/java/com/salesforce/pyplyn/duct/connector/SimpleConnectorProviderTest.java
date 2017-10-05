@@ -8,17 +8,17 @@
 
 package com.salesforce.pyplyn.duct.connector;
 
-import com.google.inject.Injector;
-import com.salesforce.pyplyn.configuration.Connector;
-import com.salesforce.pyplyn.configuration.ConnectorInterface;
-import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapFixtures;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
 
 import java.util.List;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
+
+import com.google.inject.Injector;
+import com.salesforce.pyplyn.configuration.EndpointConnector;
+import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapFixtures;
 
 /**
  * Test class
@@ -44,7 +44,7 @@ public class SimpleConnectorProviderTest {
         SimpleConnectorProvider provider = injector.getProvider(SimpleConnectorProvider.class).get();
 
         // ACT
-        List<ConnectorInterface> connectors = provider.get();
+        List<EndpointConnector> connectors = provider.get();
 
         // ASSERT
         assertThat(connectors, notNullValue());
@@ -58,7 +58,7 @@ public class SimpleConnectorProviderTest {
         SimpleConnectorProvider provider = injector.getProvider(SimpleConnectorProvider.class).get();
 
         // ACT
-        List<ConnectorInterface> connectors = provider.get();
+        List<EndpointConnector> connectors = provider.get();
 
         // ASSERT
         assertThat(connectors, notNullValue());

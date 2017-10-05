@@ -8,10 +8,11 @@
 
 package com.salesforce.pyplyn.configuration;
 
+import org.immutables.value.Value;
+
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.salesforce.pyplyn.annotations.PyplynImmutableStyle;
-import org.immutables.value.Value;
 
 /**
  * Base connector class
@@ -27,14 +28,5 @@ import org.immutables.value.Value;
 @PyplynImmutableStyle
 @JsonDeserialize(as = ImmutableConnector.class)
 @JsonSerialize(as = ImmutableConnector.class)
-public abstract class Connector implements ConnectorInterface {
-    @Override
-    public boolean equals(Object another) {
-        return delegateEquals(another);
-    }
-
-    @Override
-    public int hashCode() {
-        return delegateHashCode();
-    }
+public abstract class Connector extends EndpointConnector {
 }

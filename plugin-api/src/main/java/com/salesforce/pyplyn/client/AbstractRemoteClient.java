@@ -8,29 +8,41 @@
 
 package com.salesforce.pyplyn.client;
 
-import com.google.common.base.Preconditions;
-import com.salesforce.pyplyn.configuration.Connector;
-import com.salesforce.pyplyn.configuration.ConnectorInterface;
-import okhttp3.Headers;
-import okhttp3.HttpUrl;
-import okhttp3.OkHttpClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import retrofit2.Call;
-import retrofit2.Response;
-import retrofit2.Retrofit;
-import retrofit2.converter.jackson.JacksonConverterFactory;
+import static java.util.Objects.isNull;
 
-import javax.annotation.Nonnull;
-import java.io.IOException;
+import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 import java.nio.charset.Charset;
+import java.security.*;
+import java.security.cert.CertificateException;
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static java.util.Objects.isNull;
+import javax.annotation.Nonnull;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Preconditions;
+import com.salesforce.pyplyn.configuration.Connector;
+import com.salesforce.pyplyn.configuration.EndpointConnector;
+
+import okhttp3.Headers;
+import okhttp3.HttpUrl;
+import okhttp3.OkHttpClient;
+import retrofit2.Call;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.jackson.JacksonConverterFactory;
 
 /**
  * Generic contract for Remote clients implemented in Pyplyn
@@ -50,7 +62,12 @@ public abstract class AbstractRemoteClient<S> implements RemoteClient {
     /**
      * Reference to the connector used by the current instance
      */
-    private final ConnectorInterface connector;
+    private final EndpointConnector connector;
+
+    /**
+     * The retrofit object used to construct the service
+     */
+    private final Retrofit retrofit;
 
     /**
      * The service object performing remote API operations
@@ -112,12 +129,13 @@ public abstract class AbstractRemoteClient<S> implements RemoteClient {
     /**
      * Class constructor that allows setting timeout parameters
      */
-    protected AbstractRemoteClient(ConnectorInterface connector, Class<S> cls) {
+    protected AbstractRemoteClient(EndpointConnector connector, Class<S> cls) {
         Preconditions.checkNotNull(connector, "Passed connector is null for " + this.getClass().getSimpleName());
+        this.connector = connector;
 
         // Extended timeouts are needed to deal with extremely slow response times for some Argus API endpoints.
         OkHttpClient client;
-
+        
         // set HTTP proxy, if configured
         if (connector.isProxyEnabled()) {
             client = httpClientBuilder(connector).proxy(createProxy(connector)).build();
@@ -126,14 +144,13 @@ public abstract class AbstractRemoteClient<S> implements RemoteClient {
         }
 
         // build the retrofit service implementation, using a specified client and relying on Jackson serialization/deserialization
-        this.connector = connector;
-
-        this.svc = new Retrofit.Builder()
+        retrofit = new Retrofit.Builder()
                 .baseUrl(connector.endpoint())
                 .client(client)
                 .addConverterFactory(JacksonConverterFactory.create())
-                .build()
-                .create(cls);
+                .build();
+
+        this.svc = retrofit.create(cls);
     }
 
     /**
@@ -146,11 +163,69 @@ public abstract class AbstractRemoteClient<S> implements RemoteClient {
     /**
      * Initializes an {@link OkHttpClient.Builder} object, with the specified timeouts
      */
-    private static OkHttpClient.Builder httpClientBuilder(ConnectorInterface connector) {
-        return new OkHttpClient().newBuilder()
+    private static OkHttpClient.Builder httpClientBuilder(EndpointConnector connector) {
+        // Set simple properties.
+        OkHttpClient.Builder builder = new OkHttpClient().newBuilder()
                     .connectTimeout(connector.connectTimeout(), TimeUnit.SECONDS)
                     .readTimeout(connector.readTimeout(), TimeUnit.SECONDS)
                     .writeTimeout(connector.writeTimeout(), TimeUnit.SECONDS);
+        
+        // setup mutual authentication if needed
+        if(connector.isMutualAuthEnabled()) {
+            initSSLSocketFactory(connector, builder);
+        }
+        
+        // Return builder.
+        return builder;
+    }
+
+    /**
+     * Configures an {@link SSLContext} on the specified {@link OkHttpClient.Builder}, taking into account
+     *   the trust store specified by {@link EndpointConnector#keystorePath()} and {@link EndpointConnector#keystorePassword()}}
+     */
+    private static void initSSLSocketFactory(EndpointConnector connector, OkHttpClient.Builder builder) {
+        char[] keystorePassword = byteToCharArray(connector.keystorePassword());
+        try {
+            // initialize keystore
+            //   the default type is 'jks';  however, this can be changed by updating the `keystore.type` property
+            //   in `$JAVA_HOME/lib/security/java.security`
+            KeyStore keystore = KeyStore.getInstance(KeyStore.getDefaultType());
+            keystore.load(new FileInputStream(connector.keystorePath()), keystorePassword);
+
+
+            // setup trust manager factory
+            TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            trustManagerFactory.init(keystore);
+            X509TrustManager trustManager = (X509TrustManager)trustManagerFactory.getTrustManagers()[0];
+
+            // setup key manager factory
+            KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+            keyManagerFactory.init(keystore, keystorePassword);
+
+            // initialize an SSL context using the same protocol as the default and init
+            SSLContext sslContext = SSLContext.getInstance(connector.sslContextAlgorithm());
+            sslContext.init(keyManagerFactory.getKeyManagers(), trustManagerFactory.getTrustManagers(), null);
+
+            // set socket factory
+            builder.sslSocketFactory(sslContext.getSocketFactory(), trustManager);
+
+        } catch (IOException |CertificateException |UnrecoverableKeyException |NoSuchAlgorithmException |KeyStoreException |KeyManagementException e) {
+            // rethrow as RTE, since we cannot continue if mutual auth was expected but could not be initialized
+            throw new RuntimeException("Unexpected exception configuring mutual authentication for " + connector.id(), e);
+
+        } finally {
+            // clear password after using it
+            Arrays.fill(keystorePassword, (char)0);
+        }
+    }
+
+    /**
+     * Convert a byte[] to char[]
+     */
+    public static char[] byteToCharArray(byte[] bytes) {
+        ByteBuffer wrap = ByteBuffer.wrap(bytes);
+        CharBuffer decode = Charset.defaultCharset().decode(wrap);
+        return decode.array();
     }
 
     /**
@@ -159,7 +234,7 @@ public abstract class AbstractRemoteClient<S> implements RemoteClient {
      * @return a {@link Proxy} object initialized with the values specified in this endpoint's corresponding
      *         {@link Connector}
      */
-    private Proxy createProxy(ConnectorInterface connector) {
+    private Proxy createProxy(EndpointConnector connector) {
         return new Proxy(Proxy.Type.HTTP, new InetSocketAddress(connector.proxyHost(), connector.proxyPort()));
     }
 
@@ -290,8 +365,15 @@ public abstract class AbstractRemoteClient<S> implements RemoteClient {
     /**
      * @return connector used by the current instance
      */
-    public final ConnectorInterface connector() {
+    public final EndpointConnector connector() {
         return connector;
+    }
+
+    /**
+     * @return the {@link Retrofit} object used to create the service
+     */
+    protected Retrofit retrofit() {
+        return retrofit;
     }
 
     /**
@@ -303,4 +385,3 @@ public abstract class AbstractRemoteClient<S> implements RemoteClient {
         return connector.id();
     }
 }
-

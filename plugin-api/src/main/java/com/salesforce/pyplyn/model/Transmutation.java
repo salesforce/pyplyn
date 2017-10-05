@@ -8,13 +8,15 @@
 
 package com.salesforce.pyplyn.model;
 
-import com.salesforce.pyplyn.annotations.PyplynImmutableStyle;
-import org.immutables.value.Value;
-
-import javax.annotation.Nullable;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
+
+import javax.annotation.Nullable;
+
+import org.immutables.value.Value;
+
+import com.salesforce.pyplyn.annotations.PyplynImmutableStyle;
 
 /**
  * This class is a model that is used to hold extract data while all {@link Transform}s are applied and until

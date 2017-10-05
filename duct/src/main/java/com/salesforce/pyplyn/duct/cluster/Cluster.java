@@ -8,6 +8,13 @@
 
 package com.salesforce.pyplyn.duct.cluster;
 
+import static com.salesforce.pyplyn.util.SerializationHelper.loadResourceInsecure;
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+
+import java.io.FileNotFoundException;
+import java.util.Set;
+
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.hazelcast.config.Config;
@@ -16,13 +23,6 @@ import com.hazelcast.core.*;
 import com.hazelcast.util.Preconditions;
 import com.salesforce.pyplyn.duct.app.ShutdownHook;
 import com.salesforce.pyplyn.duct.appconfig.AppConfig;
-
-import java.io.FileNotFoundException;
-import java.util.Set;
-
-import static com.salesforce.pyplyn.util.SerializationHelper.loadResourceInsecure;
-import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
 
 /**
  * Initializes the cluster logic

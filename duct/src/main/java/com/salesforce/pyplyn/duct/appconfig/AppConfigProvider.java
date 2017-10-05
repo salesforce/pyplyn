@@ -8,13 +8,15 @@
 
 package com.salesforce.pyplyn.duct.appconfig;
 
+import java.io.IOException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.name.Named;
 import com.salesforce.pyplyn.util.SerializationHelper;
-
-import java.io.IOException;
 
 /**
  * Provides an app config object
@@ -28,8 +30,8 @@ public class AppConfigProvider implements Provider<AppConfig> {
     private final AppConfig appConfig;
 
     @Inject
-    public AppConfigProvider(@Named("config") String configFile, ObjectMapper mapper) throws IOException {
-        // TODO: simplify this / move to module
+    public AppConfigProvider(@Named("config") String configFile, ObjectMapper mapper) throws IOException, NoSuchAlgorithmException, KeyManagementException {
+        // TODO: simplify this / move to modules
         appConfig = mapper.readValue(SerializationHelper.loadResourceInsecure(configFile), AppConfig.class);
     }
 

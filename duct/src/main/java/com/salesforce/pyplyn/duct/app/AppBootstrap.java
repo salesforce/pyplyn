@@ -8,6 +8,14 @@
 
 package com.salesforce.pyplyn.duct.app;
 
+import static com.salesforce.pyplyn.util.SerializationHelper.canRead;
+import static java.util.Objects.isNull;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
@@ -32,14 +40,6 @@ import com.salesforce.pyplyn.model.Transform;
 import com.salesforce.pyplyn.processor.ExtractProcessor;
 import com.salesforce.pyplyn.processor.LoadProcessor;
 import com.salesforce.pyplyn.util.ModuleBuilder;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
-import static com.salesforce.pyplyn.util.SerializationHelper.canRead;
-import static java.util.Objects.isNull;
 
 /**
  * Takes care of initializing the {@link Guice} injector with all the required modules
@@ -101,6 +101,7 @@ public class AppBootstrap {
                 // Transform
                 ModuleBuilder.forTransform(HighestValue.class),
                 ModuleBuilder.forTransform(LastDatapoint.class),
+                ModuleBuilder.forTransform(Metadata.class),
                 ModuleBuilder.forTransform(SaveMetricMetadata.class),
                 ModuleBuilder.forTransform(Threshold.class),
                 ModuleBuilder.forTransform(ThresholdMetForDuration.class),

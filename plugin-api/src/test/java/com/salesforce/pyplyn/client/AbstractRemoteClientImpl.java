@@ -8,7 +8,8 @@
 
 package com.salesforce.pyplyn.client;
 
-import com.salesforce.pyplyn.configuration.ConnectorInterface;
+import com.salesforce.pyplyn.configuration.EndpointConnector;
+
 import retrofit2.Call;
 import retrofit2.http.GET;
 
@@ -21,7 +22,7 @@ import retrofit2.http.GET;
 public class AbstractRemoteClientImpl extends AbstractRemoteClient<AbstractRemoteClientImpl.RetroService> {
     private boolean isAuth;
 
-    public AbstractRemoteClientImpl(ConnectorInterface connector, Class<RetroService> cls) {
+    public AbstractRemoteClientImpl(EndpointConnector connector, Class<RetroService> cls) {
         super(connector, cls);
     }
 

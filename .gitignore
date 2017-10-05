@@ -22,11 +22,13 @@ target/
 .settings
 .project
 .classpath
+.factorypath
 
 # Other
 test-output/
 node_modules/
 .orig
+nohup.out
 
 # Maven
 release.properties

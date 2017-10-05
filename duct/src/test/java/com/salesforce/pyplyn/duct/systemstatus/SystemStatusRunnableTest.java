@@ -8,6 +8,18 @@
 
 package com.salesforce.pyplyn.duct.systemstatus;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.verify;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.mockito.ArgumentCaptor;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
+
 import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapFixtures;
 import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapLatches;
 import com.salesforce.pyplyn.duct.etl.configuration.ConfigurationUpdateManager;
@@ -15,17 +27,6 @@ import com.salesforce.pyplyn.model.StatusCode;
 import com.salesforce.pyplyn.status.MeterType;
 import com.salesforce.pyplyn.status.StatusMessage;
 import com.salesforce.pyplyn.status.SystemStatusConsumer;
-import org.mockito.ArgumentCaptor;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
-
-import java.util.List;
-import java.util.stream.Collectors;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
-import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.verify;
 
 /**
  * Test class

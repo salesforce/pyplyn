@@ -8,16 +8,17 @@
 
 package com.salesforce.pyplyn.configuration;
 
+import java.io.Serializable;
+import java.util.List;
+
+import org.immutables.value.Value;
+
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.salesforce.pyplyn.annotations.PyplynImmutableStyle;
 import com.salesforce.pyplyn.model.Extract;
 import com.salesforce.pyplyn.model.Load;
 import com.salesforce.pyplyn.model.Transform;
-import org.immutables.value.Value;
-
-import java.io.Serializable;
-import java.util.List;
 
 /**
  * ETL Configuration model

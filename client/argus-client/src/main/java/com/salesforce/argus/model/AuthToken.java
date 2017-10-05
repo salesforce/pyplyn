@@ -1,5 +1,10 @@
 package com.salesforce.argus.model;
 
+import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY;
+import static com.fasterxml.jackson.annotation.JsonProperty.Access.WRITE_ONLY;
+
+import org.immutables.value.Value;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -7,10 +12,6 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.salesforce.pyplyn.annotations.PyplynImmutableStyle;
 import com.salesforce.pyplyn.util.SensitiveByteArrayDeserializer;
 import com.salesforce.pyplyn.util.SensitiveByteArraySerializer;
-import org.immutables.value.Value;
-
-import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY;
-import static com.fasterxml.jackson.annotation.JsonProperty.Access.WRITE_ONLY;
 
 
 /**

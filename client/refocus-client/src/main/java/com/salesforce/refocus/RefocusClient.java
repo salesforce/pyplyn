@@ -8,18 +8,19 @@
 
 package com.salesforce.refocus;
 
-import com.google.common.base.Preconditions;
-import com.salesforce.pyplyn.client.AbstractRemoteClient;
-import com.salesforce.pyplyn.client.UnauthorizedException;
-import com.salesforce.pyplyn.configuration.ConnectorInterface;
-import com.salesforce.refocus.model.*;
-
-import java.util.List;
-
 import static com.salesforce.pyplyn.util.CollectionUtils.nullOutByteArray;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+
+import java.util.List;
+import java.util.Optional;
+
+import com.google.common.base.Preconditions;
+import com.salesforce.pyplyn.client.AbstractRemoteClient;
+import com.salesforce.pyplyn.client.UnauthorizedException;
+import com.salesforce.pyplyn.configuration.EndpointConnector;
+import com.salesforce.refocus.model.*;
 
 /**
  * Refocus API implementation
@@ -28,8 +29,9 @@ import static java.util.Objects.nonNull;
  * @since 1.0
  */
 public class RefocusClient extends AbstractRemoteClient<RefocusService> {
+
     // authentication token
-    private byte[] accessToken;
+    private volatile byte[] accessToken;
 
 
     /**
@@ -37,7 +39,7 @@ public class RefocusClient extends AbstractRemoteClient<RefocusService> {
      *
      * @param connector The Refocus API endpoint to use in calls
      */
-    public RefocusClient(ConnectorInterface connector) {
+    public RefocusClient(EndpointConnector connector) {
         super(connector, RefocusService.class);
     }
 
@@ -53,7 +55,7 @@ public class RefocusClient extends AbstractRemoteClient<RefocusService> {
      * Authenticates to a Refocus endpoint, using either a user and password or a token
      * <p/>
      * <p/>To specify a token, pass <b>username</b> as null and the token in the <b>password</b> field,
-     *   base64 encoding its string value, in the corresponding {@link ConnectorInterface} implementation.
+     *   base64 encoding its string value, in the corresponding {@link EndpointConnector} implementation.
      *
      * @throws UnauthorizedException if the passed credentials are invalid
      */
@@ -212,7 +214,31 @@ public class RefocusClient extends AbstractRemoteClient<RefocusService> {
      */
     public Subject patchSubject(Subject subject) throws UnauthorizedException {
         Preconditions.checkNotNull(subject, "Subject should not be null");
-        return executeAndRetrieveBody(svc().patchSubject(authorizationHeader(), subject.id(), subject), null);
+        String subjectKey = Optional.ofNullable(subject.id()).orElse(subject.name());
+        return executeAndRetrieveBody(svc().patchSubject(authorizationHeader(), subjectKey, subject), null);
+    }
+
+    /**
+     * Replaces all set fields for the given subject
+     *
+     * @throws IllegalArgumentException if null subject was passed
+     * @return null on failures
+     */
+    public Subject putSubject(Subject subject) throws UnauthorizedException {
+        Preconditions.checkNotNull(subject, "Subject should not be null");
+        String subjectKey = Optional.ofNullable(subject.id()).orElse(subject.name());
+        return executeAndRetrieveBody(svc().putSubject(authorizationHeader(), subjectKey, subject), null);
+    }
+
+    /**
+     * Deletes the specified subject
+     *
+     * @throws IllegalArgumentException if null subject key (ID or subject path) was passed
+     * @return null on failures
+     */
+    public Subject deleteSubject(String subjectKey) throws UnauthorizedException {
+        Preconditions.checkNotNull(subjectKey, "Subject key (ID or path) should not be null");
+        return executeAndRetrieveBody(svc().deleteSubject(authorizationHeader(), subjectKey), null);
     }
 
     /**

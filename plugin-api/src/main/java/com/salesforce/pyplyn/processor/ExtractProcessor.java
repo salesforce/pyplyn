@@ -8,12 +8,13 @@
 
 package com.salesforce.pyplyn.processor;
 
-import com.salesforce.pyplyn.model.Extract;
-import com.salesforce.pyplyn.model.Transmutation;
-import io.reactivex.Flowable;
-
 import java.util.Collections;
 import java.util.List;
+
+import com.salesforce.pyplyn.model.Extract;
+import com.salesforce.pyplyn.model.Transmutation;
+
+import io.reactivex.Flowable;
 
 /**
  * Extract processor interface

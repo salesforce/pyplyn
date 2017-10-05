@@ -8,8 +8,6 @@
 
 package com.salesforce.pyplyn.util;
 
-import com.salesforce.pyplyn.model.Transmutation;
-
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.text.ParseException;
@@ -18,6 +16,8 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.Optional;
+
+import com.salesforce.pyplyn.model.Transmutation;
 
 /**
  * Date and value format class

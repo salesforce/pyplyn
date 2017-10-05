@@ -8,19 +8,20 @@
 
 package com.salesforce.pyplyn.duct.app;
 
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+
+import java.util.concurrent.ExecutorService;
+
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
+
 import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapFixtures;
 import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapLatches;
 import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.ExecutorTestHelper;
 import com.salesforce.pyplyn.duct.etl.configuration.ConfigurationUpdateManager;
 import com.salesforce.pyplyn.status.MeterType;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
-
-import java.util.concurrent.ExecutorService;
-
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 
 
 /**
@@ -45,7 +46,7 @@ public class ShutdownHookTest {
      * Checks that triggering the ShutdownHook will stop an ongoing ETL cycle
      * <p/> and that RefocusLoadProcessor does not post to Refocus endpoint on Shutdown
      */
-    @Test(timeOut = 50000L)
+    @Test(timeOut = 5_000L)
     public void testAppNotPostingResultsToRefocusAfterShuttingDown() throws Exception {
         try {
             // ARRANGE
@@ -71,15 +72,16 @@ public class ShutdownHookTest {
             AppBootstrapLatches.appHasShutdown().await();
 
             // ASSERT
-            // since the load was interrupted, expecting the RefocusLoadProcessor to log a failure
-            verify(fixtures.systemStatus()).meter("Refocus", MeterType.LoadFailure);
+            // since the load scheduler was interrupted, expecting no interactions
+            verify(fixtures.systemStatus(), times(0)).meter("Refocus", MeterType.LoadSuccess);
+            verify(fixtures.systemStatus(), times(1)).meter("Refocus", MeterType.LoadFailure);
 
         } finally {
             AppBootstrapLatches.release();
         }
     }
 
-    @Test(timeOut = 5000L)
+    @Test(timeOut = 5_000L)
     public void testArgusNotQueriedIfShuttingDown() throws Exception {
         try {
             // ARRANGE
@@ -116,7 +118,7 @@ public class ShutdownHookTest {
     /**
      * RefocusExtractProcessor does not query the remote Argus endpoint if the app is shutting down
      */
-    @Test(timeOut = 5000L)
+    @Test(timeOut = 5_000L)
     public void testRefocusNotQueriedIfShuttingDown() throws Exception {
         try {
             // ARRANGE

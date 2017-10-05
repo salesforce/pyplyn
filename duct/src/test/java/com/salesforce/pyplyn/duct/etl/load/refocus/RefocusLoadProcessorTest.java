@@ -8,14 +8,15 @@
 
 package com.salesforce.pyplyn.duct.etl.load.refocus;
 
-import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapFixtures;
-import com.salesforce.pyplyn.duct.etl.configuration.ConfigurationUpdateManager;
-import com.salesforce.pyplyn.status.MeterType;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapFixtures;
+import com.salesforce.pyplyn.duct.etl.configuration.ConfigurationUpdateManager;
+import com.salesforce.pyplyn.status.MeterType;
 
 /**
  * Test class

@@ -8,13 +8,14 @@
 
 package com.salesforce.refocus;
 
+import java.util.List;
+
 import com.salesforce.refocus.model.*;
+
 import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Retrofit;
 import retrofit2.http.*;
-
-import java.util.List;
 
 /**
  * Refocus REST service class
@@ -75,6 +76,14 @@ public interface RefocusService {
     @PATCH("subjects/{key}")
     @Headers("Content-Type: application/json")
     Call<Subject> patchSubject(@Header(AUTHORIZATION) String authorization, @Path("key") String key, @Body Subject subject);
+
+    @PUT("subjects/{key}")
+    @Headers("Content-Type: application/json")
+    Call<Subject> putSubject(@Header(AUTHORIZATION) String authorization, @Path("key") String key, @Body Subject subject);
+
+    @DELETE("subjects/{key}")
+    @Headers("Content-Type: application/json")
+    Call<Subject> deleteSubject(@Header(AUTHORIZATION) String authorization, @Path("key") String key);
 
 
     /* Aspect operations */

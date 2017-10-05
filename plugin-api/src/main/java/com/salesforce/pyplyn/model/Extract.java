@@ -8,9 +8,9 @@
 
 package com.salesforce.pyplyn.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
 import java.io.Serializable;
+
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 /**
  * Extract data source interface
@@ -25,5 +25,5 @@ import java.io.Serializable;
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
  * @since 3.0
  */
-@JsonIgnoreProperties("format")
+@JsonTypeInfo(use=JsonTypeInfo.Id.NAME, include=JsonTypeInfo.As.PROPERTY, property="format")
 public interface Extract extends Serializable { }

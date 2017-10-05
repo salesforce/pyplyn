@@ -1,9 +1,9 @@
 package com.salesforce.refocus.model;
 
-import org.testng.annotations.Test;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+
+import org.testng.annotations.Test;
 
 /**
  * Test class

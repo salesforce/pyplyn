@@ -8,15 +8,7 @@
 
 package com.salesforce.pyplyn.duct.connector;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
-import com.salesforce.pyplyn.cache.CacheFactory;
-import com.salesforce.pyplyn.cache.Cacheable;
-import com.salesforce.pyplyn.cache.ConcurrentCacheMap;
-import com.salesforce.pyplyn.client.RemoteClient;
-import com.salesforce.pyplyn.configuration.Connector;
-import com.salesforce.pyplyn.configuration.ConnectorInterface;
-import com.salesforce.pyplyn.duct.app.BootstrapException;
+import static java.util.Objects.nonNull;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -26,7 +18,15 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static java.util.Objects.nonNull;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+import com.salesforce.pyplyn.cache.CacheFactory;
+import com.salesforce.pyplyn.cache.Cacheable;
+import com.salesforce.pyplyn.cache.ConcurrentCacheMap;
+import com.salesforce.pyplyn.client.RemoteClient;
+import com.salesforce.pyplyn.configuration.Connector;
+import com.salesforce.pyplyn.configuration.EndpointConnector;
+import com.salesforce.pyplyn.duct.app.BootstrapException;
 
 /**
  * Allows multiple {@link com.google.inject.Guice} modules to specify their own {@link Connector}s and collects
@@ -41,7 +41,7 @@ import static java.util.Objects.nonNull;
 @Singleton
 public class AppConnectors {
     public static final String DUPLICATE_CONNECTOR_ERROR = "Duplicate connector object (%s) not allowed, with id=\"%s\"!";
-    private final Map<String, ConnectorInterface> connectors;
+    private final Map<String, EndpointConnector> connectors;
     private final Map<String, ClientAndCache<? extends RemoteClient, ? extends Cacheable>> registeredClients;
     private final CacheFactory cacheFactory;
 
@@ -52,13 +52,13 @@ public class AppConnectors {
      * @throws BootstrapException if the same connectorId is specified in more than one connector list
      */
     @Inject
-    public AppConnectors(Set<List<ConnectorInterface>> allConnectors, CacheFactory cacheFactory) {
+    public AppConnectors(Set<List<EndpointConnector>> allConnectors, CacheFactory cacheFactory) {
         this.cacheFactory = cacheFactory;
         this.connectors = new HashMap<>();
 
         // iterate through all passed connectors and add them to our list of known connectors
-        for (List<ConnectorInterface> connectors : allConnectors) {
-            for (ConnectorInterface connector : connectors) {
+        for (List<EndpointConnector> connectors : allConnectors) {
+            for (EndpointConnector connector : connectors) {
                 // ensure uniqueness and throw exception if a duplicate connector is found
                 if (nonNull(this.connectors.putIfAbsent(connector.id(), connector))) {
                     throw new BootstrapException(String.format(DUPLICATE_CONNECTOR_ERROR,
@@ -73,7 +73,7 @@ public class AppConnectors {
     /**
      * @return the required connector for the specified <b>connectorId</b> or null if not found
      */
-    public ConnectorInterface findConnector(String connectorId) {
+    public EndpointConnector findConnector(String connectorId) {
         return connectors.get(connectorId);
     }
 
@@ -82,6 +82,7 @@ public class AppConnectors {
      *   or by constructing the required objects on demand
      *
      *   TODO: define an interface for this class in plugin-api
+     *   TODO: find a better way to achieve this (mapping of String ID + Target class, allowing any number of mappings for a specified identifier)
      */
     public <CLIENT extends RemoteClient, CACHE extends Cacheable> ClientAndCache<CLIENT, CACHE> retrieveOrBuildClient(final String connectorId,
                                                                                Class<CLIENT> clientClass,
@@ -90,7 +91,7 @@ public class AppConnectors {
         ClientAndCache<CLIENT, CACHE> clientAndCache = (ClientAndCache<CLIENT, CACHE>) registeredClients.computeIfAbsent(connectorId, key -> {
             try {
                 // init client
-                Constructor<CLIENT> constructor = clientClass.getConstructor(ConnectorInterface.class);
+                Constructor<CLIENT> constructor = clientClass.getConstructor(EndpointConnector.class);
                 CLIENT client = constructor.newInstance(findConnector(key));
 
                 // init cache

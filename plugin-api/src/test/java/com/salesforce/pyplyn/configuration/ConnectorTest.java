@@ -8,11 +8,11 @@
 
 package com.salesforce.pyplyn.configuration;
 
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 /**
  * Test class

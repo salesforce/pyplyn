@@ -8,15 +8,16 @@
 
 package com.salesforce.refocus.model;
 
+import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY;
+
+import java.io.Serializable;
+
+import org.immutables.value.Value;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.salesforce.pyplyn.annotations.PyplynImmutableStyle;
-import org.immutables.value.Value;
-
-import java.io.Serializable;
-
-import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY;
 
 /**
  * Link model

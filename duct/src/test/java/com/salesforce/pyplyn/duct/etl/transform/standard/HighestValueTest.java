@@ -8,18 +8,19 @@
 
 package com.salesforce.pyplyn.duct.etl.transform.standard;
 
-import com.salesforce.pyplyn.model.ImmutableTransmutation;
-import com.salesforce.pyplyn.model.Transmutation;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
 
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
+
+import com.salesforce.pyplyn.model.ImmutableTransmutation;
+import com.salesforce.pyplyn.model.Transmutation;
 
 /**
  * Test class

@@ -8,16 +8,9 @@
 
 package com.salesforce.pyplyn.duct.etl.transform.standard;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.google.common.collect.Iterables;
-import com.salesforce.pyplyn.annotations.PyplynImmutableStyle;
-import com.salesforce.pyplyn.model.ImmutableTransmutation;
-import com.salesforce.pyplyn.model.ThresholdType;
-import com.salesforce.pyplyn.model.Transform;
-import com.salesforce.pyplyn.model.Transmutation;
-import org.immutables.value.Value;
+import static com.salesforce.pyplyn.duct.etl.transform.standard.Threshold.changeValue;
+import static com.salesforce.pyplyn.model.StatusCode.*;
+import static com.salesforce.pyplyn.util.FormatUtils.formatNumber;
 
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
@@ -28,9 +21,17 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static com.salesforce.pyplyn.duct.etl.transform.standard.Threshold.changeValue;
-import static com.salesforce.pyplyn.model.StatusCode.*;
-import static com.salesforce.pyplyn.util.FormatUtils.formatNumber;
+import org.immutables.value.Value;
+
+import com.fasterxml.jackson.annotation.JsonTypeName;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.google.common.collect.Iterables;
+import com.salesforce.pyplyn.annotations.PyplynImmutableStyle;
+import com.salesforce.pyplyn.model.ImmutableTransmutation;
+import com.salesforce.pyplyn.model.ThresholdType;
+import com.salesforce.pyplyn.model.Transform;
+import com.salesforce.pyplyn.model.Transmutation;
 
 /**
  * Determines if the input time series data has matched the threshold
@@ -54,6 +55,7 @@ import static com.salesforce.pyplyn.util.FormatUtils.formatNumber;
 @PyplynImmutableStyle
 @JsonDeserialize(as = ImmutableThresholdMetForDuration.class)
 @JsonSerialize(as = ImmutableThresholdMetForDuration.class)
+@JsonTypeName("ThresholdMetForDuration")
 public abstract class ThresholdMetForDuration implements Transform {
     private static final long serialVersionUID = -4594665847342745577L;
     private static final String MESSAGE_TEMPLATE = "%s threshold hit by %s, with value=%s %s %.2f, duration longer than %s";
@@ -113,7 +115,7 @@ public abstract class ThresholdMetForDuration implements Transform {
 
             if (matchThreshold) {
                 if (pointTS.compareTo(criticalDurationTS) <= 0) {
-                    return Collections.singletonList(appendMessage(changeValue(result, ERR.value()), ERR.code(), threshold(), criticalDurationMillis()));
+                    return Collections.singletonList(appendMessage(changeValue(result, CRIT.value()), CRIT.code(), threshold(), criticalDurationMillis()));
 
                 } else if (pointTS.compareTo(warnDurationTS) <= 0) {
                     atWarningLevel = true;

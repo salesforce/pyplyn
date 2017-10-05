@@ -8,13 +8,15 @@
 
 package com.salesforce.pyplyn.duct.etl.extract.argus;
 
+import javax.annotation.Nullable;
+
+import org.immutables.value.Value;
+
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.salesforce.pyplyn.annotations.PyplynImmutableStyle;
 import com.salesforce.pyplyn.model.Extract;
-import org.immutables.value.Value;
-
-import javax.annotation.Nullable;
 
 /**
  * Argus datasource model
@@ -26,6 +28,7 @@ import javax.annotation.Nullable;
 @PyplynImmutableStyle
 @JsonDeserialize(as = ImmutableArgus.class)
 @JsonSerialize(as = ImmutableArgus.class)
+@JsonTypeName("Argus")
 public abstract class Argus implements Extract {
     private static final long serialVersionUID = 8271965988988568032L;
 

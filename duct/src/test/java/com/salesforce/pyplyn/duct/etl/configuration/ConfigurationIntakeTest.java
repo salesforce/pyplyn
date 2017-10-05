@@ -8,24 +8,25 @@
 
 package com.salesforce.pyplyn.duct.etl.configuration;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.salesforce.pyplyn.configuration.Configuration;
-import com.salesforce.pyplyn.duct.app.BootstrapException;
-import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapFixtures;
-import com.salesforce.pyplyn.util.SerializationHelper;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import static com.salesforce.pyplyn.duct.appconfig.AppConfigProviderTest.fixSerializationHelper;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.empty;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.testng.Assert.fail;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
-import static com.salesforce.pyplyn.duct.appconfig.AppConfigProviderTest.fixSerializationHelper;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
-import static org.testng.Assert.fail;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.salesforce.pyplyn.configuration.Configuration;
+import com.salesforce.pyplyn.duct.app.BootstrapException;
+import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapFixtures;
 
 /**
  * Test class

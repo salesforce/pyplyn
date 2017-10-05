@@ -8,24 +8,24 @@
 
 package com.salesforce.pyplyn.util;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
+
+import java.util.List;
+
+import org.testng.annotations.Test;
+
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.multibindings.Multibinder;
-import com.salesforce.pyplyn.configuration.Connector;
-import com.salesforce.pyplyn.configuration.ConnectorInterface;
+import com.salesforce.pyplyn.configuration.EndpointConnector;
 import com.salesforce.pyplyn.model.Extract;
 import com.salesforce.pyplyn.model.Load;
 import com.salesforce.pyplyn.model.Transform;
 import com.salesforce.pyplyn.processor.ExtractProcessor;
 import com.salesforce.pyplyn.processor.LoadProcessor;
 import com.salesforce.pyplyn.status.SystemStatusConsumer;
-import org.testng.annotations.Test;
-
-import java.util.List;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.nullValue;
 
 /**
  * Test class
@@ -60,7 +60,7 @@ public class MultibinderFactoryTest {
      * Module implementation that makes use of Guice's Binder to create all expected Multibinders
      */
     private static class Module extends AbstractModule {
-        Multibinder<List<ConnectorInterface>> appConnectors;
+        Multibinder<List<EndpointConnector>> appConnectors;
         Multibinder<Class<? extends Extract>> extractDatasources;
         Multibinder<ExtractProcessor<? extends Extract>> extractProcessors;
         Multibinder<Class<? extends Load>> loadDestinations;

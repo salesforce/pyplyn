@@ -8,13 +8,14 @@
 
 package com.salesforce.pyplyn.duct.systemstatus;
 
-import com.salesforce.pyplyn.status.StatusMessage;
-import com.salesforce.pyplyn.status.SystemStatusConsumer;
+import java.util.Arrays;
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-import java.util.List;
+import com.salesforce.pyplyn.status.StatusMessage;
+import com.salesforce.pyplyn.status.SystemStatusConsumer;
 
 /**
  * Simple implementation that outputs system status messages to console

@@ -8,6 +8,13 @@
 
 package com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test;
 
+import static com.salesforce.pyplyn.model.ThresholdType.GREATER_THAN;
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
+
+import java.util.List;
+
 import com.salesforce.pyplyn.configuration.Configuration;
 import com.salesforce.pyplyn.configuration.ImmutableConfiguration;
 import com.salesforce.pyplyn.duct.etl.extract.argus.ImmutableArgus;
@@ -15,15 +22,7 @@ import com.salesforce.pyplyn.duct.etl.extract.refocus.ImmutableRefocus;
 import com.salesforce.pyplyn.duct.etl.transform.standard.*;
 import com.salesforce.pyplyn.model.Extract;
 import com.salesforce.pyplyn.model.Load;
-import com.salesforce.pyplyn.model.ThresholdType;
 import com.salesforce.pyplyn.model.Transform;
-
-import java.util.List;
-
-import static com.salesforce.pyplyn.model.ThresholdType.GREATER_THAN;
-import static java.util.Arrays.asList;
-import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
 
 /**
  * Test helper that creates a full {@link com.salesforce.pyplyn.configuration.Configuration} object

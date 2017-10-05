@@ -8,6 +8,16 @@
 
 package com.salesforce.pyplyn.duct.systemstatus;
 
+import static com.codahale.metrics.MetricRegistry.name;
+import static com.salesforce.pyplyn.model.ThresholdType.GREATER_THAN;
+import static com.salesforce.pyplyn.model.ThresholdType.LESS_THAN;
+
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
@@ -15,17 +25,11 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.salesforce.pyplyn.duct.appconfig.AppConfig;
 import com.salesforce.pyplyn.model.StatusCode;
-import com.salesforce.pyplyn.status.*;
+import com.salesforce.pyplyn.status.MeterType;
+import com.salesforce.pyplyn.status.StatusMessage;
+import com.salesforce.pyplyn.status.SystemStatus;
+import com.salesforce.pyplyn.status.SystemStatusConsumer;
 import com.salesforce.pyplyn.util.FormatUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.*;
-import java.util.concurrent.TimeUnit;
-
-import static com.codahale.metrics.MetricRegistry.name;
-import static com.salesforce.pyplyn.model.ThresholdType.GREATER_THAN;
-import static com.salesforce.pyplyn.model.ThresholdType.LESS_THAN;
 
 /**
  * System status monitor
@@ -39,7 +43,7 @@ public class SystemStatusRunnable implements SystemStatus {
     private static final Logger logger = LoggerFactory.getLogger(SystemStatusRunnable.class);
 
     private static final String SYSTEM_STATUS = "System status";
-    private static final String METER_TEMPLATE = "%s %s=%s/s";
+    private static final String METER_TEMPLATE = "%s %s=%s/interval";
     private static final String TIMER_TEMPLATE = "p95(%s)=%s";
 
     private final Map<String, Double> thresholds;
@@ -53,9 +57,9 @@ public class SystemStatusRunnable implements SystemStatus {
      *   and if the thread is run, it will always report status OK.
      * <p/>
      * <p/>However, since the runnable is only scheduled in {@link com.salesforce.pyplyn.duct.app.AppBootstrap}
-     *   if {@link AppConfig.Alert#isEnabled()} is false, this should not happen
+     *   if {@link com.salesforce.pyplyn.duct.appconfig.AppConfig.Alert#isEnabled()} is false, this should not happen
      *
-     * @param appConfig {@link AppConfig} object, where the alert thresholds are retrieved from
+     * @param appConfig {@link com.salesforce.pyplyn.duct.appconfig.AppConfig} object, where the alert thresholds are retrieved from
      */
     @Inject
     public SystemStatusRunnable(AppConfig appConfig) {
@@ -107,8 +111,8 @@ public class SystemStatusRunnable implements SystemStatus {
             // removes the current meter, so that it is re-initialized
             registry.remove(meterName);
 
-            // define optionals for checking ERR/WARN
-            Optional<StatusMessage> errMessage = checkRateOfMeter(meterName, StatusCode.ERR, meterValue);
+            // define optionals for checking CRIT/WARN
+            Optional<StatusMessage> errMessage = checkRateOfMeter(meterName, StatusCode.CRIT, meterValue);
             Optional<StatusMessage> warnMessage = checkRateOfMeter(meterName, StatusCode.WARN, meterValue);
 
             // add any messages to the list
@@ -155,9 +159,9 @@ public class SystemStatusRunnable implements SystemStatus {
 
 
     /**
-     * Checks the specified value of a meter against its WARN/ERR thresholds defined in {@link AppConfig}
+     * Checks the specified value of a meter against its WARN/CRIT thresholds defined in {@link AppConfig}
      *
-     * @return WARN/ERR message or empty if not triggered
+     * @return WARN/CRIT message or empty if not triggered
      */
     private Optional<StatusMessage> checkRateOfMeter(String meterName, StatusCode level, double meterValue) {
         // get meter type or stop if not found

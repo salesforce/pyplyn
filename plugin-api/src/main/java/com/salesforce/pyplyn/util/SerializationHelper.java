@@ -8,12 +8,12 @@
 
 package com.salesforce.pyplyn.util;
 
+import static java.util.Objects.nonNull;
+
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-
-import static java.util.Objects.nonNull;
 
 /**
  * Provides a common contract used by classes that perform serialization/deserialization operations

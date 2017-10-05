@@ -8,15 +8,8 @@
 
 package com.salesforce.pyplyn.duct.app;
 
-import com.google.inject.Key;
-import com.salesforce.pyplyn.configuration.Configuration;
-import com.salesforce.pyplyn.duct.appconfig.AppConfig;
-import com.salesforce.pyplyn.duct.appconfig.ConfigParseException;
-import com.salesforce.pyplyn.duct.etl.configuration.ConfigurationUpdateManager;
-import com.salesforce.pyplyn.duct.etl.configuration.TaskManager;
-import com.salesforce.pyplyn.status.SystemStatus;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static com.salesforce.pyplyn.duct.appconfig.AppConfigFileLoader.loadFromCLI;
+import static java.util.Objects.nonNull;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -24,8 +17,16 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import static com.salesforce.pyplyn.duct.appconfig.AppConfigFileLoader.loadFromCLI;
-import static java.util.Objects.nonNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.inject.Key;
+import com.salesforce.pyplyn.configuration.Configuration;
+import com.salesforce.pyplyn.duct.appconfig.AppConfig;
+import com.salesforce.pyplyn.duct.appconfig.ConfigParseException;
+import com.salesforce.pyplyn.duct.etl.configuration.ConfigurationUpdateManager;
+import com.salesforce.pyplyn.duct.etl.configuration.TaskManager;
+import com.salesforce.pyplyn.status.SystemStatus;
 
 /**
  * Main entry point

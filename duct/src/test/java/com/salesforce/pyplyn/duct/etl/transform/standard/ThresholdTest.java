@@ -8,22 +8,23 @@
 
 package com.salesforce.pyplyn.duct.etl.transform.standard;
 
-import com.salesforce.pyplyn.model.ImmutableTransmutation;
-import com.salesforce.pyplyn.model.StatusCode;
-import com.salesforce.pyplyn.model.ThresholdType;
-import com.salesforce.pyplyn.model.Transmutation;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import static com.salesforce.pyplyn.model.StatusCode.*;
+import static com.salesforce.pyplyn.model.ThresholdType.LESS_THAN;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
 
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
 
-import static com.salesforce.pyplyn.model.StatusCode.*;
-import static com.salesforce.pyplyn.model.ThresholdType.LESS_THAN;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
+
+import com.salesforce.pyplyn.model.ImmutableTransmutation;
+import com.salesforce.pyplyn.model.StatusCode;
+import com.salesforce.pyplyn.model.ThresholdType;
+import com.salesforce.pyplyn.model.Transmutation;
 
 /**
  * Test class
@@ -63,7 +64,7 @@ public class ThresholdTest {
 
     @Test
     public void testLessThanValueIsCrit() throws Exception {
-        testThresholdAgainst(LESS_THAN, 10d, 10d, 10d, ERR);
+        testThresholdAgainst(LESS_THAN, 10d, 10d, 10d, CRIT);
     }
 
     @Test
@@ -83,7 +84,7 @@ public class ThresholdTest {
 
     @Test
     public void testGreaterThanValueIsCrit() throws Exception {
-        testThresholdAgainst(ThresholdType.GREATER_THAN, 10d, 10d, 10d, ERR);
+        testThresholdAgainst(ThresholdType.GREATER_THAN, 10d, 10d, 10d, CRIT);
     }
 
     @Test

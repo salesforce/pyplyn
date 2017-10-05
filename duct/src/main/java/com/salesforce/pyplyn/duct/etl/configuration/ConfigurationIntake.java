@@ -8,12 +8,8 @@
 
 package com.salesforce.pyplyn.duct.etl.configuration;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.inject.Inject;
-import com.salesforce.pyplyn.configuration.Configuration;
-import com.salesforce.pyplyn.duct.app.BootstrapException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static com.salesforce.pyplyn.util.SerializationHelper.loadResourceInsecure;
+import static java.util.Objects.isNull;
 
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
@@ -24,8 +20,13 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import static com.salesforce.pyplyn.util.SerializationHelper.loadResourceInsecure;
-import static java.util.Objects.isNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.inject.Inject;
+import com.salesforce.pyplyn.configuration.Configuration;
+import com.salesforce.pyplyn.duct.app.BootstrapException;
 
 /**
  * Parses configuration files

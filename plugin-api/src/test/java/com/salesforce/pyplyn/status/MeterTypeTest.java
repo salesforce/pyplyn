@@ -8,11 +8,12 @@
 
 package com.salesforce.pyplyn.status;
 
-import com.salesforce.pyplyn.model.ThresholdType;
-import org.testng.annotations.Test;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+
+import org.testng.annotations.Test;
+
+import com.salesforce.pyplyn.model.ThresholdType;
 
 /**
  * Test class

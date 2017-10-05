@@ -8,10 +8,10 @@
 
 package com.salesforce.pyplyn.status;
 
-import com.salesforce.pyplyn.model.ThresholdType;
-
 import static com.salesforce.pyplyn.model.ThresholdType.GREATER_THAN;
 import static com.salesforce.pyplyn.model.ThresholdType.LESS_THAN;
+
+import com.salesforce.pyplyn.model.ThresholdType;
 
 /**
  * Predefined alert meter types, defined on Metered processors ({@link com.salesforce.pyplyn.processor.AbstractMeteredExtractProcessor}

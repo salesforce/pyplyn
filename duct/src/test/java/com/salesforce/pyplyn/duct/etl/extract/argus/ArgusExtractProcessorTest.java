@@ -8,6 +8,22 @@
 
 package com.salesforce.pyplyn.duct.etl.extract.argus;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+
+import java.time.Instant;
+import java.util.Collections;
+import java.util.List;
+import java.util.TreeMap;
+
+import org.mockito.ArgumentCaptor;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
+
 import com.salesforce.argus.model.ImmutableMetricResponse;
 import com.salesforce.argus.model.MetricResponse;
 import com.salesforce.pyplyn.client.UnauthorizedException;
@@ -16,21 +32,6 @@ import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapLatches
 import com.salesforce.pyplyn.duct.etl.configuration.ConfigurationUpdateManager;
 import com.salesforce.pyplyn.model.Transmutation;
 import com.salesforce.pyplyn.status.MeterType;
-import org.mockito.ArgumentCaptor;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
-
-import java.time.Instant;
-import java.util.Collections;
-import java.util.List;
-import java.util.TreeMap;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 
 /**
  * Test class
@@ -85,7 +86,7 @@ public class ArgusExtractProcessorTest {
         fixtures.appConfigMocks()
                 .runOnce();
 
-        fixtures.oneArgusToRefocusConfigurationWithDefaultValueAndRepeatInterval(1.2d, 100)
+        fixtures.oneArgusToRefocusConfigurationWithDefaultValueAndRepeatInterval(1.2d, 100L)
                 .callRealArgusExtractProcessor()
                 .argusClientReturns(Collections.singletonList(response))
                 .initializeFixtures();
@@ -163,7 +164,7 @@ public class ArgusExtractProcessorTest {
         // bootstrap
         try {
             fixtures.enableLatches()
-                    .oneArgusToRefocusConfigurationWithCacheAndRepeatInterval(100)
+                    .oneArgusToRefocusConfigurationWithCache()
                     .realMetricResponseCache()
                     .argusClientReturns(Collections.singletonList(response))
                     .callRealArgusExtractProcessor()
@@ -187,6 +188,7 @@ public class ArgusExtractProcessorTest {
 
             // ASSERT
             verify(fixtures.systemStatus(), times(1)).meter("Argus", MeterType.ExtractSuccess);
+            verify(fixtures.systemStatus(), times(1)).meter("Argus", MeterType.ExtractNoDataReturned);
             verify(fixtures.metricResponseCache(), times(2)).isCached("argus-metric");
             verify(fixtures.metricResponseCache(), times(0)).cache(any(), anyLong());
 
@@ -226,7 +228,7 @@ public class ArgusExtractProcessorTest {
         fixtures.appConfigMocks()
                 .runOnce();
 
-        fixtures.oneArgusToRefocusConfigurationWithDefaultValueAndRepeatInterval(null, 100)
+        fixtures.oneArgusToRefocusConfigurationWithDefaultValueAndRepeatInterval(null, 100L)
                 .callRealArgusExtractProcessor()
                 .argusClientThrowsExceptionOnGetMetrics()
                 .initializeFixtures();
@@ -254,7 +256,7 @@ public class ArgusExtractProcessorTest {
         fixtures.appConfigMocks()
                 .runOnce();
 
-        fixtures.oneArgusToRefocusConfigurationWithDefaultValueAndRepeatInterval(null, 100)
+        fixtures.oneArgusToRefocusConfigurationWithDefaultValueAndRepeatInterval(null, 100L)
                 .callRealArgusExtractProcessor()
                 .argusClientReturns(response)
                 .initializeFixtures();

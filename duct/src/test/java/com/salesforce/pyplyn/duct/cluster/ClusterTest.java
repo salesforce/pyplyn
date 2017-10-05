@@ -8,22 +8,23 @@
 
 package com.salesforce.pyplyn.duct.cluster;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.Member;
-import com.salesforce.pyplyn.duct.app.ShutdownHook;
-import com.salesforce.pyplyn.duct.appconfig.AppConfig;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
-
-import java.util.Collections;
-
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.testng.Assert.fail;
+
+import java.util.Collections;
+
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
+
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.Member;
+import com.salesforce.pyplyn.duct.app.ShutdownHook;
+import com.salesforce.pyplyn.duct.appconfig.AppConfig;
 
 /**
  * Test class

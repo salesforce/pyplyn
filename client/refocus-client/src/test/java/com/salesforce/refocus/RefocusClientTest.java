@@ -8,18 +8,12 @@
 
 package com.salesforce.refocus;
 
-import com.salesforce.pyplyn.client.UnauthorizedException;
-import com.salesforce.pyplyn.configuration.Connector;
-import com.salesforce.refocus.model.*;
-import okhttp3.MediaType;
-import okhttp3.Request;
-import okhttp3.ResponseBody;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
-import retrofit2.Call;
-import retrofit2.Response;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.*;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -27,12 +21,20 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static org.hamcrest.MatcherAssert.*;
-import static org.hamcrest.Matchers.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
+
+import com.salesforce.pyplyn.client.UnauthorizedException;
+import com.salesforce.pyplyn.configuration.Connector;
+import com.salesforce.refocus.model.*;
+
+import okhttp3.MediaType;
+import okhttp3.Request;
+import okhttp3.ResponseBody;
+import retrofit2.Call;
+import retrofit2.Response;
 
 /**
  * Refocus outlet test class
@@ -399,7 +401,6 @@ public class RefocusClientTest {
         assertThat(subjects.get(0).isPublished(), is(true));
     }
 
-
     @Test
     public void getSubject() throws Exception {
         // ARRANGE
@@ -464,7 +465,6 @@ public class RefocusClientTest {
         assertThat(result, is(nullValue()));
     }
 
-
     @Test
     public void postSubject() throws Exception {
         // ARRANGE
@@ -509,6 +509,75 @@ public class RefocusClientTest {
         refocus.postSubject(null);
     }
 
+    @Test
+    public void putSubject() throws Exception {
+        // ARRANGE
+        Response<Subject> response = Response.success(subject);
+
+        @SuppressWarnings("unchecked")
+        Call<Subject> responseCall = mock(Call.class);
+        doReturn(response).when(responseCall).execute();
+        doReturn(request).when(responseCall).request();
+        doReturn(responseCall).when(svc).putSubject(any(), any(), any());
+
+        // ACT
+        Subject result = refocus.putSubject(subject);
+
+        // ASSERT
+        assertThat(result, is(not(nullValue())));
+        assertThat(result.name(), equalTo("name"));
+        assertThat(result.isPublished(), equalTo(true));
+    }
+
+    @Test
+    public void putSubjectFail() throws Exception {
+        ResponseBody errorBody = ResponseBody.create(MediaType.parse(""), "FAIL");
+        Response<Subject> response = Response.error(400, errorBody);
+
+        @SuppressWarnings("unchecked")
+        Call<Subject> responseCall = mock(Call.class);
+        doReturn(response).when(responseCall).execute();
+        doReturn(request).when(responseCall).request();
+        doReturn(responseCall).when(svc).putSubject(any(), any(), any());
+
+        // ACT
+        Subject result = refocus.putSubject(subject);
+
+        // ASSERT
+        assertThat(result, is(nullValue()));
+    }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void putSubjectFailNPE() throws Exception {
+        // ACT
+        refocus.putSubject(null);
+    }
+
+    @Test
+    public void deleteSubject() throws Exception {
+        // ARRANGE
+        Response<Subject> response = Response.success(subject);
+
+        @SuppressWarnings("unchecked")
+        Call<Subject> responseCall = mock(Call.class);
+        doReturn(response).when(responseCall).execute();
+        doReturn(request).when(responseCall).request();
+        doReturn(responseCall).when(svc).deleteSubject(any(), any());
+
+        // ACT
+        Subject result = refocus.deleteSubject("key");
+
+        // ASSERT
+        assertThat(result, is(not(nullValue())));
+        assertThat(result.name(), equalTo("name"));
+        assertThat(result.isPublished(), equalTo(true));
+    }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void deleteSubjectFailNPE() throws Exception {
+        // ACT
+        refocus.deleteSubject(null);
+    }
 
     @Test
     public void patchSubject() throws Exception {
@@ -528,7 +597,6 @@ public class RefocusClientTest {
         assertThat(result, is(not(nullValue())));
         assertThat(result.name(), equalTo("name"));
     }
-
 
     @Test
     public void patchSubjectFail() throws Exception {

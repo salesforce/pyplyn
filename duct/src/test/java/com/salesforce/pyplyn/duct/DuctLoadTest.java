@@ -8,6 +8,22 @@
 
 package com.salesforce.pyplyn.duct;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.spy;
+
+import java.time.ZonedDateTime;
+import java.util.Collections;
+import java.util.List;
+
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
+
 import com.salesforce.pyplyn.duct.app.ShutdownHook;
 import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapFixtures;
 import com.salesforce.pyplyn.duct.etl.load.refocus.ImmutableRefocus;
@@ -15,21 +31,6 @@ import com.salesforce.pyplyn.duct.etl.load.refocus.Refocus;
 import com.salesforce.pyplyn.duct.etl.load.refocus.RefocusLoadProcessor;
 import com.salesforce.pyplyn.model.ImmutableTransmutation;
 import com.salesforce.pyplyn.model.Transmutation;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
-
-import java.time.ZonedDateTime;
-import java.util.Collections;
-import java.util.List;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.spy;
 
 public class DuctLoadTest {
     private static final String ACTUAL_NAME = "TransformationName";

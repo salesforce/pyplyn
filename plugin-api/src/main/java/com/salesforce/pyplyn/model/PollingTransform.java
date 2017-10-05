@@ -1,29 +1,33 @@
 package com.salesforce.pyplyn.model;
 
-import io.reactivex.Flowable;
-import io.reactivex.Scheduler;
-import io.reactivex.functions.Function;
-import org.immutables.value.Value;
-import org.reactivestreams.Publisher;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static io.reactivex.Flowable.defer;
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
-import javax.annotation.Nullable;
 import java.io.Serializable;
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
-import static io.reactivex.Flowable.defer;
-import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
+import javax.annotation.Nullable;
+
+import org.immutables.value.Value;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import io.reactivex.Flowable;
+import io.reactivex.Scheduler;
 
 /**
  * {@link Transform} implementation that can poll an endpoint until it retrieves the results or it times out
  * <p/>
  * <p/><b>Since the {@link Transform} interface implements {@link Serializable}, all subclasses should define
- * <code>serialVersionUID</code>!</b>
+ * <code>serialVersionUID</code>!</b>. They should also specify the implementation's name using this Jackson annotation
+ * <code>@JsonTypeName("NameUsedToIdentifyTheTransform")</code>
  * <p/>
  * <p/>Polling will take place as follows:
  * <p/>- first attempt will take place after the initialDelay has passed
@@ -120,6 +124,11 @@ public abstract class PollingTransform<T> implements Transform {
      */
     @Override
     public Flowable<List<List<Transmutation>>> applyAsync(List<List<Transmutation>> input, Scheduler scheduler) {
+        // determine if the implementing class should run
+        if (skipTransform(input)) {
+            return Flowable.just(input);
+        }
+
         // remove items that should not be processed
         List<List<Transmutation>> toProcess = filter(input);
         if (isNull(toProcess)) {
@@ -154,6 +163,8 @@ public abstract class PollingTransform<T> implements Transform {
 
     /**
      * Filters out data points that should not be processed
+     *
+     * TODO: remove filter, replace with {@link PollingTransform#skipTransform(List)}
      */
     public List<List<Transmutation>> filter(List<List<Transmutation>> input) {
         // all values can be passed if type or threshold are not specified

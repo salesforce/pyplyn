@@ -8,19 +8,21 @@
 
 package com.salesforce.argus.model;
 
+import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY;
+import static com.fasterxml.jackson.annotation.JsonProperty.Access.WRITE_ONLY;
+
+import java.util.List;
+
+import javax.annotation.Nullable;
+
+import org.immutables.value.Value;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.salesforce.pyplyn.annotations.PyplynImmutableStyle;
-import org.immutables.value.Value;
-
-import javax.annotation.Nullable;
-import java.util.List;
-
-import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY;
-import static com.fasterxml.jackson.annotation.JsonProperty.Access.WRITE_ONLY;
 
 /**
  * Argus alert object model

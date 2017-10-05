@@ -19,9 +19,16 @@
     <artifactId>refocus-client</artifactId>
 
     <dependencies>
+        <!-- plugin api -->
         <dependency>
             <groupId>com.salesforce.pyplyn</groupId>
             <artifactId>plugin-api</artifactId>
+        </dependency>
+
+        <!-- Retrofit mocks -->
+        <dependency>
+            <groupId>com.squareup.retrofit2</groupId>
+            <artifactId>retrofit-mock</artifactId>
         </dependency>
     </dependencies>
 </project>

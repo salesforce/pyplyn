@@ -8,7 +8,9 @@
 
 package com.salesforce.pyplyn.util;
 
-import org.testng.annotations.Test;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
+import static org.testng.AssertJUnit.fail;
 
 import java.text.ParseException;
 import java.time.ZonedDateTime;
@@ -16,9 +18,7 @@ import java.time.format.DateTimeParseException;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
-import static org.testng.AssertJUnit.fail;
+import org.testng.annotations.Test;
 
 /**
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;

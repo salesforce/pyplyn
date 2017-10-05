@@ -8,14 +8,13 @@
 
 package com.salesforce.pyplyn.duct.app;
 
-import com.salesforce.argus.model.ImmutableMetricResponse;
-import com.salesforce.argus.model.MetricResponse;
-import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapFixtures;
-import com.salesforce.pyplyn.duct.etl.configuration.ConfigurationUpdateManager;
-import com.salesforce.pyplyn.model.*;
-import org.mockito.ArgumentCaptor;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import static com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.ConfigurationsTestHelper.createThresholdTransforms;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
+import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
 
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -27,14 +26,15 @@ import java.util.TreeMap;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.salesforce.pyplyn.duct.app.MetricDuctTest.TestPollingTransform.verifyLoggedException;
-import static com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.ConfigurationsTestHelper.createThresholdTransforms;
-import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.*;
+import org.mockito.ArgumentCaptor;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
+
+import com.salesforce.argus.model.ImmutableMetricResponse;
+import com.salesforce.argus.model.MetricResponse;
+import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapFixtures;
+import com.salesforce.pyplyn.duct.etl.configuration.ConfigurationUpdateManager;
+import com.salesforce.pyplyn.model.*;
 
 /**
  * Test class
@@ -76,7 +76,7 @@ public class MetricDuctTest {
                 .runOnce();
 
         fixtures.returnTransformationResultFromAllExtractProcessors(Arrays.asList(series1, series2))
-                .argusToRefocusConfigurationWithTransformsAndRepeatInterval(transforms, 100)
+                .argusToRefocusConfigurationWithTransformsAndRepeatInterval(transforms, 100L)
                 .initializeFixtures();
 
         // init app
@@ -124,11 +124,11 @@ public class MetricDuctTest {
                 .runOnce();
 
         // init the polling transform and have it respond after the third try
-        TestPollingTransform testedPollingTransform = spy(new TestPollingTransform(numberOfRetries, 50, 10000, null, null));
+        TestPollingTransform testedPollingTransform = spy(new TestPollingTransform(numberOfRetries, 50, 10_000L, null, null));
 
         fixtures.argusClientReturns(singletonList(response))
                 .callRealArgusExtractProcessor()
-                .argusToRefocusConfigurationWithTransformsAndRepeatInterval(singletonList(testedPollingTransform), 1000)
+                .argusToRefocusConfigurationWithTransformsAndRepeatInterval(singletonList(testedPollingTransform), 1_000L)
                 .initializeFixtures();
 
         // init app
@@ -155,7 +155,7 @@ public class MetricDuctTest {
 
         // determine the number of retries
         final int numberOfRetries = 5;
-        final long timeoutMs = 50;
+        final long timeoutMs = 50L;
 
         // only run once
         fixtures.appConfigMocks()
@@ -166,7 +166,7 @@ public class MetricDuctTest {
 
         fixtures.argusClientReturns(singletonList(response))
                 .callRealArgusExtractProcessor()
-                .argusToRefocusConfigurationWithTransformsAndRepeatInterval(singletonList(testedPollingTransform), 1000)
+                .argusToRefocusConfigurationWithTransformsAndRepeatInterval(singletonList(testedPollingTransform), 1_000L)
                 .initializeFixtures();
 
         // init app
@@ -183,7 +183,8 @@ public class MetricDuctTest {
         // ASSERT
         verify(testedPollingTransform, times(1)).sendRequest(any());
         verify(testedPollingTransform, atLeast(0)).retrieveResult(any());
-        verifyLoggedException(testedPollingTransform, TimeoutException.class);
+        TestPollingTransform.verifyLoggedException(testedPollingTransform, TimeoutException.class);
+
 
         // nothing to load, since the timeout should cause an empty response
         verify(fixtures.refocusLoadProcessor(), times(0)).execute(any(), any());
@@ -201,11 +202,11 @@ public class MetricDuctTest {
                 .runOnce();
 
         // ensure the transform times out by setting initialDelay = timeout
-        TestPollingTransform testedPollingTransform = spy(new TestPollingTransform(numberOfRetries, 0, 5000, null, null));
+        TestPollingTransform testedPollingTransform = spy(new TestPollingTransform(numberOfRetries, 0, 5_000L, null, null));
 
         fixtures.argusClientReturns(inputMetrics)
                 .callRealArgusExtractProcessor()
-                .argusToRefocusConfigurationWithTransformsAndRepeatInterval(singletonList(testedPollingTransform), 1000)
+                .argusToRefocusConfigurationWithTransformsAndRepeatInterval(singletonList(testedPollingTransform), 1_000L)
                 .initializeFixtures();
 
         // init app
@@ -301,7 +302,7 @@ public class MetricDuctTest {
             return this.request;
         }
 
-        static void verifyLoggedException(TestPollingTransform pt, Class<? extends Throwable> t) {
+        private static void verifyLoggedException(TestPollingTransform pt, Class<? extends Throwable> t) {
             verify(pt, times(1)).logAsyncError(any(t));
         }
     }

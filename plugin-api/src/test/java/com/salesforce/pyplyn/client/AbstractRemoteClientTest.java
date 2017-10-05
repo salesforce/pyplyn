@@ -8,27 +8,34 @@
 
 package com.salesforce.pyplyn.client;
 
-import com.salesforce.pyplyn.configuration.Connector;
-import com.salesforce.pyplyn.configuration.ImmutableConnector;
-import okhttp3.Headers;
-import okhttp3.Request;
-import okhttp3.ResponseBody;
-import okio.BufferedSource;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
-import retrofit2.Call;
-import retrofit2.Response;
-
-import java.io.IOException;
-import java.net.ConnectException;
-import java.util.Collections;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.*;
 import static org.testng.Assert.fail;
+
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.ConnectException;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.KeyStore;
+import java.util.Collections;
+
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
+
+import com.salesforce.pyplyn.configuration.Connector;
+import com.salesforce.pyplyn.configuration.ImmutableConnector;
+
+import okhttp3.Headers;
+import okhttp3.Request;
+import okhttp3.ResponseBody;
+import okio.BufferedSource;
+import retrofit2.Call;
+import retrofit2.Response;
 
 /**
  * Test class
@@ -166,9 +173,9 @@ public class AbstractRemoteClientTest {
     public void testClientWithProxy() throws Exception {
         // ARRANGE
         connector = ImmutableConnector.builder().from(connector)
-            .proxyHost("127.0.0.1")
-            .proxyPort(8901)
-            .build();
+                .proxyHost("127.0.0.1")
+                .proxyPort(8901)
+                .build();
 
         // ACT
         client = new AbstractRemoteClientImpl(connector, AbstractRemoteClientImpl.RetroService.class);
@@ -182,6 +189,54 @@ public class AbstractRemoteClientTest {
             // ASSERT
             assertThat("Service was correctly initialized", client.svc(), notNullValue());
             assertThat("Attempting to execute the call, should result in a proxy connect failure", e.getMessage(), containsString("127.0.0.1:8901"));
+        }
+    }
+
+    @Test
+    public void testClientWithMutualAuthentication() throws Exception {
+        Path tempFile = Files.createTempFile("keystore", ".jks");
+        try {
+            // ARRANGE
+            final String keystorePassword = "password";
+
+            connector = ImmutableConnector.builder().from(connector)
+                    .keystorePath(tempFile.toString())
+                    .keystorePassword(keystorePassword.getBytes(Charset.defaultCharset()))
+                    .build();
+
+            // create a keystore
+            KeyStore keystore = KeyStore.getInstance(KeyStore.getDefaultType());
+            keystore.load(null, keystorePassword.toCharArray());
+
+            // export the keystore to the temp file
+            OutputStream os = Files.newOutputStream(tempFile);
+            keystore.store(os, keystorePassword.toCharArray());
+            os.close();
+
+            // ACT
+            client = new AbstractRemoteClientImpl(connector, AbstractRemoteClientImpl.RetroService.class);
+
+        } finally {
+            Files.delete(tempFile);
+        }
+    }
+
+    @Test
+    public void testCannotInitializeClientWithInvalidTruststore() throws Exception {
+        try {
+            // ARRANGE
+            connector = ImmutableConnector.builder().from(connector)
+                    .keystorePath("/invalid/path")
+                    .keystorePassword("password".getBytes(Charset.defaultCharset()))
+                    .build();
+
+            // ACT
+            client = new AbstractRemoteClientImpl(connector, AbstractRemoteClientImpl.RetroService.class);
+            fail("Expected initialization to fail!");
+
+        } catch (RuntimeException e) {
+            assertThat(e.getMessage(), containsString("Unexpected exception configuring mutual authentication"));
+            assertThat(e.getMessage(), containsString(connector.id()));
         }
     }
 

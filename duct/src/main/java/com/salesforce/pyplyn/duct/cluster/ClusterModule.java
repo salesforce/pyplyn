@@ -1,12 +1,12 @@
 package com.salesforce.pyplyn.duct.cluster;
 
+import java.io.FileNotFoundException;
+
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.salesforce.pyplyn.duct.app.ShutdownHook;
 import com.salesforce.pyplyn.duct.appconfig.AppConfig;
-
-import java.io.FileNotFoundException;
 
 /**
  * Configures the Hazelcast cluster

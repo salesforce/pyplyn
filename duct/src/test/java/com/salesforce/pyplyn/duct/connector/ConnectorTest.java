@@ -8,28 +8,29 @@
 
 package com.salesforce.pyplyn.duct.connector;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.inject.Injector;
-import com.salesforce.pyplyn.cache.CacheFactory;
-import com.salesforce.pyplyn.configuration.Connector;
-import com.salesforce.pyplyn.configuration.ConnectorInterface;
-import com.salesforce.pyplyn.configuration.ImmutableConnector;
-import com.salesforce.pyplyn.duct.app.BootstrapException;
-import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapFixtures;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import static com.salesforce.pyplyn.duct.connector.AppConnectors.DUPLICATE_CONNECTOR_ERROR;
+import static com.salesforce.pyplyn.util.SerializationHelper.loadResourceInsecure;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
+import static org.mockito.Mockito.mock;
+import static org.testng.Assert.fail;
 
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static com.salesforce.pyplyn.duct.connector.AppConnectors.DUPLICATE_CONNECTOR_ERROR;
-import static com.salesforce.pyplyn.util.SerializationHelper.loadResourceInsecure;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
-import static org.mockito.Mockito.*;
-import static org.testng.Assert.fail;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.inject.Injector;
+import com.salesforce.pyplyn.cache.CacheFactory;
+import com.salesforce.pyplyn.configuration.Connector;
+import com.salesforce.pyplyn.configuration.EndpointConnector;
+import com.salesforce.pyplyn.configuration.ImmutableConnector;
+import com.salesforce.pyplyn.duct.app.BootstrapException;
+import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapFixtures;
 
 /**
  * Test class
@@ -76,7 +77,7 @@ public class ConnectorTest {
         // ACT
         // deserialize connectors into expected type, then add to a set
         Connector[] connectors = mapper.readValue(loadResourceInsecure(DUPLICATE_CONNECTORS), Connector[].class);
-        Set<List<ConnectorInterface>> connectorSet = createConnectorSet(connectors);
+        Set<List<EndpointConnector>> connectorSet = createConnectorSet(connectors);
 
         try {
             new AppConnectors(connectorSet, mock(CacheFactory.class));
@@ -98,8 +99,8 @@ public class ConnectorTest {
 
         // ACT
         // deserialize connectors into expected type, then add to a set
-        ConnectorInterface[] connectors = mapper.readValue(loadResourceInsecure(ONE_CONNECTOR), Connector[].class);
-        Set<List<ConnectorInterface>> connectorSet = createConnectorSet(connectors);
+        EndpointConnector[] connectors = mapper.readValue(loadResourceInsecure(ONE_CONNECTOR), Connector[].class);
+        Set<List<EndpointConnector>> connectorSet = createConnectorSet(connectors);
 
         // initialize the AppConnectors object
         AppConnectors appConnectors = new AppConnectors(connectorSet, mock(CacheFactory.class));
@@ -113,7 +114,7 @@ public class ConnectorTest {
     /**
      * Asserts that we can expect at least one valid connector in the array
      */
-    private static void assertConnectorsWereDeserialized(ConnectorInterface[] connectors) {
+    private static void assertConnectorsWereDeserialized(EndpointConnector[] connectors) {
         assertThat(connectors, notNullValue());
         assertThat(connectors.length, greaterThan(0));
     }
@@ -121,8 +122,8 @@ public class ConnectorTest {
     /**
      * Creates a connector set that can be used to initialize an {@link AppConnectors} object
      */
-    public static Set<List<ConnectorInterface>> createConnectorSet(ConnectorInterface[] connectors) {
-        Set<List<ConnectorInterface>> connectorSet = new HashSet<>();
+    public static Set<List<EndpointConnector>> createConnectorSet(EndpointConnector[] connectors) {
+        Set<List<EndpointConnector>> connectorSet = new HashSet<>();
         connectorSet.add(Arrays.asList(connectors));
         return connectorSet;
     }

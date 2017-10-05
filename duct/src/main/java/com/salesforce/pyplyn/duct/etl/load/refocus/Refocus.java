@@ -8,17 +8,18 @@
 
 package com.salesforce.pyplyn.duct.etl.load.refocus;
 
+import java.util.List;
+
+import javax.annotation.Nullable;
+
+import org.immutables.value.Value;
+
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.salesforce.pyplyn.annotations.PyplynImmutableStyle;
 import com.salesforce.pyplyn.model.Load;
-import com.salesforce.pyplyn.model.Transmutation;
 import com.salesforce.refocus.model.Link;
-import com.salesforce.refocus.model.Sample;
-import org.immutables.value.Value;
-
-import javax.annotation.Nullable;
-import java.util.List;
 
 /**
  * Refocus load destination model
@@ -30,6 +31,7 @@ import java.util.List;
 @PyplynImmutableStyle
 @JsonDeserialize(as = ImmutableRefocus.class)
 @JsonSerialize(as = ImmutableRefocus.class)
+@JsonTypeName("Refocus")
 public abstract class Refocus implements Load {
     private static final long serialVersionUID = 7327981995594592996L;
 
@@ -49,19 +51,19 @@ public abstract class Refocus implements Load {
     public abstract String aspect();
 
     /**
-     * Message code to publish by default, if {@link Transmutation#metadata()} does not contain one
+     * Message code to publish by default, if {@link com.salesforce.pyplyn.model.Transmutation#metadata()} does not contain one
      */
     @Nullable
     public abstract String defaultMessageCode();
 
     /**
-     * Message body to publish by default, if {@link Transmutation#metadata()} does not contain any messages
+     * Message body to publish by default, if {@link com.salesforce.pyplyn.model.Transmutation#metadata()} does not contain any messages
      */
     @Nullable
     public abstract String defaultMessageBody();
 
     /**
-     * List of related links to associate to the published {@link Sample}
+     * List of related links to associate to the published {@link com.salesforce.refocus.model.Sample}
      */
     public abstract List<Link> relatedLinks();
 

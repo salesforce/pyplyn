@@ -8,20 +8,23 @@
 
 package com.salesforce.refocus.model;
 
+import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY;
+import static com.fasterxml.jackson.annotation.JsonProperty.Access.WRITE_ONLY;
+
+import java.util.List;
+import java.util.Objects;
+
+import javax.annotation.Nullable;
+
+import org.immutables.value.Value;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.salesforce.pyplyn.annotations.PyplynImmutableStyle;
-import org.immutables.value.Value;
-
-import javax.annotation.Nullable;
-import java.util.List;
-import java.util.Objects;
-
-import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY;
-import static com.fasterxml.jackson.annotation.JsonProperty.Access.WRITE_ONLY;
+import com.salesforce.pyplyn.util.RawJsonCollectionDeserializer;
 
 /**
  * Subject model
@@ -61,11 +64,13 @@ public abstract class Subject {
     @JsonProperty(access = WRITE_ONLY)
     public abstract List<Subject> children();
 
+    @JsonDeserialize(using = RawJsonCollectionDeserializer.class)
     public abstract List<String> tags();
 
     @JsonProperty(access = WRITE_ONLY)
     public abstract List<Sample> samples();
 
+    @JsonDeserialize(using = RawJsonCollectionDeserializer.class)
     public abstract List<Link> relatedLinks();
 
     @Override

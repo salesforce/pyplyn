@@ -7,6 +7,21 @@
  */
 package com.salesforce.pyplyn.duct.etl.extract.argus;
 
+import static com.salesforce.pyplyn.util.FormatUtils.*;
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+
+import java.text.ParseException;
+import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeParseException;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.codahale.metrics.Timer;
 import com.google.common.collect.Iterables;
 import com.google.inject.Inject;
@@ -20,20 +35,6 @@ import com.salesforce.pyplyn.duct.connector.AppConnectors;
 import com.salesforce.pyplyn.model.ImmutableTransmutation;
 import com.salesforce.pyplyn.model.Transmutation;
 import com.salesforce.pyplyn.processor.AbstractMeteredExtractProcessor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.text.ParseException;
-import java.time.Instant;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeParseException;
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static com.salesforce.pyplyn.util.FormatUtils.*;
-import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
 
 /**
  * Extracts data from Argus endpoints

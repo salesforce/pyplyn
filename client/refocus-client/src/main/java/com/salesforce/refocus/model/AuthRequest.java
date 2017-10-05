@@ -8,16 +8,17 @@
 
 package com.salesforce.refocus.model;
 
+import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY;
+
+import javax.annotation.Nullable;
+
+import org.immutables.value.Value;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.salesforce.pyplyn.annotations.PyplynImmutableStyle;
 import com.salesforce.pyplyn.util.SensitiveByteArraySerializer;
-import org.immutables.value.Value;
-
-import javax.annotation.Nullable;
-
-import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY;
 
 /**
  * Auth request model

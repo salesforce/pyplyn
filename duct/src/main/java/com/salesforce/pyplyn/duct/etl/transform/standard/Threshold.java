@@ -8,20 +8,23 @@
 
 package com.salesforce.pyplyn.duct.etl.transform.standard;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.salesforce.pyplyn.annotations.PyplynImmutableStyle;
-import com.salesforce.pyplyn.model.*;
-import org.immutables.value.Value;
-
-import javax.annotation.Nullable;
-import java.util.List;
-import java.util.stream.Collectors;
-
 import static com.salesforce.pyplyn.model.StatusCode.*;
 import static com.salesforce.pyplyn.util.FormatUtils.formatNumber;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+import javax.annotation.Nullable;
+
+import org.immutables.value.Value;
+
+import com.fasterxml.jackson.annotation.JsonTypeName;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.salesforce.pyplyn.annotations.PyplynImmutableStyle;
+import com.salesforce.pyplyn.model.*;
 
 /**
  * Applies the specified thresholds on the {@link Transmutation}'s value, and returns
@@ -29,7 +32,7 @@ import static java.util.Objects.nonNull;
  * <p/>- 0=OK
  * <p/>- 1=INFO
  * <p/>- 2=WARN
- * <p/>- 3=ERR (critical)
+ * <p/>- 3=CRIT (critical)
  * <p/>
  * <p/>Note: values are evaluated from most to least critical and the first match will be returned
  *   (in other words, the comparisons are always evaluated with "greater or lower than or equal to")
@@ -45,6 +48,7 @@ import static java.util.Objects.nonNull;
 @PyplynImmutableStyle
 @JsonDeserialize(as = ImmutableThreshold.class)
 @JsonSerialize(as = ImmutableThreshold.class)
+@JsonTypeName("Threshold")
 public abstract class Threshold implements Transform {
     private static final long serialVersionUID = 1883668176362666986L;
     private static final String MESSAGE_TEMPLATE = "%s threshold hit by %s, with value=%s %s %.2f";
@@ -118,7 +122,7 @@ public abstract class Threshold implements Transform {
         //   if all thresholds are not specified, the result will be transformed to OK
         Number value = result.value();
         if (type().matches(value, criticalThreshold())) {
-            return appendMessage(changeValue(result, ERR.value()), ERR.code(), criticalThreshold());
+            return appendMessage(changeValue(result, CRIT.value()), CRIT.code(), criticalThreshold());
 
         } else if (type().matches(value, warningThreshold())) {
             return appendMessage(changeValue(result, WARN.value()), WARN.code(), warningThreshold());

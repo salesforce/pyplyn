@@ -8,12 +8,13 @@
 
 package com.salesforce.pyplyn.processor;
 
-import com.salesforce.pyplyn.model.Load;
-import com.salesforce.pyplyn.model.Transmutation;
-import io.reactivex.Flowable;
-
 import java.util.Collections;
 import java.util.List;
+
+import com.salesforce.pyplyn.model.Load;
+import com.salesforce.pyplyn.model.Transmutation;
+
+import io.reactivex.Flowable;
 
 /**
  * Load processor interface
@@ -33,6 +34,7 @@ public interface LoadProcessor<T extends Load> extends Filterable<T, Load> {
      * @param data dataset that should be processed
      * @param destinations where the data should be loaded to
      */
+    // TODO: change return type to List<LoadResponse> and offer additional details regarding what succeeded/failed
     List<Boolean> process(List<Transmutation> data, List<T> destinations);
 
     /**

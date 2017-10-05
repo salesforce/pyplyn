@@ -8,6 +8,15 @@
 
 package com.salesforce.pyplyn.duct.etl.transform.standard;
 
+import static com.salesforce.pyplyn.util.FormatUtils.formatNumber;
+
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+import org.immutables.value.Value;
+
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.collect.Iterables;
@@ -15,13 +24,6 @@ import com.salesforce.pyplyn.annotations.PyplynImmutableStyle;
 import com.salesforce.pyplyn.model.ImmutableTransmutation;
 import com.salesforce.pyplyn.model.Transform;
 import com.salesforce.pyplyn.model.Transmutation;
-import org.immutables.value.Value;
-
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
-
-import static com.salesforce.pyplyn.util.FormatUtils.formatNumber;
 
 /**
  * Tags the result stage with each input's name and value
@@ -35,6 +37,7 @@ import static com.salesforce.pyplyn.util.FormatUtils.formatNumber;
 @PyplynImmutableStyle
 @JsonDeserialize(as = ImmutableSaveMetricMetadata.class)
 @JsonSerialize(as = ImmutableSaveMetricMetadata.class)
+@JsonTypeName("SaveMetricMetadata")
 public abstract class SaveMetricMetadata implements Transform {
     private static final long serialVersionUID = 2589981196065459798L;
 

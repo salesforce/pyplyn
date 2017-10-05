@@ -1,39 +1,39 @@
 {
   "global": {
-    "configurationsPath": "/path/to/configurations/dir",
-    "connectorsPath": "/path/to/connectors.json",
-    "minRepeatIntervalMillis": 60000,
+    "configurationsPath": "./configurations",
+    "connectorsPath": "./config/connectors.json",
+    "runOnce": false,
     "updateConfigurationIntervalMillis": 300000
+  },
+
+  "alert": {
+    "enabled": false,
+    "checkIntervalMillis": 60000,
+    "thresholds": {
+      "RefocusExtractSuccessWARN": 50,
+      "RefocusExtractSuccessCRIT": 25,
+      "RefocusExtractFailureWARN": 10,
+      "RefocusExtractFailureCRIT": 20,
+      "RefocusExtractNoDataReturnedWARN": 25,
+      "RefocusExtractNoDataReturnedCRIT": 50,
+      "RefocusAuthenticationFailureWARN": 5,
+      "RefocusAuthenticationFailureCRIT": 10,
+      "ArgusExtractSuccessWARN": 200,
+      "ArgusExtractSuccessCRIT": 100,
+      "ArgusExtractFailureWARN": 10,
+      "ArgusExtractFailureCRIT": 20,
+      "ArgusExtractNoDataReturnedWARN": 25,
+      "ArgusExtractNoDataReturnedCRIT": 50,
+      "ArgusAuthenticationFailureWARN": 1,
+      "ArgusAuthenticationFailureCRIT": 2,
+      "RefocusLoadFailureWARN": 10,
+      "RefocusLoadFailureCRIT": 20,
+      "ConfigurationUpdateFailureCRIT": 1
+    }
   },
 
   "hazelcast": {
     "enabled": false,
     "config": "/hazelcast.xml"
-  },
-
-  "alert": {
-    "enabled": true,
-    "checkIntervalMillis": 60000,
-    "thresholds": {
-      "RefocusExtractSuccessWARN": 0.5,
-      "RefocusExtractSuccessERR": 0.1,
-      "RefocusExtractFailureWARN": 5,
-      "RefocusExtractFailureERR": 10,
-      "RefocusExtractNoDataReturnedWARN": 30,
-      "RefocusExtractNoDataReturnedERR": 50,
-      "RefocusAuthenticationFailureWARN": 1,
-      "RefocusAuthenticationFailureERR": 2,
-      "ArgusExtractSuccessWARN": 14,
-      "ArgusExtractSuccessERR": 3,
-      "ArgusExtractFailureWARN": 5,
-      "ArgusExtractFailureERR": 10,
-      "ArgusExtractNoDataReturnedWARN": 30,
-      "ArgusExtractNoDataReturnedERR": 50,
-      "ArgusAuthenticationFailureWARN": 1,
-      "ArgusAuthenticationFailureERR": 2,
-      "RefocusLoadFailureWARN": 5,
-      "RefocusLoadFailureERR": 10,
-      "ConfigurationUpdateFailureERR": 1
-    }
   }
 }

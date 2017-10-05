@@ -8,16 +8,13 @@
 
 package com.salesforce.argus.model;
 
-import org.testng.annotations.Test;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
 
 import java.time.Instant;
-import java.util.Collections;
 import java.util.TreeMap;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.not;
+import org.testng.annotations.Test;
 
 /**
  * Test class

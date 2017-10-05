@@ -10,14 +10,15 @@ package com.salesforce.pyplyn.duct.appconfig;
 
 import java.util.Map;
 
+import javax.annotation.Nullable;
+
+import org.immutables.value.Value;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.salesforce.pyplyn.annotations.PyplynImmutableStyle;
-import org.immutables.value.Value;
-
-import javax.annotation.Nullable;
 
 
 /**
@@ -43,10 +44,10 @@ public abstract class AppConfig {
     public abstract Global global();
 
     @Nullable
-    public abstract Hazelcast hazelcast();
+    public abstract Alert alert();
 
     @Nullable
-    public abstract Alert alert();
+    public abstract Hazelcast hazelcast();
 
 
     @Value.Immutable
@@ -58,10 +59,17 @@ public abstract class AppConfig {
 
         public abstract String connectorsPath();
 
+        public abstract Long updateConfigurationIntervalMillis();
+
+        @Value.Default
+        public int ioPoolsThreadSize() {
+            return 100;
+        }
+
         /**
          * This parameter will be removed in future versions
          *
-         * @see {@link Global#runOnce}
+         * @see Global#runOnce
          * @deprecated
          */
         @Deprecated
@@ -73,13 +81,6 @@ public abstract class AppConfig {
         @Value.Default
         public boolean runOnce() {
             return minRepeatIntervalMillis() <= 0;
-        }
-
-        public abstract Long updateConfigurationIntervalMillis();
-
-        @Value.Default
-        public int ioPoolsThreadSize() {
-            return 200;
         }
     }
 
@@ -102,16 +103,16 @@ public abstract class AppConfig {
     @JsonDeserialize(as = ImmutableAppConfig.Alert.class)
     @JsonSerialize(as = ImmutableAppConfig.Alert.class)
     public static abstract class Alert {
+        @JsonProperty
+        @Value.Default
+        public long checkIntervalMillis() {
+            return 300_000L;
+        }
+
         @Value.Default
         @JsonProperty("enabled")
         public boolean isEnabled() {
             return false;
-        }
-
-        @JsonProperty(defaultValue = "300000")
-        @Value.Default
-        public long checkIntervalMillis() {
-            return 300_000L;
         }
 
         public abstract Map<String, Double> thresholds();

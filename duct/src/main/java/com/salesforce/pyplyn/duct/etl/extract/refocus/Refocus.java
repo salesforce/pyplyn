@@ -8,13 +8,15 @@
 
 package com.salesforce.pyplyn.duct.etl.extract.refocus;
 
+import javax.annotation.Nullable;
+
+import org.immutables.value.Value;
+
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.salesforce.pyplyn.annotations.PyplynImmutableStyle;
 import com.salesforce.pyplyn.model.Extract;
-import org.immutables.value.Value;
-
-import javax.annotation.Nullable;
 
 /**
  * Refocus datasource model
@@ -26,6 +28,7 @@ import javax.annotation.Nullable;
 @PyplynImmutableStyle
 @JsonDeserialize(as = ImmutableRefocus.class)
 @JsonSerialize(as = ImmutableRefocus.class)
+@JsonTypeName("Refocus")
 public abstract class Refocus implements Extract {
     private static final long serialVersionUID = -2303603367792896790L;
 

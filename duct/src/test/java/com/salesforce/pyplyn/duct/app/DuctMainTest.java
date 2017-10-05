@@ -1,19 +1,20 @@
 package com.salesforce.pyplyn.duct.app;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.salesforce.pyplyn.configuration.Connector;
-import com.salesforce.pyplyn.configuration.ImmutableConnector;
-import com.salesforce.pyplyn.duct.appconfig.AppConfig;
-import com.salesforce.pyplyn.duct.appconfig.ImmutableAppConfig;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import static java.util.Collections.singletonList;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import static java.util.Collections.singletonList;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.salesforce.pyplyn.configuration.Connector;
+import com.salesforce.pyplyn.configuration.ImmutableConnector;
+import com.salesforce.pyplyn.duct.appconfig.AppConfig;
+import com.salesforce.pyplyn.duct.appconfig.ImmutableAppConfig;
 
 /**
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;

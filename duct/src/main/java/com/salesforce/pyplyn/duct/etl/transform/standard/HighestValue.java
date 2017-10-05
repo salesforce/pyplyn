@@ -8,20 +8,23 @@
 
 package com.salesforce.pyplyn.duct.etl.transform.standard;
 
+import static com.salesforce.pyplyn.util.FormatUtils.formatNumberFiveCharLimit;
+
+import java.math.BigDecimal;
+import java.util.*;
+
+import javax.annotation.Nullable;
+
+import org.immutables.value.Value;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.salesforce.pyplyn.annotations.PyplynImmutableStyle;
 import com.salesforce.pyplyn.model.ImmutableTransmutation;
 import com.salesforce.pyplyn.model.Transform;
 import com.salesforce.pyplyn.model.Transmutation;
-import org.immutables.value.Value;
-
-import javax.annotation.Nullable;
-import java.math.BigDecimal;
-import java.util.*;
-
-import static com.salesforce.pyplyn.util.FormatUtils.formatNumberFiveCharLimit;
 
 /**
  * Returns the most critical (highest value) result by value
@@ -36,12 +39,13 @@ import static com.salesforce.pyplyn.util.FormatUtils.formatNumberFiveCharLimit;
 @PyplynImmutableStyle
 @JsonDeserialize(as = ImmutableHighestValue.class)
 @JsonSerialize(as = ImmutableHighestValue.class)
+@JsonTypeName("HighestValue")
 public abstract class HighestValue implements Transform {
     private static final long serialVersionUID = 5858149783326921054L;
     private static final String ORIGINAL_TIME_TEMPLATE = "Original time: %s";
 
     /**
-     * if specified, will decide what to set in {@link Transmutation.Metadata}
+     * if specified, will decide what to set in {@link com.salesforce.pyplyn.model.Transmutation.Metadata}
      */
     @Nullable
     @JsonProperty("messageCodeSource")
@@ -51,7 +55,7 @@ public abstract class HighestValue implements Transform {
     public abstract Display tagMessageBody();
 
     /**
-     * Applies this transformation and returns a new {@link Transmutation} matrix
+     * Applies this transformation and returns a new {@link com.salesforce.pyplyn.model.Transmutation} matrix
      */
     @Override
     public List<List<Transmutation>> apply(List<List<Transmutation>> stageInput) {
@@ -66,7 +70,7 @@ public abstract class HighestValue implements Transform {
     }
 
     /**
-     * Sets the message code according to the rule specified in the <b>messageCodeSource</b> parameter
+     * Sets the message code according to the rule specified in the <strong>messageCodeSource</strong> parameter
      *   or returns the unchanged result if no rule is specified
      */
     private Transmutation processMetadata(Transmutation result) {

@@ -8,19 +8,19 @@
 
 package com.salesforce.argus;
 
-import com.google.common.base.Preconditions;
-import com.salesforce.argus.model.*;
-import com.salesforce.pyplyn.client.AbstractRemoteClient;
-import com.salesforce.pyplyn.client.UnauthorizedException;
-import com.salesforce.pyplyn.configuration.ConnectorInterface;
-
-import java.util.List;
-import java.util.stream.Collectors;
-
 import static com.salesforce.pyplyn.util.CollectionUtils.nullOutByteArray;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+import com.google.common.base.Preconditions;
+import com.salesforce.argus.model.*;
+import com.salesforce.pyplyn.client.AbstractRemoteClient;
+import com.salesforce.pyplyn.client.UnauthorizedException;
+import com.salesforce.pyplyn.configuration.EndpointConnector;
 
 /**
  * Argus client implementation
@@ -29,11 +29,12 @@ import static java.util.Objects.nonNull;
  * @since 3.0
  */
 public class ArgusClient extends AbstractRemoteClient<ArgusService> {
+    
     private static final String AUTH_HEADER_PREFIX = "Bearer ";
 
     // authentication tokens
-    private byte[] accessToken;
-    private byte[] refreshToken;
+    private volatile byte[] accessToken;
+    private volatile byte[] refreshToken;
 
 
     /**
@@ -41,7 +42,7 @@ public class ArgusClient extends AbstractRemoteClient<ArgusService> {
      *
      * @param connector The Argus endpoint to use in all the calls made by this collector
      */
-    public ArgusClient(ConnectorInterface connector) {
+    public ArgusClient(EndpointConnector connector) {
         super(connector, ArgusService.class);
     }
 

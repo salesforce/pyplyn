@@ -59,13 +59,34 @@
             <plugin>
                 <artifactId>maven-resources-plugin</artifactId>
                 <executions>
+                    <!-- Generate a init.d script to simplify running the process in a *nix environment -->
+                    <execution>
+                        <id>copy-shell-scripts</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${final.build.location}/bin</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>../bin</directory>
+                                    <includes>
+                                        <include>pyplyn.sh</include>
+                                    </includes>
+                                    <filtering>true</filtering>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+
+                    <!-- Create a version.txt file and populate it with the name of the built version -->
                     <execution>
                         <id>create-version-file</id>
                         <phase>validate</phase>
                         <goals>
                             <goal>copy-resources</goal>
                         </goals>
-                        <!-- Create a version.txt file in the project dir with just the version. -->
                         <configuration>
                             <outputDirectory>${final.build.location}</outputDirectory>
                             <resources>
@@ -80,6 +101,7 @@
                         </configuration>
                     </execution>
 
+                    <!-- Copy the README.md and LICENSE.txt files -->
                     <execution>
                         <id>copy-project-readme</id>
                         <phase>package</phase>
@@ -94,12 +116,14 @@
                                     <filtering>true</filtering>
                                     <includes>
                                         <include>README.md</include>
+                                        <include>LICENSE.txt</include>
                                     </includes>
                                 </resource>
                             </resources>
                         </configuration>
                     </execution>
 
+                    <!-- Copy the example config files -->
                     <execution>
                         <id>copy-configuration-files</id>
                         <phase>package</phase>
@@ -112,10 +136,9 @@
                                 <resource>
                                     <directory>src/main/resources</directory>
                                     <includes>
-                                        <include>log4j.properties</include>
                                         <include>app-config.example.json</include>
                                         <include>connectors.example.json</include>
-                                        <include>hazelcast.xml</include>
+                                        <include>hazelcast.example.xml</include>
                                     </includes>
                                 </resource>
                             </resources>

@@ -8,22 +8,23 @@
 
 package com.salesforce.pyplyn.processor;
 
-import com.codahale.metrics.Meter;
-import com.salesforce.pyplyn.model.Load;
-import com.salesforce.pyplyn.model.LoadImpl;
-import com.salesforce.pyplyn.model.Transmutation;
-import com.salesforce.pyplyn.status.SystemStatus;
-import org.testng.annotations.Test;
-
-import java.util.List;
-import java.util.stream.Collectors;
-
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.*;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.testng.annotations.Test;
+
+import com.codahale.metrics.Meter;
+import com.salesforce.pyplyn.model.Load;
+import com.salesforce.pyplyn.model.LoadImpl;
+import com.salesforce.pyplyn.model.Transmutation;
+import com.salesforce.pyplyn.status.SystemStatus;
 
 /**
  * Test class

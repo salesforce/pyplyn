@@ -8,11 +8,11 @@
 
 package com.salesforce.pyplyn.cache;
 
+import static java.util.Objects.isNull;
+
 import java.lang.ref.SoftReference;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static java.util.Objects.isNull;
 
 /**
  * Cache implementation based on a ConcurrentMap

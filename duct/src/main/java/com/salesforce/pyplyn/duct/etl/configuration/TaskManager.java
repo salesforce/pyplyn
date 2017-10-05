@@ -1,5 +1,20 @@
 package com.salesforce.pyplyn.duct.etl.configuration;
 
+import static com.salesforce.pyplyn.util.CollectionUtils.immutableOrEmptySet;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.stream.Collectors.toList;
+
+import java.time.Duration;
+import java.time.Instant;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
+
+import org.reactivestreams.Subscription;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -9,23 +24,13 @@ import com.salesforce.pyplyn.duct.appconfig.AppConfig;
 import com.salesforce.pyplyn.model.*;
 import com.salesforce.pyplyn.processor.ExtractProcessor;
 import com.salesforce.pyplyn.processor.LoadProcessor;
+
 import io.reactivex.Flowable;
 import io.reactivex.Scheduler;
-import io.reactivex.Single;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.parallel.ParallelFailureHandling;
+import io.reactivex.plugins.RxJavaPlugins;
 import io.reactivex.schedulers.Schedulers;
-import org.reactivestreams.Subscription;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.time.Duration;
-import java.time.Instant;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static com.salesforce.pyplyn.util.CollectionUtils.immutableOrEmptySet;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * Responsible for keeping track of currently subscribed tasks
@@ -77,6 +82,14 @@ public class TaskManager<T extends Configuration> {
         extractScheduler = initExtractScheduler(ioPoolSize);
         transformScheduler = initTransformScheduler(ioPoolSize);
         loadScheduler = initLoadScheduler(ioPoolSize);
+
+        // handle irrecoverable errors: allow graceful shutdown
+        RxJavaPlugins.setErrorHandler(throwable -> {
+            onError(throwable);
+
+            // mark processing as completed after a short delay
+            Flowable.timer(1, TimeUnit.SECONDS).doOnNext((i) -> notifyCompleted()).subscribe();
+        });
     }
 
     /**
@@ -137,7 +150,7 @@ public class TaskManager<T extends Configuration> {
      * Inserts or updates a task
      * <p/>
      * <p/> The implementation will take care to:
-     * <p/> - add the task to the {@param ACTIVE_SUBSCRIPTIONS} container when an observer subscribes
+     * <p/> - add the task to the {@link #ACTIVE_SUBSCRIPTIONS} container when an observer subscribes
      * <p/> - and to remove the task once it's been disposed
      */
     public void upsert(T task) {
@@ -148,21 +161,12 @@ public class TaskManager<T extends Configuration> {
                     // EXTRACT
 
                     // merge all Extract results
-                    Flowable<List<List<Transmutation>>> transformed =
-                            Flowable.merge(
-                                    Flowable.fromIterable(extractProcessors).observeOn(extractScheduler)
-
-                                            // filter out types (Extract[]) that cannot be processed and return an Async result
-                                            .map(processor -> processor.executeAsync(configuration.extract()))
-                            );
-
-                    // combine all Extract results into a single List<List<Transmutation>>
-                    final List<List<Transmutation>> extractsCollector = new ArrayList<>();
-                    Single<List<List<Transmutation>>> mergedResultLists = transformed.reduce(extractsCollector, (list, items) -> {
-                        list.addAll(items);
-                        return list;
-                    });
-                    transformed = mergedResultLists.toFlowable();
+                    Flowable<List<List<Transmutation>>> transformed = Flowable.fromIterable(extractProcessors)
+                            .parallel()
+                            .runOn(extractScheduler)
+                            .map(processor -> processor.executeAsync(configuration.extract()), ParallelFailureHandling.ERROR)
+                            .flatMap(s -> s)
+                            .reduce((list, items) -> Stream.concat(list.stream(), items.stream()).collect(toList()));
 
 
                     // TRANSFORM
@@ -177,23 +181,19 @@ public class TaskManager<T extends Configuration> {
                         }
                     }
 
-
                     // LOAD
                     return transformed
                             // process each row individually
                             .flatMap(Flowable::fromIterable)
 
                             // for each row an loadProcessor combination, apply
-                            .flatMap(resultRow -> Flowable.fromIterable(loadProcessors).observeOn(loadScheduler)
-                                    .map(loadProcessor -> loadProcessor.executeAsync(resultRow, configuration.load()))
-                            )
-
-                            // reduce all results into a List<Boolean>
-                            .flatMap(s -> s)
-                            .reduce((booleans, booleans2) -> {
-                                booleans.addAll(booleans2);
-                                return booleans;
-                            }).toFlowable();
+                            .flatMap(resultRow -> Flowable.fromIterable(loadProcessors)
+                                            .parallel()
+                                            .runOn(loadScheduler)
+                                            .map(loadProcessor -> loadProcessor.executeAsync(resultRow, configuration.load()), ParallelFailureHandling.RETRY)
+                                            .flatMap(s -> s)
+                                            .reduce((all, r) -> Stream.concat(all.stream(), r.stream()).collect(toList()))
+                            );
                 })
 
                 // lifecycle management
@@ -215,6 +215,10 @@ public class TaskManager<T extends Configuration> {
 
     public Flowable<T> createTask(T task) {
         return Flowable.interval(0, task.repeatIntervalMillis(), MILLISECONDS)
+
+                // prevent configurations from running too often
+                .onBackpressureDrop()
+
                 .map(i -> task)
                 // stop if shutting down
                 .takeWhile(t -> !shutdownHook.isShutdown())
@@ -252,7 +256,6 @@ public class TaskManager<T extends Configuration> {
 
                 // mark the time at which we ran last
                 .doOnNext(results -> LAST_EXECUTED.put(task, Instant.now()));
-//                .onErrorResumeNext(defer(() -> createTask(task)));
     }
 
 

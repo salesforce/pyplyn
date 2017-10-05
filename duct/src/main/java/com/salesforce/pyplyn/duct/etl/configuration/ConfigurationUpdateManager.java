@@ -1,21 +1,7 @@
 package com.salesforce.pyplyn.duct.etl.configuration;
 
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
-import com.google.inject.Inject;
-import com.google.inject.Provider;
-import com.google.inject.Singleton;
-import com.hazelcast.core.*;
-import com.hazelcast.map.listener.*;
-import com.hazelcast.util.Preconditions;
-import com.salesforce.pyplyn.configuration.Configuration;
-import com.salesforce.pyplyn.duct.app.ShutdownHook;
-import com.salesforce.pyplyn.duct.cluster.Cluster;
-import io.reactivex.schedulers.Schedulers;
-import io.reactivex.subjects.PublishSubject;
-import io.reactivex.subjects.Subject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static com.salesforce.pyplyn.util.CollectionUtils.immutableOrEmptySet;
+import static java.util.Objects.isNull;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -27,8 +13,27 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static com.salesforce.pyplyn.util.CollectionUtils.immutableOrEmptySet;
-import static java.util.Objects.isNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
+import com.google.inject.Inject;
+import com.google.inject.Provider;
+import com.google.inject.Singleton;
+import com.hazelcast.core.*;
+import com.hazelcast.map.listener.EntryAddedListener;
+import com.hazelcast.map.listener.EntryEvictedListener;
+import com.hazelcast.map.listener.EntryRemovedListener;
+import com.hazelcast.map.listener.EntryUpdatedListener;
+import com.hazelcast.util.Preconditions;
+import com.salesforce.pyplyn.configuration.Configuration;
+import com.salesforce.pyplyn.duct.app.ShutdownHook;
+import com.salesforce.pyplyn.duct.cluster.Cluster;
+
+import io.reactivex.schedulers.Schedulers;
+import io.reactivex.subjects.PublishSubject;
+import io.reactivex.subjects.Subject;
 
 /**
  * Updates the current configurations, creating, updating, and removing tasks for each one

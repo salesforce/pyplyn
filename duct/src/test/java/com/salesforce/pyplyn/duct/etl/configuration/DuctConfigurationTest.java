@@ -8,12 +8,13 @@
 
 package com.salesforce.pyplyn.duct.etl.configuration;
 
-import com.salesforce.pyplyn.configuration.Configuration;
-import org.testng.annotations.Test;
-
 import static com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.ConfigurationsTestHelper.createFullConfiguration;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+
+import org.testng.annotations.Test;
+
+import com.salesforce.pyplyn.configuration.Configuration;
 
 /**
  * Class

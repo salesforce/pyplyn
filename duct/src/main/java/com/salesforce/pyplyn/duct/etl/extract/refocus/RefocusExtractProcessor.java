@@ -7,6 +7,23 @@
  */
 package com.salesforce.pyplyn.duct.etl.extract.refocus;
 
+import static com.salesforce.pyplyn.util.FormatUtils.*;
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+
+import java.text.ParseException;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeParseException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.codahale.metrics.Timer;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -20,22 +37,6 @@ import com.salesforce.pyplyn.processor.AbstractMeteredExtractProcessor;
 import com.salesforce.refocus.RefocusClient;
 import com.salesforce.refocus.model.ImmutableSample;
 import com.salesforce.refocus.model.Sample;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.text.ParseException;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeParseException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
-
-import static com.salesforce.pyplyn.util.FormatUtils.*;
-import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
 
 /**
  * Queries data from Refocus

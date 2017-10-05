@@ -8,29 +8,31 @@
 
 package com.salesforce.argus;
 
-import com.google.common.collect.Iterables;
-import com.salesforce.argus.model.*;
-import com.salesforce.pyplyn.client.UnauthorizedException;
-import com.salesforce.pyplyn.configuration.Connector;
-import okhttp3.MediaType;
-import okhttp3.Request;
-import okhttp3.ResponseBody;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
-import retrofit2.Call;
-import retrofit2.Response;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.contains;
+import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
 
 import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.List;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.*;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.*;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
+
+import com.google.common.collect.Iterables;
+import com.salesforce.argus.model.*;
+import com.salesforce.pyplyn.client.UnauthorizedException;
+import com.salesforce.pyplyn.configuration.Connector;
+
+import okhttp3.MediaType;
+import okhttp3.Request;
+import okhttp3.ResponseBody;
+import retrofit2.Call;
+import retrofit2.Response;
 
 /**
  * ArgusCollector test class

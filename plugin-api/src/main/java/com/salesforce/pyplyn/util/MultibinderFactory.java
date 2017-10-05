@@ -8,13 +8,15 @@
 
 package com.salesforce.pyplyn.util;
 
+import java.util.List;
+
 import com.google.inject.Binder;
 import com.google.inject.Guice;
 import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.Multibinder;
+import com.google.inject.multibindings.ProvidesIntoSet;
 import com.salesforce.pyplyn.client.AbstractRemoteClient;
-import com.salesforce.pyplyn.configuration.Connector;
-import com.salesforce.pyplyn.configuration.ConnectorInterface;
+import com.salesforce.pyplyn.configuration.EndpointConnector;
 import com.salesforce.pyplyn.model.Extract;
 import com.salesforce.pyplyn.model.Load;
 import com.salesforce.pyplyn.model.Transform;
@@ -22,11 +24,10 @@ import com.salesforce.pyplyn.processor.ExtractProcessor;
 import com.salesforce.pyplyn.processor.LoadProcessor;
 import com.salesforce.pyplyn.status.SystemStatusConsumer;
 
-import java.util.List;
-
 /**
  * Formalizes the contract for any extending plugins that (based on {@link Guice}/{@link Multibinder}
  *
+ * TODO: Refactor using {@link ProvidesIntoSet}
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
  * @since 3.0
  */
@@ -38,12 +39,12 @@ public final class MultibinderFactory {
     private MultibinderFactory() { }
 
     /**
-     * Used to bind lists of {@link ConnectorInterface} implementations
+     * Used to bind lists of {@link EndpointConnector} implementations
      *   this is a Set<List<Connector>> since plugins might need to define new connectors that are
      *   implemented differently
      */
-    public static Multibinder<List<ConnectorInterface>> appConnectors(Binder binder) {
-         return Multibinder.newSetBinder(binder, new TypeLiteral<List<ConnectorInterface>>() {});
+    public static Multibinder<List<EndpointConnector>> appConnectors(Binder binder) {
+         return Multibinder.newSetBinder(binder, new TypeLiteral<List<EndpointConnector>>() {});
     }
 
     /**

@@ -1,7 +1,9 @@
 package com.salesforce.pyplyn.model;
 
 /**
- * Predefined codes for OK/INFO/WARN/ERR statuses
+ * Predefined codes for OK/INFO/WARN/CRIT statuses
+ * <p/>
+ * <p/> Use <code>UNKNOWN</code> for any situations where a corresponding status code could not be found
  *
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
  * @since 10.0.0
@@ -10,7 +12,8 @@ public enum StatusCode {
     OK(0, "OK"),
     INFO(1, "INFO"),
     WARN(2, "WARN"),
-    ERR(3, "ERR");
+    CRIT(3, "CRIT"),
+    UNKNOWN(999, "UNKNOWN");
 
     private final long value;
     private final String code;
