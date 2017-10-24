@@ -48,7 +48,7 @@ public interface RefocusService {
 
     @POST("samples/upsert/bulk")
     @Headers("Content-Type: application/json")
-    Call<ResponseBody> upsertSamplesBulk(@Header(AUTHORIZATION) String authorization, @Body List<Sample> samples);
+    Call<UpsertResponse> upsertSamplesBulk(@Header(AUTHORIZATION) String authorization, @Body List<Sample> samples);
 
     @DELETE("samples/{key}")
     @Headers("Content-Type: application/json")

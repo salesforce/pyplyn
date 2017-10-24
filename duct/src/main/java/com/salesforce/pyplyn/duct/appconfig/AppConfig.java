@@ -66,21 +66,9 @@ public abstract class AppConfig {
             return 100;
         }
 
-        /**
-         * This parameter will be removed in future versions
-         *
-         * @see Global#runOnce
-         * @deprecated
-         */
-        @Deprecated
-        @Value.Default
-        public long minRepeatIntervalMillis() {
-            return 60_000L;
-        }
-
         @Value.Default
         public boolean runOnce() {
-            return minRepeatIntervalMillis() <= 0;
+            return false;
         }
     }
 

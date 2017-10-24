@@ -1,12 +1,15 @@
 package com.salesforce.pyplyn.duct.etl.load.refocus;
 
 import static com.salesforce.pyplyn.util.FormatUtils.formatNumber;
+import static java.util.Objects.nonNull;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import com.salesforce.refocus.model.UpsertResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -81,7 +84,7 @@ public class RefocusLoadProcessor extends AbstractMeteredLoadProcessor<Refocus> 
 
                         // stop here if we could not authenticate
                         logger.warn("", e);
-                        return Boolean.FALSE;
+                        return null;
                     }
 
                     // for all expressions belonging to this client
@@ -114,22 +117,24 @@ public class RefocusLoadProcessor extends AbstractMeteredLoadProcessor<Refocus> 
 
                     // if shutting down, do not post to the Refocus endpoint
                     if (shutdownHook.isShutdown()) {
-                        return Boolean.FALSE;
+                        return null;
                     }
 
                     // send expressions to Refocus endpoint
                     try (Timer.Context context = systemStatus.timer(meterName(), "upsert-samples-bulk." + endpointId).time()) {
-                        return client.upsertSamplesBulk(allSamplesForEndpoint);
+                        UpsertResponse upsertResponse = client.upsertSamplesBulk(allSamplesForEndpoint);
+                        logger.info("Refocus bulk upsert response: {}", upsertResponse);
+                        return Optional.ofNullable(upsertResponse).map(UpsertResponse::jobId).orElse(null);
 
                         // return failure
                     } catch (UnauthorizedException e) {
                         logger.error("Could not complete request for {}; failed samples={}", endpointId, allSamplesForEndpoint);
-                        return Boolean.FALSE;
+                        return null;
                     }
                 })
 
                 // return true if all Samples are successfully upserted into all endpoints
-                .allMatch(s -> s.equals(Boolean.TRUE));
+                .allMatch(Objects::nonNull);
 
         // log result of operation
         //   Note: the upsertSamplesBulk Refocus API call, will always return OK, so failures will be marked

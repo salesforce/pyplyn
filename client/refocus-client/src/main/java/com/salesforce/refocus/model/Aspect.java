@@ -51,6 +51,9 @@ public abstract class Aspect {
     public abstract String helpEmail();
 
     @Nullable
+    public abstract String helpUrl();
+
+    @Nullable
     public abstract Boolean isPublished();
 
     public abstract List<Double> criticalRange();

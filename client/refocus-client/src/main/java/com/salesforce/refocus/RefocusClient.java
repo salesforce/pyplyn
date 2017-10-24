@@ -142,9 +142,9 @@ public class RefocusClient extends AbstractRemoteClient<RefocusService> {
      * @throws IllegalArgumentException if null samples were passed
      * @return true if operation succeeded
      */
-    public boolean upsertSamplesBulk(List<Sample> samples) throws UnauthorizedException {
+    public UpsertResponse upsertSamplesBulk(List<Sample> samples) throws UnauthorizedException {
         Preconditions.checkNotNull(samples, "Samples should not be null");
-        return nonNull(executeAndRetrieveBody(svc().upsertSamplesBulk(authorizationHeader(), samples), null));
+        return executeAndRetrieveBody(svc().upsertSamplesBulk(authorizationHeader(), samples), null);
     }
 
 

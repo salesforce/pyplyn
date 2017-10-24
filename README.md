@@ -29,6 +29,7 @@ and displaying the result in Refocus (as red, yellow, or green lights).
 ## Improvements from release 9.x
 
 - Faster processing speed with the use of RxJava (4.3x faster, tested on our reference dataset)
+- Added support for retrieving [InfluxDB](https://www.influxdata.com/time-series-platform/influxdb/) measurements
 - Cleaner code, mainly after converting models *Immutables*-annotated abstract classes
 - Support mutual TLS authentication for endpoints, by specifying a Java keystore and password
 - Connect, read, and write timeouts can now be specified for each *connector*

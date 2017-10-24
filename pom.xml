@@ -12,13 +12,15 @@
 
     <groupId>com.salesforce.pyplyn</groupId>
     <artifactId>pyplyn</artifactId>
-    <version>10.0.1-SNAPSHOT</version>
+    <version>10.1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>pyplyn</name>
 
     <modules>
         <module>client/argus-client</module>
+        <module>client/influxdb-client</module>
         <module>client/refocus-client</module>
+        <module>client/trust1-client</module>
         <module>duct</module>
         <module>plugin-api</module>
     </modules>
@@ -362,12 +364,22 @@
             </dependency>
             <dependency>
                 <groupId>com.salesforce.pyplyn</groupId>
+                <artifactId>influxdb-client</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.salesforce.pyplyn</groupId>
                 <artifactId>plugin-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.salesforce.pyplyn</groupId>
                 <artifactId>refocus-client</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.salesforce.pyplyn</groupId>
+                <artifactId>trust1-client</artifactId>
                 <version>${project.version}</version>
             </dependency>
 

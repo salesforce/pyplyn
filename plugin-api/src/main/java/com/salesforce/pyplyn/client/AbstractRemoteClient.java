@@ -9,6 +9,7 @@
 package com.salesforce.pyplyn.client;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 import java.io.*;
 import java.net.InetSocketAddress;
@@ -40,6 +41,7 @@ import okhttp3.Headers;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import retrofit2.Call;
+import retrofit2.Converter;
 import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.jackson.JacksonConverterFactory;
@@ -127,9 +129,16 @@ public abstract class AbstractRemoteClient<S> implements RemoteClient {
     }
 
     /**
-     * Class constructor that allows setting timeout parameters
+     * Default class constructor; initializes Retrofit with Jackson support via {@link JacksonConverterFactory}
      */
     protected AbstractRemoteClient(EndpointConnector connector, Class<S> cls) {
+        this(connector, JacksonConverterFactory.create(), cls);
+    }
+
+    /**
+     * Class constructor that allows replacing (or removing the {@link Converter.Factory}
+     */
+    protected AbstractRemoteClient(EndpointConnector connector, Converter.Factory converterFactory, Class<S> cls) {
         Preconditions.checkNotNull(connector, "Passed connector is null for " + this.getClass().getSimpleName());
         this.connector = connector;
 
@@ -144,12 +153,16 @@ public abstract class AbstractRemoteClient<S> implements RemoteClient {
         }
 
         // build the retrofit service implementation, using a specified client and relying on Jackson serialization/deserialization
-        retrofit = new Retrofit.Builder()
+        Retrofit.Builder builder = new Retrofit.Builder()
                 .baseUrl(connector.endpoint())
-                .client(client)
-                .addConverterFactory(JacksonConverterFactory.create())
-                .build();
+                .client(client);
 
+        // if a converter factory was specified, add one
+        if (nonNull(converterFactory)) {
+            builder.addConverterFactory(converterFactory);
+        }
+
+        retrofit = builder.build();
         this.svc = retrofit.create(cls);
     }
 
