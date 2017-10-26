@@ -8,8 +8,23 @@
 
 package io.pyplyn.influxdb;
 
+import static java.util.Collections.singletonList;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
+import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+
+import java.nio.charset.Charset;
+
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
+
 import com.salesforce.pyplyn.configuration.Connector;
 import com.salesforce.pyplyn.configuration.ImmutableConnector;
+
 import io.pyplyn.influxdb.model.ImmutablePoint;
 import io.pyplyn.influxdb.model.ImmutableResults;
 import io.pyplyn.influxdb.model.Point;
@@ -17,20 +32,7 @@ import io.pyplyn.influxdb.model.Results;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okio.Buffer;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
 import retrofit2.Response;
-
-import java.nio.charset.Charset;
-
-import static java.util.Collections.singletonList;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.*;
 
 /**
  * Test class

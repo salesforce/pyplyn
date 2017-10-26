@@ -8,13 +8,14 @@
 
 package com.salesforce.status;
 
+import java.util.List;
+
 import com.salesforce.status.model.Instance;
+
 import retrofit2.Call;
 import retrofit2.http.GET;
 import retrofit2.http.Headers;
 import retrofit2.http.Query;
-
-import java.util.List;
 
 public interface Trust1Service {
 

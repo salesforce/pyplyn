@@ -170,6 +170,10 @@
             <groupId>com.salesforce.pyplyn</groupId>
             <artifactId>trust1-client</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.salesforce.pyplyn</groupId>
+            <artifactId>virtualinstruments-client</artifactId>
+        </dependency>
 
         <!-- Jackson -->
         <dependency>
