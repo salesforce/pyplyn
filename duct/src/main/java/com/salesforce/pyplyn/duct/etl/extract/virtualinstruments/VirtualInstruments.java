@@ -25,8 +25,8 @@ import com.salesforce.pyplyn.model.Extract;
  */
 @Value.Immutable
 @PyplynImmutableStyle
-@JsonDeserialize(as = ImmutableInfluxDB.class)
-@JsonSerialize(as = ImmutableInfluxDB.class)
+@JsonDeserialize(as = ImmutableVirtualInstruments.class)
+@JsonSerialize(as = ImmutableVirtualInstruments.class)
 @JsonTypeName("VirtualInstruments")
 public abstract class VirtualInstruments implements Extract {
     private static final long serialVersionUID = 2273965988988568032L;
@@ -55,5 +55,21 @@ public abstract class VirtualInstruments implements Extract {
      * @return metric to load data for
      */
     public abstract String metricName();
+
+    /**
+     * @return the delay between polling requests
+     */
+    @Value.Default
+    public Long pollingIntervalMillis() {
+        return 500L;
+    }
+
+    /**
+     * @return the number of milliseconds after which to abort attempting to poll for results
+     */
+    @Value.Default
+    public Long pollingTimeoutMillis() {
+        return 5_000L;
+    }
 
 }

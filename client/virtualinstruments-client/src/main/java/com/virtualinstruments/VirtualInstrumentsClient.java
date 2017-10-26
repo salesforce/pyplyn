@@ -12,16 +12,17 @@ import com.google.common.base.Preconditions;
 import com.salesforce.pyplyn.client.AbstractRemoteClient;
 import com.salesforce.pyplyn.client.UnauthorizedException;
 import com.salesforce.pyplyn.configuration.EndpointConnector;
-import com.virtualinstruments.model.ImmutableAuthRequest;
 import com.virtualinstruments.model.ImmutableReportPayload;
 import com.virtualinstruments.model.ReportPayload;
 import com.virtualinstruments.model.ReportResponse;
+import okhttp3.Request;
+import okhttp3.ResponseBody;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import retrofit2.Response;
 
-import java.util.Map;
-import java.util.Objects;
+import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.Optional;
 
 import static java.util.Objects.nonNull;
@@ -34,8 +35,7 @@ import static java.util.Objects.nonNull;
  */
 public class VirtualInstrumentsClient extends AbstractRemoteClient<VirtualInstrumentsService> {
     private static final Logger logger = LoggerFactory.getLogger(VirtualInstrumentsClient.class);
-    public static final String RESPONSE_SUCCESS = "Success";
-    public static final String RESPONSE_FAILURE = "Failure";
+    public static final String SESSION_ID_HEADER = "JSESSIONID";
 
     private volatile String sessionId;
 
@@ -63,18 +63,40 @@ public class VirtualInstrumentsClient extends AbstractRemoteClient<VirtualInstru
      */
     @Override
     protected boolean auth() throws UnauthorizedException {
-        Response<Map<String, Object>> response = execute(svc().login(ImmutableAuthRequest.of(connector().username(), connector().password())));
+        // retrieve response
+        Response<ResponseBody> response = execute(svc().login(connector().username(), new String(connector().password(), Charset.defaultCharset())));
 
-        // if the auth call succeeds, retrieve and store the session id
-        if (nonNull(response.body()) && Objects.equals(response.body().getOrDefault("status", RESPONSE_FAILURE), RESPONSE_SUCCESS)) {
-            sessionId = response.headers().get("JSESSIONID");
-            return true;
+        if (!response.isSuccessful()) {
+            logFailedLogin(response, connector().endpoint());
+            return false;
         }
 
-        Map<String, Object> body = response.body();
-        logger.error("Unsuccessful authentication call to {}; response={}", connector().endpoint(), body);
+        // since VI redirects us, including the JSESSIONID, we need to retrieve it
+        Request request = response.raw().request();
+        Optional<String> sessionHeader = request.url().pathSegments().stream().filter(seg -> seg.contains(SESSION_ID_HEADER)).findFirst();
 
-        return false;
+        // session header was not set
+        if (!sessionHeader.isPresent()) {
+            logFailedLogin(response, connector().endpoint());
+            return false;
+        }
+
+        // set session id
+        this.sessionId = sessionHeader.get().replaceAll("^;", "").trim();
+
+        return true;
+    }
+
+    /**
+     * Log a failed login and its corresponding {@link Response}
+     */
+    static void logFailedLogin(Response<ResponseBody> response, String endpoint) {
+        try {
+            logger.error("Unsuccessful authentication call to {}; response={}", endpoint, response.body().string());
+
+        } catch (IOException e) {
+            logger.warn("Could not read response from VirtualInstruments endpoint {}", endpoint, e);
+        }
     }
 
     /**
@@ -97,7 +119,7 @@ public class VirtualInstrumentsClient extends AbstractRemoteClient<VirtualInstru
                 .build();
 
         // execute call
-        Response<Void> execute = execute(svc().reportBatch(report));
+        Response<Void> execute = execute(svc().reportBatch(sessionId, report));
 
         // return the UUID if the call is successful, or null otherwise
         return Optional.ofNullable(execute).filter(Response::isSuccessful).map(r -> report.uuid()).orElse(null);
@@ -108,7 +130,7 @@ public class VirtualInstrumentsClient extends AbstractRemoteClient<VirtualInstru
      */
     public ReportResponse pollReport(String uuid) throws UnauthorizedException {
         Preconditions.checkNotNull(uuid, "The report UUID should not be null!");
-        return executeAndRetrieveBody(svc().reportPoll(uuid), null);
+        return executeAndRetrieveBody(svc().reportPoll(sessionId, uuid), null);
     }
 
     /**

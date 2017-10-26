@@ -8,13 +8,12 @@
 
 package com.virtualinstruments;
 
-import com.virtualinstruments.model.AuthRequest;
 import com.virtualinstruments.model.ReportPayload;
 import com.virtualinstruments.model.ReportResponse;
+
+import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.http.*;
-
-import java.util.Map;
 
 /**
  * VirtualInstruments service
@@ -25,15 +24,15 @@ import java.util.Map;
 public interface VirtualInstrumentsService {
 
     @POST("sec/login")
-    @Headers("Content-Type: application/json")
-    Call<Map<String, Object>> login(@Body AuthRequest request);
+    @FormUrlEncoded
+    Call<ResponseBody> login(@Field("username") String username, @Field("password") String password);
 
     @PUT("analytics/reportBatch")
-    @Headers("Accept: application/json")
-    Call<Void> reportBatch(@Body ReportPayload payload);
+    @Headers("Content-Type: application/json")
+    Call<Void> reportBatch(@Header("Cookie") String sessionId, @Body ReportPayload payload);
 
     @GET("analytics/poll/reportPoll")
     @Headers("Accept: application/json")
-    Call<ReportResponse> reportPoll(@Query("uuid") String reportUuid);
+    Call<ReportResponse> reportPoll(@Header("Cookie") String sessionId, @Query("uuid") String reportUuid);
 
 }
