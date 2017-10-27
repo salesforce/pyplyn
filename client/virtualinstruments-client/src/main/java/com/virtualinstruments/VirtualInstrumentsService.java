@@ -11,6 +11,7 @@ package com.virtualinstruments;
 import com.virtualinstruments.model.ReportPayload;
 import com.virtualinstruments.model.ReportResponse;
 
+import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.http.*;
@@ -24,8 +25,8 @@ import retrofit2.http.*;
 public interface VirtualInstrumentsService {
 
     @POST("sec/login")
-    @FormUrlEncoded
-    Call<ResponseBody> login(@Field("username") String username, @Field("password") String password);
+    @Headers("Content-Type: application/x-www-form-urlencoded")
+    Call<ResponseBody> login(@Body RequestBody credentials);
 
     @PUT("analytics/reportBatch")
     @Headers("Content-Type: application/json")

@@ -21,10 +21,10 @@ import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY;
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 
 /**
- * Payload for the {@link com.virtualinstruments.VirtualInstrumentsService#reportBatch(ReportPayload)} call
+ * Payload for the {@link com.virtualinstruments.VirtualInstrumentsService#reportBatch(String, ReportPayload)} call
  *
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
- * @since 10.0.0
+ * @since 10.2.0
  */
 @Value.Immutable
 @Value.Enclosing

@@ -15,8 +15,7 @@ import com.salesforce.pyplyn.configuration.EndpointConnector;
 import com.virtualinstruments.model.ImmutableReportPayload;
 import com.virtualinstruments.model.ReportPayload;
 import com.virtualinstruments.model.ReportResponse;
-import okhttp3.Request;
-import okhttp3.ResponseBody;
+import okhttp3.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import retrofit2.Response;
@@ -25,6 +24,8 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.Optional;
 
+import static java.lang.String.format;
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 /**
@@ -64,25 +65,32 @@ public class VirtualInstrumentsClient extends AbstractRemoteClient<VirtualInstru
     @Override
     protected boolean auth() throws UnauthorizedException {
         // retrieve response
-        Response<ResponseBody> response = execute(svc().login(connector().username(), new String(connector().password(), Charset.defaultCharset())));
+        String credentials = format("username=%s&password=%s", connector().username(), new String(connector().password(), Charset.defaultCharset()));
+        RequestBody body = RequestBody.create(MediaType.parse(""), credentials);
+        Response<ResponseBody> response = execute(svc().login(body));
 
         if (!response.isSuccessful()) {
             logFailedLogin(response, connector().endpoint());
             return false;
         }
 
-        // since VI redirects us, including the JSESSIONID, we need to retrieve it
-        Request request = response.raw().request();
-        Optional<String> sessionHeader = request.url().pathSegments().stream().filter(seg -> seg.contains(SESSION_ID_HEADER)).findFirst();
-
-        // session header was not set
-        if (!sessionHeader.isPresent()) {
+        // since VI redirects us, we need to retrieve the JSESSIONID Cookie
+        okhttp3.Response priorResponse = response.raw().priorResponse();
+        if (isNull(priorResponse)) {
             logFailedLogin(response, connector().endpoint());
             return false;
         }
 
-        // set session id
-        this.sessionId = sessionHeader.get().replaceAll("^;", "").trim();
+        String cookie = priorResponse.header("Set-Cookie");
+
+        // session header was not set
+        if (isNull(cookie)) {
+            logFailedLogin(response, connector().endpoint());
+            return false;
+        }
+
+        // store session id, getting rid of extraneous information
+        this.sessionId = cookie.split(";")[0];
 
         return true;
     }

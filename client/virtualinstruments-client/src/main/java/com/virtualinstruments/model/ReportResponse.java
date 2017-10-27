@@ -14,6 +14,7 @@ import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 import java.util.List;
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.immutables.value.Value;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -22,36 +23,38 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.salesforce.pyplyn.annotations.PyplynImmutableStyle;
 
 /**
- * Model for the {@link com.virtualinstruments.VirtualInstrumentsService#reportPoll(String)} call
+ * Model for the {@link com.virtualinstruments.VirtualInstrumentsService#reportPoll(String, String)} call
  *
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
- * @since 10.0.0
+ * @since 10.2.0
  */
 @Value.Immutable
 @Value.Enclosing
 @PyplynImmutableStyle
 @JsonDeserialize(as = ImmutableReportResponse.class)
 @JsonSerialize(as = ImmutableReportResponse.class)
+@JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(NON_EMPTY)
 public abstract class ReportResponse {
 
-    /**
-     * @return The report's UUID
-     */
-    public abstract String uuid();
-
     public abstract String status();
-
-    public abstract boolean finished();
 
     public abstract Result result();
 
+    public abstract boolean success();
 
     @Value.Immutable
     @PyplynImmutableStyle
     @JsonDeserialize(as = ImmutableReportResponse.Result.class)
     @JsonSerialize(as = ImmutableReportResponse.Result.class)
     public static abstract class Result {
+        /**
+         * @return The report's UUID
+         */
+        public abstract String uuid();
+
+        public abstract boolean finished();
+
         public abstract List<Chart> charts();
     }
 
@@ -59,9 +62,8 @@ public abstract class ReportResponse {
     @PyplynImmutableStyle
     @JsonDeserialize(as = ImmutableReportResponse.Chart.class)
     @JsonSerialize(as = ImmutableReportResponse.Chart.class)
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static abstract class Chart {
-
-        public abstract String uuid();
 
         public abstract String status();
 

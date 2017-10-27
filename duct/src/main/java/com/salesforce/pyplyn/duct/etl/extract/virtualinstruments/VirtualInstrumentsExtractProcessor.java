@@ -103,7 +103,7 @@ public class VirtualInstrumentsExtractProcessor extends AbstractMeteredExtractPr
                         ReportResponse reportResponse = pollReport(client, uuid, reportParameters.pollingIntervalMillis(), 1)
                                 // timeout after the specified number of ms
                                 .timeout(reportParameters.pollingTimeoutMillis(), TimeUnit.MILLISECONDS)
-                                .doOnError(e -> logger.warn("Exception when retrieving report metrics", e))
+                                .doOnError(e -> logger.warn("Exception when retrieving report metrics: {}", e.getMessage()))
                                 .blockingFirst();
 
                         // mark successful operation and continue processing
@@ -132,11 +132,13 @@ public class VirtualInstrumentsExtractProcessor extends AbstractMeteredExtractPr
 
             })
 
+            // filter out errors
+            .filter(Objects::nonNull)
+
             // merge into one matrix
             .flatMap(Collection::stream)
 
-            // filter errors and return
-            .filter(Objects::nonNull)
+            // and return
             .collect(Collectors.toList());
     }
 
@@ -152,7 +154,7 @@ public class VirtualInstrumentsExtractProcessor extends AbstractMeteredExtractPr
                 .map(time -> client.pollReport(uuid))
 
                 // if the response is not finished, return null to generate an error downstream
-                .map(response -> response.finished()?response:null)
+                .map(response -> response.status().equals("OK")?response:null)
 
                 // retry on errors
                 .onErrorResumeNext(defer(() -> pollReport(client, uuid, interval, cnt + 1)).take(1));
