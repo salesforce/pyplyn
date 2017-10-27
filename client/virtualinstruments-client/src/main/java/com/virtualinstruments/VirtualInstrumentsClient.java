@@ -36,7 +36,6 @@ import static java.util.Objects.nonNull;
  */
 public class VirtualInstrumentsClient extends AbstractRemoteClient<VirtualInstrumentsService> {
     private static final Logger logger = LoggerFactory.getLogger(VirtualInstrumentsClient.class);
-    public static final String SESSION_ID_HEADER = "JSESSIONID";
 
     private volatile String sessionId;
 

@@ -7,6 +7,22 @@
  */
 package com.salesforce.pyplyn.duct.etl.extract.virtualinstruments;
 
+import static io.reactivex.Flowable.defer;
+import static java.util.Objects.isNull;
+
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.util.Collection;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.codahale.metrics.Timer;
 import com.google.common.collect.Iterables;
 import com.google.inject.Inject;
@@ -20,22 +36,8 @@ import com.salesforce.pyplyn.model.Transmutation;
 import com.salesforce.pyplyn.processor.AbstractMeteredExtractProcessor;
 import com.virtualinstruments.VirtualInstrumentsClient;
 import com.virtualinstruments.model.ReportResponse;
+
 import io.reactivex.Flowable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.time.Instant;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
-import java.util.Collection;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Objects;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-
-import static io.reactivex.Flowable.defer;
-import static java.util.Objects.isNull;
 
 /**
  * Extracts data from VirtualInstruments endpoints
@@ -64,82 +66,82 @@ public class VirtualInstrumentsExtractProcessor extends AbstractMeteredExtractPr
     public List<List<Transmutation>> process(List<VirtualInstruments> reportRequests) {
         // stream of metrics to be loaded from the endpoints or from cache
         return reportRequests.stream()
-            .map(reportParameters -> {
-                // retrieve a VirtualInstruments client
-                AppConnectors.ClientAndCache<VirtualInstrumentsClient, Cacheable> cc = appConnectors.retrieveOrBuildClient(reportParameters.endpoint(), VirtualInstrumentsClient.class, Cacheable.class);
-                final VirtualInstrumentsClient client = cc.client();
+                .map(reportParameters -> {
+                    // retrieve a VirtualInstruments client
+                    AppConnectors.ClientAndCache<VirtualInstrumentsClient, Cacheable> cc = appConnectors.retrieveOrBuildClient(reportParameters.endpoint(), VirtualInstrumentsClient.class, Cacheable.class);
+                    final VirtualInstrumentsClient client = cc.client();
 
-                try {
-                    client.authenticate();
+                    try {
+                        client.authenticate();
 
-                } catch (UnauthorizedException e) {
-                    // log auth failure if this exception type was thrown
-                    authenticationFailure();
-                    failed();
-
-                    // stop here if we cannot authenticate
-                    logger.warn("", e);
-                    return null;
-                }
-
-                // short circuit if app was shutdown
-                if (shutdownHook.isShutdown()) {
-                    return null;
-                }
-
-
-                // retrieve data
-                try (Timer.Context context = systemStatus.timer(meterName(), "submitReport." + reportParameters.endpoint()).time()) {
-                    String uuid = client.submitReport(reportParameters.startTime(), reportParameters.endTime(), reportParameters.entityType(), reportParameters.metricName());
-
-                    // determine if the batch request failed; stop here if that's the case
-                    if (isNull(uuid)) {
+                    } catch (UnauthorizedException e) {
+                        // log auth failure if this exception type was thrown
+                        authenticationFailure();
                         failed();
+
+                        // stop here if we cannot authenticate
+                        logger.warn("", e);
                         return null;
                     }
 
-                    // attempt to load the result
-                    try {
-                        ReportResponse reportResponse = pollReport(client, uuid, reportParameters.pollingIntervalMillis(), 1)
-                                // timeout after the specified number of ms
-                                .timeout(reportParameters.pollingTimeoutMillis(), TimeUnit.MILLISECONDS)
-                                .doOnError(e -> logger.warn("Exception when retrieving report metrics: {}", e.getMessage()))
-                                .blockingFirst();
+                    // short circuit if app was shutdown
+                    if (shutdownHook.isShutdown()) {
+                        return null;
+                    }
 
-                        // mark successful operation and continue processing
-                        succeeded();
 
-                        // retrieve data points
-                        List<ReportResponse.ChartData> chartData = Iterables.getOnlyElement(reportResponse.result().charts()).chartData();
+                    // retrieve data
+                    try (Timer.Context context = systemStatus.timer(meterName(), "submitReport." + reportParameters.endpoint()).time()) {
+                        String uuid = client.submitReport(reportParameters.startTime(), reportParameters.endTime(), reportParameters.entityType(), reportParameters.metricName());
 
-                        // log cache debugging data
-                        logger.info("{} metrics loaded from endpoint {}", chartData.size(), reportParameters.endpoint());
+                        // determine if the batch request failed; stop here if that's the case
+                        if (isNull(uuid)) {
+                            failed();
+                            return null;
+                        }
 
-                        return mapDatapointsAsResults(chartData, reportParameters);
+                        // attempt to load the result
+                        try {
+                            ReportResponse reportResponse = pollReport(client, uuid, reportParameters.pollingIntervalMillis(), 1)
+                                    // timeout after the specified number of ms
+                                    .timeout(reportParameters.pollingTimeoutMillis(), TimeUnit.MILLISECONDS)
+                                    .doOnError(e -> logger.warn("Exception when retrieving report metrics: {}", e.getMessage()))
+                                    .blockingFirst();
 
-                    } catch (NoSuchElementException|IllegalArgumentException e) {
+                            // mark successful operation and continue processing
+                            succeeded();
+
+                            // retrieve data points
+                            List<ReportResponse.ChartData> chartData = Iterables.getOnlyElement(reportResponse.result().charts()).chartData();
+
+                            // log cache debugging data
+                            logger.info("{} metrics loaded from endpoint {}", chartData.size(), reportParameters.endpoint());
+
+                            return mapDatapointsAsResults(chartData, reportParameters);
+
+                        } catch (NoSuchElementException | IllegalArgumentException e) {
+                            logger.error("Could not complete request for {}; failed query={}; due to {}", reportParameters.endpoint(), reportParameters.metricName(), e.getMessage());
+                            failed();
+                            return null;
+                        }
+
+                    } catch (UnauthorizedException e) {
                         logger.error("Could not complete request for {}; failed query={}; due to {}", reportParameters.endpoint(), reportParameters.metricName(), e.getMessage());
                         failed();
+
                         return null;
                     }
 
-                } catch (UnauthorizedException e) {
-                    logger.error("Could not complete request for {}; failed query={}; due to {}", reportParameters.endpoint(), reportParameters.metricName(), e.getMessage());
-                    failed();
+                })
 
-                    return null;
-                }
+                // filter out errors
+                .filter(Objects::nonNull)
 
-            })
+                // merge into one matrix
+                .flatMap(Collection::stream)
 
-            // filter out errors
-            .filter(Objects::nonNull)
-
-            // merge into one matrix
-            .flatMap(Collection::stream)
-
-            // and return
-            .collect(Collectors.toList());
+                // and return
+                .collect(Collectors.toList());
     }
 
     /**
