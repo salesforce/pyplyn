@@ -230,6 +230,29 @@ public class FormatUtilsTest {
     }
 
     @Test
+    public void testFormattingPercentageDoesNotExceedSize() throws Exception {
+        // ARRANGE
+        Map<String, Number> expectedResultsForValues = new HashMap<>(23);
+        expectedResultsForValues.put("0%",     0);
+        expectedResultsForValues.put("0%",     0.0001f);
+        expectedResultsForValues.put("0.1%",   0.001f);
+        expectedResultsForValues.put("1%",     0.01f);
+        expectedResultsForValues.put("10%",    0.1f);
+        expectedResultsForValues.put("100%",   1f);
+        expectedResultsForValues.put("98.7%",  0.987f);
+        expectedResultsForValues.put("98.8%",  0.9876f);
+
+        // ACT/ASSERT
+        for (Map.Entry<String, Number> entry : expectedResultsForValues.entrySet()) {
+            String result = FormatUtils.formatPercentage(entry.getValue());
+
+            // ASSERT
+            assertThat(result, equalTo(entry.getKey()));
+            assertThat("String length larger than 5 (\"" + result + "\")", result.length(), lessThanOrEqualTo(5));
+        }
+    }
+
+    @Test
     public void testGenerateDefaultValueMessage() throws Exception {
         // ACT
         String defaultMessage = FormatUtils.generateDefaultValueMessage("metric", 1234);

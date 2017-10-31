@@ -57,6 +57,14 @@ public final class FormatUtils {
         return formatter;
     });
 
+    /**
+     * Used for format percentages with 2 fraction digits
+     */
+    private static ThreadLocal<NumberFormat> percentageFormat = ThreadLocal.withInitial(() -> {
+        NumberFormat formatter = new DecimalFormat("0.#%");
+        formatter.setMaximumFractionDigits(1);
+        return formatter;
+    });
 
     /**
      * Utilities classes should not be instantiated
@@ -152,6 +160,16 @@ public final class FormatUtils {
         } else {
             return decimalFormatSeconds.get().format(value.doubleValue()/1000) + "s";
         }
+    }
+
+    /**
+     * Formats a float like a percent.
+     */
+    public static String formatPercentage(Number value) {
+        if (value.floatValue() == 1f) {
+            return "100%";
+        }
+        return percentageFormat.get().format(value);
     }
 
     /**
