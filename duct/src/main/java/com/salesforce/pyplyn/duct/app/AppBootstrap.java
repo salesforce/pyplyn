@@ -34,6 +34,7 @@ import com.salesforce.pyplyn.duct.etl.extract.trust1.Trust1;
 import com.salesforce.pyplyn.duct.etl.extract.trust1.Trust1ExtractProcessor;
 import com.salesforce.pyplyn.duct.etl.extract.virtualinstruments.VirtualInstruments;
 import com.salesforce.pyplyn.duct.etl.extract.virtualinstruments.VirtualInstrumentsExtractProcessor;
+import com.salesforce.pyplyn.duct.etl.load.argus.ArgusLoadProcessor;
 import com.salesforce.pyplyn.duct.etl.load.refocus.RefocusLoadProcessor;
 import com.salesforce.pyplyn.duct.etl.transform.standard.*;
 import com.salesforce.pyplyn.duct.providers.client.ArgusClientModule;
@@ -118,6 +119,7 @@ public class AppBootstrap {
 
                 // Load
                 ModuleBuilder.forLoad(com.salesforce.pyplyn.duct.etl.load.refocus.Refocus.class),
+                ModuleBuilder.forLoad(com.salesforce.pyplyn.duct.etl.load.argus.Argus.class),
 
                 // Deserialization module
                 new PyplynObjectMapperModule()
@@ -151,6 +153,7 @@ public class AppBootstrap {
         defaultModules.add(ModuleBuilder.forExtractProcessor(RefocusExtractProcessor.class));
         defaultModules.add(ModuleBuilder.forExtractProcessor(Trust1ExtractProcessor.class));
         defaultModules.add(ModuleBuilder.forExtractProcessor(VirtualInstrumentsExtractProcessor.class));
+        defaultModules.add(ModuleBuilder.forLoadProcessor(ArgusLoadProcessor.class));
         defaultModules.add(ModuleBuilder.forLoadProcessor(RefocusLoadProcessor.class));
 
         // configuration modules

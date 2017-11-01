@@ -31,7 +31,7 @@ import com.fasterxml.jackson.databind.SerializerProvider;
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
  * @since 3.0
  */
-public class SensitiveByteArraySerializerTest {
+public class SensitiveByteArrayTest {
     @Mock
     SerializerProvider provider;
 

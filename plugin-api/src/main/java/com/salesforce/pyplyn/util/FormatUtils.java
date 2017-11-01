@@ -16,6 +16,9 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.Optional;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.salesforce.pyplyn.model.Transmutation;
 
@@ -56,6 +59,8 @@ public final class FormatUtils {
         formatter.setMaximumFractionDigits(2);
         return formatter;
     });
+
+    private static final Pattern cleanMeasurementNames = Pattern.compile("(?i)[^a-z0-9]+");
 
 
     /**
@@ -159,5 +164,12 @@ public final class FormatUtils {
      */
     public static String generateDefaultValueMessage(String metric, Number value) {
         return String.format(DEFAULT_VALUE_MESSAGE_TEMPLATE, metric, formatNumber(value));
+    }
+
+    /**
+     * Cleans measurements name, replacing multiple separators (-) and invalid characters with a single dash
+     */
+    public static String cleanMeasurementName(String measurement) {
+        return Stream.of(cleanMeasurementNames.split(measurement)).collect(Collectors.joining("-"));
     }
 }

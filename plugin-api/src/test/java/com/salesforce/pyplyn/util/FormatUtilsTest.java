@@ -238,6 +238,24 @@ public class FormatUtilsTest {
         assertThat(defaultMessage, allOf(containsString("metric"), containsString("1234")));
     }
 
+    @Test
+    public void testCleanValidMeasurement() throws Exception {
+        // ACT
+        String measurementName = FormatUtils.cleanMeasurementName("metric-Name");
+
+        // ASSERT
+        assertThat(measurementName, equalTo("metric-Name"));
+    }
+
+    @Test
+    public void testCleanInvalidMeasurement() throws Exception {
+        // ACT
+        String measurementName = FormatUtils.cleanMeasurementName("metric--Name::extra01data");
+
+        // ASSERT
+        assertThat(measurementName, equalTo("metric-Name-extra01data"));
+    }
+
     /**
      * Runs the expected assertions
      * @param entry

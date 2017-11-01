@@ -8,6 +8,7 @@
 
 package com.salesforce.pyplyn.duct.etl.extract.virtualinstruments;
 
+import com.salesforce.pyplyn.util.AbsoluteOrRelativeTime;
 import org.immutables.value.Value;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -37,13 +38,17 @@ public abstract class VirtualInstruments implements Extract {
     public abstract String endpoint();
 
     /**
-     * @return time from which to start loading metrics (expressed in milliseconds from epoch)
+     * @return time from which to start loading metrics (expressed in milliseconds from epoch or
+     *   relative formats described in {@link AbsoluteOrRelativeTime})
      */
+    @JsonDeserialize(using = AbsoluteOrRelativeTime.Deserializer.class)
     public abstract Long startTime();
 
     /**
-     * @return time until which metrics are loaded (expressed in milliseconds from epoch)
+     * @return time until which metrics are loaded (expressed in milliseconds from epoch or
+     *   relative formats described in {@link AbsoluteOrRelativeTime})
      */
+    @JsonDeserialize(using = AbsoluteOrRelativeTime.Deserializer.class)
     public abstract Long endTime();
 
     /**

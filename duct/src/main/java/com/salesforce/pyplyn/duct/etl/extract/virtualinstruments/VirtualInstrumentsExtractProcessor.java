@@ -7,6 +7,7 @@
  */
 package com.salesforce.pyplyn.duct.etl.extract.virtualinstruments;
 
+import static com.salesforce.pyplyn.util.FormatUtils.cleanMeasurementName;
 import static io.reactivex.Flowable.defer;
 import static java.util.Objects.isNull;
 
@@ -185,7 +186,8 @@ public class VirtualInstrumentsExtractProcessor extends AbstractMeteredExtractPr
                                     .source(chartData)
                                     .build();
 
-                            return createResult(time, value, metadata, data.entityName(), parameters.endpoint());
+                            String entityName = cleanMeasurementName(data.entityName());
+                            return createResult(time, value, metadata, entityName, parameters.endpoint());
                         })
 
                         .collect(Collectors.toList())).collect(Collectors.toList());
