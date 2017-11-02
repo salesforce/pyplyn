@@ -59,6 +59,11 @@
             <organization>Salesforce</organization>
             <url>https://github.com/ivarley</url>
         </developer>
+        <developer>
+            <name>Jason Schroeder</name>
+            <organization>Salesforce</organization>
+            <url>https://github.com/jasonschroeder-sfdc</url>
+        </developer>
     </developers>
 
     <properties>
