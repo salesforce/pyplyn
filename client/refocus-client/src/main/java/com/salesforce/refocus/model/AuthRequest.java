@@ -18,7 +18,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.salesforce.pyplyn.annotations.PyplynImmutableStyle;
-import com.salesforce.pyplyn.util.SensitiveByteArraySerializer;
+import com.salesforce.pyplyn.util.SensitiveByteArray;
 
 /**
  * Auth request model
@@ -37,6 +37,6 @@ public abstract class AuthRequest {
     public abstract String username();
 
     @Value.Redacted
-    @JsonSerialize(using=SensitiveByteArraySerializer.class)
+    @JsonSerialize(using=SensitiveByteArray.Serializer.class)
     public abstract byte[] password();
 }

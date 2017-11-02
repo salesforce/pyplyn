@@ -15,6 +15,7 @@ import java.util.SortedMap;
 
 import javax.annotation.Nullable;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.immutables.value.Value;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -60,6 +61,7 @@ public abstract class MetricResponse implements Cacheable {
     @Override
     @Value.Derived
     @Value.Auxiliary
+    @JsonIgnore
     public String cacheKey() {
         return metric();
     }

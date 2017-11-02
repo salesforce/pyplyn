@@ -10,8 +10,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.salesforce.pyplyn.annotations.PyplynImmutableStyle;
-import com.salesforce.pyplyn.util.SensitiveByteArrayDeserializer;
-import com.salesforce.pyplyn.util.SensitiveByteArraySerializer;
+import com.salesforce.pyplyn.util.SensitiveByteArray;
 
 
 /**
@@ -28,12 +27,12 @@ import com.salesforce.pyplyn.util.SensitiveByteArraySerializer;
 public abstract class AuthToken {
     @Value.Redacted
     @JsonProperty(access = WRITE_ONLY)
-    @JsonSerialize(using=SensitiveByteArraySerializer.class)
-    @JsonDeserialize(using=SensitiveByteArrayDeserializer.class)
+    @JsonSerialize(using=SensitiveByteArray.Serializer.class)
+    @JsonDeserialize(using=SensitiveByteArray.Deserializer.class)
     public abstract byte[] accessToken();
 
     @Value.Redacted
-    @JsonSerialize(using=SensitiveByteArraySerializer.class)
-    @JsonDeserialize(using=SensitiveByteArrayDeserializer.class)
+    @JsonSerialize(using=SensitiveByteArray.Serializer.class)
+    @JsonDeserialize(using=SensitiveByteArray.Deserializer.class)
     public abstract byte[] refreshToken();
 }

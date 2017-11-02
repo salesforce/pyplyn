@@ -12,7 +12,7 @@
 
     <groupId>com.salesforce.pyplyn</groupId>
     <artifactId>pyplyn</artifactId>
-    <version>10.1.1-SNAPSHOT</version>
+    <version>10.2.1-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>pyplyn</name>
 
@@ -21,6 +21,7 @@
         <module>client/influxdb-client</module>
         <module>client/refocus-client</module>
         <module>client/trust1-client</module>
+        <module>client/virtualinstruments-client</module>
         <module>duct</module>
         <module>plugin-api</module>
     </modules>
@@ -380,6 +381,11 @@
             <dependency>
                 <groupId>com.salesforce.pyplyn</groupId>
                 <artifactId>trust1-client</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.salesforce.pyplyn</groupId>
+                <artifactId>virtualinstruments-client</artifactId>
                 <version>${project.version}</version>
             </dependency>
 

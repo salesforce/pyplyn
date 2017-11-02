@@ -290,6 +290,15 @@ public abstract class AbstractRemoteClient<S> implements RemoteClient {
     }
 
     /**
+     * Executes the remote call and returns the HTTP response headers
+     *
+     * @throws UnauthorizedException if the endpoint could not be authenticated
+     */
+    protected <T> Response<T> execute(Call<T> call) throws UnauthorizedException {
+        return Optional.ofNullable(executeCallInternal(call)).orElse(null);
+    }
+
+    /**
      * Executes the {@link Retrofit} call
      *   if the initial call fails with {@link UnauthorizedException}, the authentication operation is called one more
      *   time and the call is then retried

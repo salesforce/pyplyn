@@ -11,7 +11,7 @@
     <parent>
         <groupId>com.salesforce.pyplyn</groupId>
         <artifactId>pyplyn</artifactId>
-        <version>10.1.1-SNAPSHOT</version>
+        <version>10.2.1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -169,6 +169,10 @@
         <dependency>
             <groupId>com.salesforce.pyplyn</groupId>
             <artifactId>trust1-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.salesforce.pyplyn</groupId>
+            <artifactId>virtualinstruments-client</artifactId>
         </dependency>
 
         <!-- Jackson -->

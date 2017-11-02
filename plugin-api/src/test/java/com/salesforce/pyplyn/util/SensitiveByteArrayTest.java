@@ -31,7 +31,7 @@ import com.fasterxml.jackson.databind.SerializerProvider;
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
  * @since 3.0
  */
-public class SensitiveByteArraySerializerTest {
+public class SensitiveByteArrayTest {
     @Mock
     SerializerProvider provider;
 
@@ -44,16 +44,16 @@ public class SensitiveByteArraySerializerTest {
     @Mock
     DeserializationContext context;
 
-    SensitiveByteArraySerializer serializer;
-    SensitiveByteArrayDeserializer deserializer;
+    SensitiveByteArray.Serializer serializer;
+    SensitiveByteArray.Deserializer deserializer;
 
     @BeforeMethod
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
 
         // ARRANGE
-        serializer = new SensitiveByteArraySerializer();
-        deserializer = new SensitiveByteArrayDeserializer();
+        serializer = new SensitiveByteArray.Serializer();
+        deserializer = new SensitiveByteArray.Deserializer();
     }
 
     @Test

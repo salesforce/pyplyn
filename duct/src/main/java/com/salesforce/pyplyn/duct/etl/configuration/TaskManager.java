@@ -184,6 +184,7 @@ public class TaskManager<T extends Configuration> {
                     // LOAD
                     return transformed
                             // process each row individually
+                            // TODO: update this to send full dataset to each processor, instead of sending each row individually
                             .flatMap(Flowable::fromIterable)
 
                             // for each row an loadProcessor combination, apply
