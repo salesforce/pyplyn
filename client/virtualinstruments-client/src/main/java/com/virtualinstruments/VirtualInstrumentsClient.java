@@ -68,7 +68,7 @@ public class VirtualInstrumentsClient extends AbstractRemoteClient<VirtualInstru
         RequestBody body = RequestBody.create(MediaType.parse(""), credentials);
         Response<ResponseBody> response = execute(svc().login(body));
 
-        if (!response.isSuccessful()) {
+        if (isNull(response) || !response.isSuccessful()) {
             logFailedLogin(response, connector().endpoint());
             return false;
         }
@@ -99,7 +99,12 @@ public class VirtualInstrumentsClient extends AbstractRemoteClient<VirtualInstru
      */
     static void logFailedLogin(Response<ResponseBody> response, String endpoint) {
         try {
-            logger.error("Unsuccessful authentication call to {}; response={}", endpoint, response.body().string());
+            String body = null;
+            ResponseBody responseBody = Optional.ofNullable(response).map(Response::body).orElse(null);
+            if (nonNull(responseBody)) {
+                body = responseBody.string();
+            }
+            logger.error("Unsuccessful authentication call to {}; response={}", endpoint, body);
 
         } catch (IOException e) {
             logger.warn("Could not read response from VirtualInstruments endpoint {}", endpoint, e);

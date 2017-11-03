@@ -14,13 +14,12 @@ import static java.util.Objects.isNull;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
-import java.util.Collection;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import com.virtualinstruments.model.ImmutableReportResponse;
+import io.reactivex.functions.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -102,12 +101,22 @@ public class VirtualInstrumentsExtractProcessor extends AbstractMeteredExtractPr
                         }
 
                         // attempt to load the result
+                        ReportResponse reportResponse = null;
                         try {
-                            ReportResponse reportResponse = pollReport(client, uuid, reportParameters.pollingIntervalMillis(), 1)
-                                    // timeout after the specified number of ms
+                            reportResponse = pollReport(client, uuid, reportParameters.pollingIntervalMillis(), 1)
+                                    // time out after the specified number of ms
                                     .timeout(reportParameters.pollingTimeoutMillis(), TimeUnit.MILLISECONDS)
                                     .doOnError(e -> logger.warn("Exception when retrieving report metrics: {}", e.getMessage()))
+                                    .onErrorResumeNext(defer(() -> Flowable.just(ImmutableReportResponse.of(
+                                                    "ERROR",
+                                            ImmutableReportResponse.Result.builder()
+                                                    .uuid("")
+                                                    .finished(false)
+                                                    .build(),
+                                            false)))
+                                    )
                                     .blockingFirst();
+
 
                             // mark successful operation and continue processing
                             succeeded();
@@ -121,13 +130,14 @@ public class VirtualInstrumentsExtractProcessor extends AbstractMeteredExtractPr
                             return mapDatapointsAsResults(chartData, reportParameters);
 
                         } catch (NoSuchElementException | IllegalArgumentException e) {
-                            logger.error("Could not complete request for {}; failed query={}; due to {}", reportParameters.endpoint(), reportParameters.metricName(), e.getMessage());
+                            logger.error("Could not complete request for {}; failed to retrieve chart data for {}; response was {}; exception message {}",
+                                    reportParameters.endpoint(), reportParameters.metricName(), reportResponse, e.getMessage());
                             failed();
                             return null;
                         }
 
                     } catch (UnauthorizedException e) {
-                        logger.error("Could not complete request for {}; failed query={}; due to {}", reportParameters.endpoint(), reportParameters.metricName(), e.getMessage());
+                        logger.error("Could not complete request for {}; failed to authorize and execute query={}; due to {}", reportParameters.endpoint(), reportParameters.metricName(), e.getMessage());
                         failed();
 
                         return null;
@@ -158,6 +168,7 @@ public class VirtualInstrumentsExtractProcessor extends AbstractMeteredExtractPr
 
                 // if the response is not finished, return null to generate an error downstream
                 .map(response -> response.status().equals("OK")?response:null)
+                .map(response -> response.result().finished()?response:null)
 
                 // retry on errors
                 .onErrorResumeNext(defer(() -> pollReport(client, uuid, interval, cnt + 1)).take(1));
