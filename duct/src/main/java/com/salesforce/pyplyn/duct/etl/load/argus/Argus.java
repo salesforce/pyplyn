@@ -16,6 +16,8 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.salesforce.pyplyn.annotations.PyplynImmutableStyle;
 import com.salesforce.pyplyn.model.Load;
 
+import java.util.Map;
+
 /**
  * Argus load destination model
  *
@@ -40,5 +42,13 @@ public abstract class Argus implements Load {
      * Scope to tie use for the published {@link com.salesforce.argus.model.MetricResponse}s
      */
     public abstract String scope();
+
+    /**
+     * Tags to publish along with the resulting value
+     *
+     * <p/> These can be overridden by any dynamic {@link com.salesforce.pyplyn.duct.etl.transform.standard.Metadata}
+     *   tags defined by the {@link com.salesforce.pyplyn.model.Transform} plugins
+     */
+    public abstract Map<String, String> tags();
 
 }
