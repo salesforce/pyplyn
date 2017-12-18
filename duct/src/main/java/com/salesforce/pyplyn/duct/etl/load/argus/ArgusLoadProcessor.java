@@ -111,7 +111,6 @@ public class ArgusLoadProcessor extends AbstractMeteredLoadProcessor<Argus> {
                                             final List<Transmutation> results = result.getValue();
                                             final Transmutation.Metadata metadata = Iterables.getLast(results).metadata();
 
-
                                             Map<String, String> datapoints = results.stream()
                                                     .collect(Collectors.toMap(
                                                             t -> Long.toString(t.time().toInstant().toEpochMilli()),

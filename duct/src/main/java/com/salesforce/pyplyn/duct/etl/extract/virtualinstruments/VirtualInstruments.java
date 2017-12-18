@@ -8,7 +8,9 @@
 
 package com.salesforce.pyplyn.duct.etl.extract.virtualinstruments;
 
+import com.salesforce.pyplyn.duct.etl.extract.virtualinstruments.VirtualInstrumentsExtractProcessor.Tokens;
 import com.salesforce.pyplyn.util.AbsoluteOrRelativeTime;
+import com.virtualinstruments.model.ReportResponse;
 import org.immutables.value.Value;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -60,6 +62,18 @@ public abstract class VirtualInstruments implements Extract {
      * @return metric to load data for
      */
     public abstract String metricName();
+
+    /**
+     * The name used to identify VI metrics to be used further down in the pipeline.
+     *   Supports dynamic parameters that will be replaced before generating a result.
+     *
+     * @return name that can contain dynamic parameters for {@link #entityType()}, {@link #metricName()},
+     *         and {@link ReportResponse.ChartData#entityName()}
+     */
+    @Value.Default
+    public String resultingMeasurementName() {
+       return Tokens.ENTITY_TYPE.token() + "-" + Tokens.METRIC_NAME.token() + "-" + Tokens.ENTITY_NAME.token();
+    }
 
     /**
      * @return the delay between polling requests

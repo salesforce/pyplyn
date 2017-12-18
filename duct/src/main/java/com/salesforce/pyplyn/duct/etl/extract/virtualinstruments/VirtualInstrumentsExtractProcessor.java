@@ -16,10 +16,10 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import com.virtualinstruments.model.ImmutableReportResponse;
-import io.reactivex.functions.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -178,7 +178,6 @@ public class VirtualInstrumentsExtractProcessor extends AbstractMeteredExtractPr
      * Maps datapoints returned by VirtualInstruments as a {@link Transmutation} matrix
      */
     private List<List<Transmutation>> mapDatapointsAsResults(List<ReportResponse.ChartData> chartData, final VirtualInstruments parameters) {
-
         // log no-data events
         if (chartData.isEmpty()) {
             logger.warn("No data for {}, endpoint {}", parameters.metricName(), parameters.endpoint());
@@ -192,17 +191,30 @@ public class VirtualInstrumentsExtractProcessor extends AbstractMeteredExtractPr
                             ZonedDateTime time = Instant.ofEpochMilli(point[0].longValue()).atZone(ZoneOffset.UTC);
                             Number value = point[0];
 
+                            // prepare measurement name
+                            String measurementName = replace(parameters, data.entityName());
+
+
                             // tag datapoint with originating statement
                             Transmutation.Metadata metadata = ImmutableTransmutation.Metadata.builder()
                                     .source(chartData)
                                     .build();
 
-                            String entityName = cleanMeasurementName(data.entityName());
-                            return createResult(time, value, metadata, entityName, parameters.endpoint());
+                            return createResult(time, value, metadata, measurementName);
                         })
 
                         .collect(Collectors.toList())).collect(Collectors.toList());
+    }
 
+    /**
+     * Replaces dynamically specified parameters in {@link VirtualInstruments#resultingMeasurementName()}
+     */
+    private String replace(VirtualInstruments parameters, String entityName) {
+        String result = parameters.resultingMeasurementName();
+        result = result.replaceAll(Tokens.ENTITY_TYPE.regex(), parameters.entityType());
+        result = result.replaceAll(Tokens.METRIC_NAME.regex(), parameters.metricName());
+        result = result.replaceAll(Tokens.ENTITY_NAME.regex(), cleanMeasurementName(entityName));
+        return result;
     }
 
     /**
@@ -214,7 +226,7 @@ public class VirtualInstrumentsExtractProcessor extends AbstractMeteredExtractPr
      * @param measurement name of data point
      * @return Null if the value could not be parsed
      */
-    private Transmutation createResult(ZonedDateTime time, Number value, Transmutation.Metadata metadata, String measurement, String endpointId) {
+    private Transmutation createResult(ZonedDateTime time, Number value, Transmutation.Metadata metadata, String measurement) {
         return ImmutableTransmutation.of(time, measurement, value, value, metadata);
     }
 
@@ -228,4 +240,27 @@ public class VirtualInstrumentsExtractProcessor extends AbstractMeteredExtractPr
         return "VirtualInstruments";
     }
 
+
+    /**
+     * Holds the tokens available to be dynamically filled in during processing
+     */
+    public enum Tokens {
+        ENTITY_TYPE("${entityType}"),
+        METRIC_NAME("${metricName}"),
+        ENTITY_NAME("${entityName}");
+
+        private String token;
+
+        Tokens(String token) {
+            this.token = token;
+        }
+
+        public String token() {
+            return token;
+        }
+
+        public String regex() {
+            return Pattern.quote(token);
+        }
+    }
 }
