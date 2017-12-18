@@ -192,12 +192,15 @@ public class VirtualInstrumentsExtractProcessor extends AbstractMeteredExtractPr
                             Number value = point[0];
 
                             // prepare measurement name
-                            String measurementName = replace(parameters, data.entityName());
+                            String entityName = cleanMeasurementName(data.entityName());
+                            String measurementName = replace(parameters, entityName);
 
 
                             // tag datapoint with originating statement
                             Transmutation.Metadata metadata = ImmutableTransmutation.Metadata.builder()
                                     .source(chartData)
+                                    .putTags(Tokens.ENTITY_TYPE.value(), parameters.entityType())
+                                    .putTags(Tokens.ENTITY_NAME.value(), entityName)
                                     .build();
 
                             return createResult(time, value, metadata, measurementName);
@@ -213,7 +216,7 @@ public class VirtualInstrumentsExtractProcessor extends AbstractMeteredExtractPr
         String result = parameters.resultingMeasurementName();
         result = result.replaceAll(Tokens.ENTITY_TYPE.regex(), parameters.entityType());
         result = result.replaceAll(Tokens.METRIC_NAME.regex(), parameters.metricName());
-        result = result.replaceAll(Tokens.ENTITY_NAME.regex(), cleanMeasurementName(entityName));
+        result = result.replaceAll(Tokens.ENTITY_NAME.regex(), entityName);
         return result;
     }
 
@@ -245,9 +248,9 @@ public class VirtualInstrumentsExtractProcessor extends AbstractMeteredExtractPr
      * Holds the tokens available to be dynamically filled in during processing
      */
     public enum Tokens {
-        ENTITY_TYPE("${entityType}"),
-        METRIC_NAME("${metricName}"),
-        ENTITY_NAME("${entityName}");
+        ENTITY_TYPE("EntityType"),
+        METRIC_NAME("MetricName"),
+        ENTITY_NAME("Entity");
 
         private String token;
 
@@ -255,12 +258,16 @@ public class VirtualInstrumentsExtractProcessor extends AbstractMeteredExtractPr
             this.token = token;
         }
 
-        public String token() {
+        public String value() {
             return token;
         }
 
+        public String token() {
+            return "${" + token + "}";
+        }
+
         public String regex() {
-            return Pattern.quote(token);
+            return Pattern.quote(token());
         }
     }
 }

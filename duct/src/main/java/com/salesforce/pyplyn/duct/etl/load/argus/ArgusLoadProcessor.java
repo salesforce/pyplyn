@@ -119,8 +119,8 @@ public class ArgusLoadProcessor extends AbstractMeteredLoadProcessor<Argus> {
                                             return ImmutableMetricResponse.builder()
                                                     .scope(scope)
                                                     .metric(name)
-                                                    .putAllTags(loadDestination.tags())
                                                     .putAllTags(metadata.tags())
+                                                    .putAllTags(loadDestination.tags())
                                                     .putAllDatapoints(datapoints)
                                                     .build();
 
