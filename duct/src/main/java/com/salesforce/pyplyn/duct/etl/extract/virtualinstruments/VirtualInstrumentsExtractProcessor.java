@@ -189,7 +189,7 @@ public class VirtualInstrumentsExtractProcessor extends AbstractMeteredExtractPr
                 .map(data -> data.data().stream()
                         .map(point -> {
                             ZonedDateTime time = Instant.ofEpochMilli(point[0].longValue()).atZone(ZoneOffset.UTC);
-                            Number value = point[0];
+                            Number value = point[1];
 
                             // prepare measurement name
                             String entityName = cleanMeasurementName(data.entityName());
