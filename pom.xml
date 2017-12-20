@@ -12,7 +12,7 @@
 
     <groupId>com.salesforce.pyplyn</groupId>
     <artifactId>pyplyn</artifactId>
-    <version>10.2.5-SNAPSHOT</version>
+    <version>10.2.5</version>
     <packaging>pom</packaging>
     <name>pyplyn</name>
 
@@ -524,7 +524,7 @@
     <!-- Maven release settings: create a profile in settings.xml to provide the required values -->
     <scm>
         <developerConnection>${release.developerConnection}</developerConnection>
-        <tag>HEAD</tag>
+        <tag>v10.2.5</tag>
     </scm>    
     <distributionManagement>
         <repository>
