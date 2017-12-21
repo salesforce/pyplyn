@@ -8,6 +8,7 @@ package com.salesforce.pyplyn.util;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -44,6 +45,22 @@ public class AbsoluteOrRelativeTime {
      * 1509545598000 (milliseconds from epoch)
      */
     public static class Deserializer extends JsonDeserializer<Long> {
+
+        private Supplier<Long> currentTimeSupplier = () -> Instant.now().toEpochMilli();
+
+        /**
+         * Default constructor, assumes the use of the current time to
+         */
+        public Deserializer() {
+        }
+
+        /**
+         * Constructor used for testing; allows fixing the time to a specified value
+         */
+        Deserializer(Supplier<Long> currentTimeSupplier) {
+            this.currentTimeSupplier = currentTimeSupplier;
+        }
+
         /**
          * Jackson Long deserializer implementation
          *
@@ -53,68 +70,20 @@ public class AbsoluteOrRelativeTime {
         @Override
         public Long deserialize(JsonParser jsonParser, DeserializationContext context) throws IOException {
             final String timeString = jsonParser.getValueAsString();
-            final long timeLimit = Instant.now().toEpochMilli();
-            long result = -1;
+            final long timeLimit = currentTimeSupplier.get();
 
+            long result;
             try {
                 // attempt to read the string as a Long value
                 result = Long.valueOf(timeString);
 
             } catch (NumberFormatException e) {
-                // valid relative time strings should start with a minus
-                if (timeString.charAt(0) == '-') {
-                    long value = 0;
-
-                    int i = 0;
-                    while (++i < timeString.length()) {
-                        final char digit = timeString.charAt(i);
-                        // stop if we've reached the time specifier
-                        if (digit < '0' || digit > '9') break;
-
-                        if (value > 0) {
-                            value = 10 * value + digit - '0';
-                        } else {
-                            value += digit - '0';
-                        }
-
-                        // stop if going beyond the start of the current epoch (1970-01-01) assuming millis are used
-                        if (value > timeLimit) break;
-                    }
-
-                    // last character
-                    if (i == timeString.length() - 1) {
-                        char digit = timeString.charAt(i);
-                        switch (digit) {
-                        case 'd':
-                            result = relativeTime(TimeUnit.DAYS.toMillis(value));
-                            break;
-
-                        case 'h':
-                            result = relativeTime(TimeUnit.HOURS.toMillis(value));
-                            break;
-
-                        case 'm':
-                            result = relativeTime(TimeUnit.MINUTES.toMillis(value));
-                            break;
-
-                        case 's':
-                            result = relativeTime(TimeUnit.SECONDS.toMillis(value));
-                            break;
-                        }
-
-                    // two characters left
-                    } else if (i == timeString.length() - 2) {
-                        // value is already in milliseconds
-                        if (timeString.charAt(i) == 'm'
-                                && timeString.charAt(i + 1) == 's') {
-                            result = relativeTime(value);
-                        }
-                    }
-                }
+                // otherwise treat as relative string
+                result = parseRelativeTimeSpecifier(timeString, timeLimit);
             }
 
-            // return in an errored state if we cannot parse a Long input (milliseconds), or the time specifiers
-            // are not one of (h, m, s, ms) or the result is less that the epoch's start
+            // throw an exception if we cannot parse a Long input (milliseconds), or the time specifiers
+            // are not one of (d, h, m, s, ms) or the result is less that the epoch's start
             if (result < 0 || result > timeLimit) {
                 throw new IOException(timeString + " could not converted to a time value (milliseconds from epoch)");
             }
@@ -122,14 +91,64 @@ public class AbsoluteOrRelativeTime {
             return result;
         }
 
-        /**
-         * @return the computed relative time, from the current point in time
-         * @throws IOException
-         *             if the result is invalid
-         */
-        public Long relativeTime(Long offsetMillis) {
-            return Instant.now().toEpochMilli() - offsetMillis;
+    }
+
+    /**
+     * Parses a relative time and returns it's corresponding timestamp, substracted from the present time (<code>presentTimeInMillis</code>)
+     *
+     * @param relativeTime The time string you want to process (e.g.: -7d, -1h, -100ms, etc.)
+     * @param presentTimeInMillis The value (in millis) of the current epoch time (usually <code>Instant.now().toEpochMilli()</code>)
+     * @return -1 if the <code>relativeTime</code> is in an invalid format
+     */
+    public static long parseRelativeTimeSpecifier(String relativeTime, long presentTimeInMillis) {
+        // valid relative time strings should start with a minus
+        if (relativeTime.charAt(0) == '-') {
+            long value = 0;
+
+            int i = 0;
+            while (++i < relativeTime.length()) {
+                final char digit = relativeTime.charAt(i);
+                // stop if we've reached the time specifier
+                if (digit < '0' || digit > '9') break;
+
+                if (value > 0) {
+                    value = 10 * value + digit - '0';
+                } else {
+                    value += digit - '0';
+                }
+
+                // stop if the current time is in the future (the computation overflows past Long.MIN_VALUE
+                if (value > presentTimeInMillis) break;
+            }
+
+            // when we only have one character left, check the single character specifiers
+            if (i == relativeTime.length() - 1) {
+                char timeSpecifier = relativeTime.charAt(i);
+                switch (timeSpecifier) {
+                    case 'd':
+                        return presentTimeInMillis - TimeUnit.DAYS.toMillis(value);
+
+                    case 'h':
+                        return presentTimeInMillis - TimeUnit.HOURS.toMillis(value);
+
+                    case 'm':
+                        return presentTimeInMillis - TimeUnit.MINUTES.toMillis(value);
+
+                    case 's':
+                        return presentTimeInMillis - TimeUnit.SECONDS.toMillis(value);
+                }
+
+            // only two characters left (check for 'ms')
+            } else if (i == relativeTime.length() - 2) {
+                // value is already in milliseconds
+                if (relativeTime.charAt(i) == 'm' && relativeTime.charAt(i + 1) == 's') {
+                    return presentTimeInMillis - value;
+                }
+            }
         }
+
+        // invalid response
+        return -1L;
     }
 
 }

@@ -45,10 +45,8 @@ public class AbsoluteOrRelativeTimeTest {
         MockitoAnnotations.initMocks(this);
 
         // ARRANGE
-        deserializer = spy(new AbsoluteOrRelativeTime.Deserializer());
-
         // fix the instant, so we can test it
-        doAnswer(a -> now - (Long)a.getArgument(0)).when(deserializer).relativeTime(anyLong());
+        deserializer = spy(new AbsoluteOrRelativeTime.Deserializer(() -> now));
     }
 
 
