@@ -9,6 +9,7 @@
 package com.salesforce.argus;
 
 import java.util.List;
+import java.util.Map;
 
 import com.salesforce.argus.model.*;
 
@@ -29,6 +30,7 @@ public interface ArgusService {
     /* Authorization header */
     String AUTHORIZATION = "Authorization";
 
+
     /* Authentication */
 
     @POST("v2/auth/login")
@@ -39,10 +41,15 @@ public interface ArgusService {
     @Headers("Content-Type: application/json")
     Call<AuthToken> refresh(@Body AuthToken tokens);
 
+
     /* Metrics operations. */
 
     @GET("metrics")
     Call<List<MetricResponse>> getMetrics(@Header(AUTHORIZATION) String authorization, @Query("expression") List<String> expressions);
+
+    @POST("collection/metrics")
+    @Headers("Content-Type: application/json")
+    Call<MetricCollectionResponse> postMetrics(@Header(AUTHORIZATION) String authorization, @Body List<MetricResponse> metrics);
 
 
     /* Dashboard operations. */

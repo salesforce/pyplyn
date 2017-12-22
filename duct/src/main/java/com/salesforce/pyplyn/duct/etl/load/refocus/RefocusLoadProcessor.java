@@ -137,8 +137,6 @@ public class RefocusLoadProcessor extends AbstractMeteredLoadProcessor<Refocus> 
                 .allMatch(Objects::nonNull);
 
         // log result of operation
-        //   Note: the upsertSamplesBulk Refocus API call, will always return OK, so failures will be marked
-        //         only if the endpoint does not respond at all, or we cannot authorize against it
         if (allUpserted) {
             succeeded();
         } else {

@@ -14,6 +14,7 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.google.common.base.Preconditions;
@@ -142,6 +143,18 @@ public class ArgusClient extends AbstractRemoteClient<ArgusService> {
     public List<MetricResponse> getMetrics(List<String> expressions) throws UnauthorizedException {
         Preconditions.checkNotNull(expressions, "Expressions should not be null");
         return executeAndRetrieveBody(svc().getMetrics(authorizationHeader(), expressions), null);
+    }
+
+    /**
+     * Posts metrics to a remote endpoint
+     *
+     * @return A list of error messages and count of successes and failures
+     * @throws UnauthorizedException
+     */
+    public MetricCollectionResponse postMetrics(List<MetricResponse> metrics) throws UnauthorizedException {
+        Preconditions.checkNotNull(metrics, "Metrics should not be null");
+        Preconditions.checkArgument(!metrics.isEmpty(), "Metrics should not be empty");
+        return executeAndRetrieveBody(svc().postMetrics(authorizationHeader(), metrics), null);
     }
 
     /**

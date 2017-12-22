@@ -9,6 +9,7 @@
 package com.salesforce.pyplyn.duct.etl.transform.standard;
 
 import static com.salesforce.pyplyn.util.FormatUtils.formatNumberFiveCharLimit;
+import static com.salesforce.pyplyn.util.FormatUtils.formatPercentage;
 
 import java.math.BigDecimal;
 import java.util.*;
@@ -80,6 +81,8 @@ public abstract class HighestValue implements Transform {
         // Creates a five character message code and sets it in the results's metadata
         if (tagMessageCode() == Display.ORIGINAL_VALUE) {
             metadata.messageCode(formatNumberFiveCharLimit(result.originalValue()));
+        } else if (tagMessageCode() == Display.ORIGINAL_PERCENTAGE) {
+            metadata.messageCode(formatPercentage(result.originalValue()));
         }
 
         // Tags the result with the original metric's timestamp
@@ -95,6 +98,7 @@ public abstract class HighestValue implements Transform {
      */
     public enum Display{
         ORIGINAL_VALUE,
-        ORIGINAL_TIMESTAMP
+        ORIGINAL_TIMESTAMP,
+        ORIGINAL_PERCENTAGE
     }
 }

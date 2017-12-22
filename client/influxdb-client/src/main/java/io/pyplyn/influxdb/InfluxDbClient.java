@@ -8,20 +8,21 @@
 
 package io.pyplyn.influxdb;
 
+import static java.util.Collections.singletonList;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
 import com.google.common.base.Preconditions;
 import com.salesforce.pyplyn.client.AbstractRemoteClient;
 import com.salesforce.pyplyn.client.UnauthorizedException;
 import com.salesforce.pyplyn.configuration.EndpointConnector;
+
 import io.pyplyn.influxdb.model.Point;
 import io.pyplyn.influxdb.model.Results;
 import okhttp3.MediaType;
 import okhttp3.RequestBody;
 import retrofit2.Call;
-
-import java.util.List;
-import java.util.stream.Collectors;
-
-import static java.util.Collections.singletonList;
 
 /**
  * Refocus API implementation
