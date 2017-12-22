@@ -130,14 +130,14 @@ public class VirtualInstrumentsExtractProcessor extends AbstractMeteredExtractPr
                             return mapDatapointsAsResults(chartData, reportParameters);
 
                         } catch (NoSuchElementException | IllegalArgumentException e) {
-                            logger.error("Could not complete request for {}; failed to retrieve chart data for {}; response was {}; exception message {}",
-                                    reportParameters.endpoint(), reportParameters.metricName(), reportResponse, e.getMessage());
+                            logger.error("Could not complete request for {}; failed to retrieve chart data for {}; response was {}",
+                                    reportParameters.endpoint(), reportParameters.metricName(), reportResponse, e);
                             failed();
                             return null;
                         }
 
                     } catch (UnauthorizedException e) {
-                        logger.error("Could not complete request for {}; failed to authorize and execute query={}; due to {}", reportParameters.endpoint(), reportParameters.metricName(), e.getMessage());
+                        logger.error("Could not complete request for {}; failed to authorize and execute query={}", reportParameters.endpoint(), reportParameters.metricName(), e);
                         failed();
 
                         return null;
@@ -167,8 +167,7 @@ public class VirtualInstrumentsExtractProcessor extends AbstractMeteredExtractPr
                 .map(time -> client.pollReport(uuid))
 
                 // if the response is not finished, return null to generate an error downstream
-                .map(response -> response.status().equals("OK")?response:null)
-                .map(response -> response.result().finished()?response:null)
+                .map(response -> (response.status().equals("OK") && response.result().finished())?response:null)
 
                 // retry on errors
                 .onErrorResumeNext(defer(() -> pollReport(client, uuid, interval, cnt + 1)).take(1));

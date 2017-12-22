@@ -46,12 +46,13 @@ public class AbsoluteOrRelativeTime {
      */
     public static class Deserializer extends JsonDeserializer<Long> {
 
-        private Supplier<Long> currentTimeSupplier = () -> Instant.now().toEpochMilli();
+        private final Supplier<Long> currentTimeSupplier;
 
         /**
-         * Default constructor, assumes the use of the current time to
+         * Default constructor, assumes the use of the current time via the {@link Instant#now()} method
          */
         public Deserializer() {
+            this(() -> Instant.now().toEpochMilli());
         }
 
         /**
@@ -111,10 +112,14 @@ public class AbsoluteOrRelativeTime {
                 // stop if we've reached the time specifier
                 if (digit < '0' || digit > '9') break;
 
+                // convert the digit from char to int (effectively "ord(digit) - 48", where 48 == (int)'0')
+                final int digitValue = digit - '0';
                 if (value > 0) {
-                    value = 10 * value + digit - '0';
+                    // shift the current value to the left (base 10) and append the current digit value
+                    value = (10 * value) + digitValue;
                 } else {
-                    value += digit - '0';
+                    // set the first non-zero digit's value as the least significant (right-most) digit
+                    value = digitValue;
                 }
 
                 // stop if the current time is in the future (the computation overflows past Long.MIN_VALUE
