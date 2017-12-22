@@ -161,7 +161,7 @@ public class VirtualInstrumentsExtractProcessor extends AbstractMeteredExtractPr
      * <p/> The attempts are triggered using the following formula:
      * <p/> TICK(cnt) = (cnt * (cnt+1) / 2) * interval
      */
-    private Flowable<ReportResponse> pollReport(final VirtualInstrumentsClient client, final String uuid, long interval, int cnt) {
+    private static Flowable<ReportResponse> pollReport(final VirtualInstrumentsClient client, final String uuid, long interval, int cnt) {
         return Flowable.timer(interval * cnt, TimeUnit.MILLISECONDS)
                 // poll the endpoint for a response
                 .map(time -> client.pollReport(uuid))
@@ -212,7 +212,7 @@ public class VirtualInstrumentsExtractProcessor extends AbstractMeteredExtractPr
     /**
      * Replaces dynamically specified parameters in {@link VirtualInstruments#resultingMeasurementName()}
      */
-    private String replace(VirtualInstruments parameters, String entityName) {
+    private static String replace(VirtualInstruments parameters, String entityName) {
         String result = parameters.resultingMeasurementName();
         result = result.replaceAll(Tokens.ENTITY_TYPE.regex(), parameters.entityType());
         result = result.replaceAll(Tokens.METRIC_NAME.regex(), parameters.metricName());
@@ -229,7 +229,7 @@ public class VirtualInstrumentsExtractProcessor extends AbstractMeteredExtractPr
      * @param measurement name of data point
      * @return Null if the value could not be parsed
      */
-    private Transmutation createResult(ZonedDateTime time, Number value, Transmutation.Metadata metadata, String measurement) {
+    private static Transmutation createResult(ZonedDateTime time, Number value, Transmutation.Metadata metadata, String measurement) {
         return ImmutableTransmutation.of(time, measurement, value, value, metadata);
     }
 
