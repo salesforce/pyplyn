@@ -49,6 +49,7 @@ import io.reactivex.Flowable;
 @Singleton
 public class VirtualInstrumentsExtractProcessor extends AbstractMeteredExtractProcessor<VirtualInstruments> {
     private static final Logger logger = LoggerFactory.getLogger(VirtualInstrumentsExtractProcessor.class);
+    public static final String OK_STATUS = "OK";
 
     private final AppConnectors appConnectors;
     private final ShutdownHook shutdownHook;
@@ -167,7 +168,7 @@ public class VirtualInstrumentsExtractProcessor extends AbstractMeteredExtractPr
                 .map(time -> client.pollReport(uuid))
 
                 // if the response is not finished, return null to generate an error downstream
-                .map(response -> (response.status().equals("OK") && response.result().finished())?response:null)
+                .map(response -> (response.status().equals(OK_STATUS) && response.result().finished())?response:null)
 
                 // retry on errors
                 .onErrorResumeNext(defer(() -> pollReport(client, uuid, interval, cnt + 1)).take(1));
@@ -215,8 +216,7 @@ public class VirtualInstrumentsExtractProcessor extends AbstractMeteredExtractPr
         String result = parameters.resultingMeasurementName();
         result = result.replaceAll(Tokens.ENTITY_TYPE.regex(), parameters.entityType());
         result = result.replaceAll(Tokens.METRIC_NAME.regex(), parameters.metricName());
-        result = result.replaceAll(Tokens.ENTITY_NAME.regex(), entityName);
-        return result;
+        return result.replaceAll(Tokens.ENTITY_NAME.regex(), entityName);
     }
 
     /**

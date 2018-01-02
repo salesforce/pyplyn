@@ -50,7 +50,7 @@ public class ConfigurationsTestHelper {
                                                           long repeatIntervalMillis, boolean disabled) {
         List<Extract> extracts = asList(
                 ImmutableArgus.of(argusEndpoint, argusExpression, argusName, 1, 2d),
-                ImmutableRefocus.of(refocusEndpoint, refocusSubject, null, refocusAspect, 1, 2d)
+                ImmutableRefocus.builder().endpoint(refocusEndpoint).subject(refocusSubject).aspect(refocusAspect).cacheMillis(1).defaultValue(2d).build()
         );
 
         List<Transform> transform = createThresholdTransforms("metric");

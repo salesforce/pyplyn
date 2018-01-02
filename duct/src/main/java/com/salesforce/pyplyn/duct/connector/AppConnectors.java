@@ -84,11 +84,11 @@ public class AppConnectors {
      *   TODO: define an interface for this class in plugin-api
      *   TODO: find a better way to achieve this (mapping of String ID + Target class, allowing any number of mappings for a specified identifier)
      */
+    @SuppressWarnings("unchecked")
     public <CLIENT extends RemoteClient, CACHE extends Cacheable> ClientAndCache<CLIENT, CACHE> retrieveOrBuildClient(final String connectorId,
                                                                                Class<CLIENT> clientClass,
                                                                                Class<CACHE> cacheClass) {
-        @SuppressWarnings("unchecked")
-        ClientAndCache<CLIENT, CACHE> clientAndCache = (ClientAndCache<CLIENT, CACHE>) registeredClients.computeIfAbsent(connectorId, key -> {
+        return (ClientAndCache<CLIENT, CACHE>) registeredClients.computeIfAbsent(connectorId, key -> {
             try {
                 // init client
                 Constructor<CLIENT> constructor = clientClass.getConstructor(EndpointConnector.class);
@@ -108,8 +108,6 @@ public class AppConnectors {
                         clientClass.getTypeName()), e);
             }
         });
-
-        return clientAndCache;
     }
 
     /**

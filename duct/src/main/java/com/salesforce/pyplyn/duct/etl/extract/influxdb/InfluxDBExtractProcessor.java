@@ -44,6 +44,8 @@ import static java.util.Objects.isNull;
 @Singleton
 public class InfluxDBExtractProcessor extends AbstractMeteredExtractProcessor<InfluxDB> {
     private static final Logger logger = LoggerFactory.getLogger(InfluxDBExtractProcessor.class);
+    static final String TIME_PARAMETER = "time";
+    public static final String VALUE_PARAMETER = "value";
 
     private final AppConnectors appConnectors;
     private final ShutdownHook shutdownHook;
@@ -144,10 +146,10 @@ public class InfluxDBExtractProcessor extends AbstractMeteredExtractProcessor<In
         int time = -1;
         int value = -1;
         for (int i = 0; i < statement.columns().size(); i++) {
-            if (statement.columns().get(i).equals("time")) {
+            if (statement.columns().get(i).equals(TIME_PARAMETER)) {
                 time = i;
 
-            } else if (statement.columns().get(i).equals("value")) {
+            } else if (statement.columns().get(i).equals(VALUE_PARAMETER)) {
                 value = i;
             }
         }
