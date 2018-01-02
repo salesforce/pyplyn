@@ -11,13 +11,18 @@ package com.salesforce.pyplyn.client;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
-import java.io.*;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
-import java.security.*;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.util.Arrays;
 import java.util.Optional;
@@ -203,8 +208,9 @@ public abstract class AbstractRemoteClient<S> implements RemoteClient {
             //   the default type is 'jks';  however, this can be changed by updating the `keystore.type` property
             //   in `$JAVA_HOME/lib/security/java.security`
             KeyStore keystore = KeyStore.getInstance(KeyStore.getDefaultType());
-            keystore.load(new FileInputStream(connector.keystorePath()), keystorePassword);
-
+            try (FileInputStream fis = new FileInputStream(connector.keystorePath())) {
+                keystore.load(fis, keystorePassword);
+            }
 
             // setup trust manager factory
             TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());

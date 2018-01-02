@@ -64,8 +64,14 @@ public class InfluxDBExtractProcessor extends AbstractMeteredExtractProcessor<In
         // stream of metrics to be loaded from the endpoints or from cache
         return queries.stream()
         .map(query -> {
-            // retrieve a InfluxDB client
+            // retrieve an InfluxDB client
             AppConnectors.ClientAndCache<InfluxDbClient, Cacheable> cc = appConnectors.retrieveOrBuildClient(query.endpoint(), InfluxDbClient.class, Cacheable.class);
+            if (isNull(cc)) {
+                failed();
+                logger.error("Cannot process InfluxDB metrics, client not found for: {}", query.endpoint());
+                return null;
+            }
+
             final InfluxDbClient client = cc.client();
 
             try {

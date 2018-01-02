@@ -64,6 +64,12 @@ public class Trust1ExtractProcessor extends AbstractMeteredExtractProcessor<Trus
         .map(instance -> {
             // retrieve a InfluxDB client
             AppConnectors.ClientAndCache<Trust1Client, Instance> cc = appConnectors.retrieveOrBuildClient(instance.endpoint(), Trust1Client.class, Instance.class);
+            if (isNull(cc)) {
+                failed();
+                logger.error("Cannot process TRUST1 metrics, client not found for: {}", instance.endpoint());
+                return null;
+            }
+
             final Trust1Client client = cc.client();
             final ConcurrentCacheMap<Instance> cache = cc.cache();
 
