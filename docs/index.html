@@ -1115,8 +1115,8 @@ mkdir ~/pyplyn
 <span class="c"># 2. Copy Pyplyn's files (this assumes you've cloned Pyplyn in `/tmp/pyplyn`)</span>
 cp -R /tmp/pyplyn/target/pyplyn-<span class="k">*</span>.jar /tmp/pyplyn/target/config /tmp/pyplyn/target/bin ~/pyplyn/
 
-<span class="c"># 3. Create a new directory for your configurations</span>
-mkdir ~/pyplyn/configurations
+<span class="c"># 3. Create directories for your configurations</span>
+mkdir ~/pyplyn/config && mkdir ~/pyplyn/config/configurations
 
 <span class="c"># 4. Rename app-config.example.json and make the required changes</span>
 mv ~/pyplyn/config/app-config.example.json ~/pyplyn/config/pyplyn-config.json
