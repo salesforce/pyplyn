@@ -1156,11 +1156,11 @@ bash ~/pyplyn/bin/pyplyn.sh logs
 
 <p>2. Create a directory (e.g., <code>~/pyplyn</code>) and copy the generated artifacts</p>
 
-<p>3. Create an empty directory (e.g., <code>~/pyplyn/configurations</code>)</p>
+<p>3. Also create <code>~/pyplyn/config</code> and <code>~/pyplyn/config/configurations</code></p>
 
 <p>4. Rename <em>app-config.example.json</em> to <em>pyplyn-config</em>.json and set the following:
-  - <code>configurationsPath</code>: &quot;../configurations&quot;
-  - <code>connectorsPath</code>: &quot;./connectors.json&quot;
+  - <code>configurationsPath</code>: &quot;./config/configurations&quot;
+  - <code>connectorsPath</code>: &quot;./config/connectors.json&quot;
   - <code>updateConfigurationIntervalMillis</code>: 10000</p>
 
 <p>5. Rename <em>connectors.example.json</em> to <em>connectors.json</em>, erase existing contents, and define Argus and Refocus connectors; don&#39;t forget to update the endpoints, <a href="#base64-mime-encoding">BASE64 encode</a> your access tokens, and update their values in this file!</p>
@@ -1178,7 +1178,7 @@ perl -e <span class="s1">'use MIME::Base64; print encode_base64("PASSWORD");'</s
 <aside class="warning">NOTE: <strong>All password strings (including tokens) need to be encoded with the BASE64-MIME variant!</strong></aside>
 <h2 id='create-a-configuration-for-processing'>Create a configuration for processing</h2>
 <blockquote>
-<p>Create a new file named <code>~/pyplyn/configurations/one.json</code> and paste the following:</p>
+<p>Create a new file named <code>~/pyplyn/config/configurations/one.json</code> and paste the following:</p>
 </blockquote>
 <pre class="highlight json tab-json"><code><span class="p">[</span><span class="w">
   </span><span class="p">{</span><span class="w">

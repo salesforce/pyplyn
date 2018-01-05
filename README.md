@@ -71,11 +71,11 @@ mvn clean package
 # Navigate to Pyplyn's build location
 cd target/
 
-# Create a new directory for your configurations (leave empty for now)
-mkdir configurations
+# Create directories for your configurations
+mkdir config && config/configurations
 
 # Rename app-config.example.json and make the required changes
-mv config/app-config.example.json pyplyn-config.json
+mv config/app-config.example.json config/pyplyn-config.json
 
 # Rename connectors.example.json and make the required changes (see below)
 mv config/connectors.example.json config/connectors.json

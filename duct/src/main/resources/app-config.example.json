@@ -1,6 +1,6 @@
 {
   "global": {
-    "configurationsPath": "./configurations",
+    "configurationsPath": "./config/configurations",
     "connectorsPath": "./config/connectors.json",
     "runOnce": false,
     "updateConfigurationIntervalMillis": 300000
