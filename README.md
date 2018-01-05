@@ -75,7 +75,7 @@ cd target/
 mkdir configurations
 
 # Rename app-config.example.json and make the required changes
-mv config/app-config.example.json config/pyplyn-config.json
+mv config/app-config.example.json pyplyn-config.json
 
 # Rename connectors.example.json and make the required changes (see below)
 mv config/connectors.example.json config/connectors.json

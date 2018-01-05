@@ -9,14 +9,14 @@
 # Description:       Enable processing of Pyplyn ETL configurations at boot time
 ### END INIT INFO
 
-# Update this parameter to the path where you installed Pyplyn
+# If you choose to deploy the startup script in a different directory than the JAR, update this parameter!
 #   NOTE: Blank space (' ') characters are not currently supported in paths!
-LOCATION="~/pyplyn"
+LOCATION="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 NAME="${project.parent.artifactId}-${project.parent.version}"
 SCRIPT="java -Dname=$NAME -jar $LOCATION/$NAME.jar --config $LOCATION/config/pyplyn-config.json"
-PIDFILE=/var/run/$NAME.pid
-LOGFILE=/var/log/$NAME.log
+PIDFILE=$LOCATION/$NAME.pid
+LOGFILE=$LOCATION/$NAME.log
 
 is_service_running() {
     if [ ! -f "$PIDFILE" ]; then
@@ -42,6 +42,15 @@ start() {
 }
 
 manual() {
+    if is_service_running; then
+        echo "$NAME is already running" 1>&2
+        return 1
+    fi
+
+    bash -c "$SCRIPT"
+}
+
+nohup() {
     if is_service_running; then
         echo "$NAME is already running" 1>&2
         return 1
@@ -92,8 +101,12 @@ case "$1" in
         start
     ;;
 
-    nohup)
+    manual)
         manual
+    ;;
+
+    nohup)
+        nohup
     ;;
 
     status)
@@ -105,6 +118,6 @@ case "$1" in
     ;;
 
     *)
-        echo "Usage: $0 {start|stop|restart|nohup|status|logs}"
+        echo "Usage: $0 {start|stop|restart|manual|nohup|status|logs}"
         echo
 esac
