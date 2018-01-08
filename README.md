@@ -98,9 +98,13 @@ A full step-by-step explanation (including how to write configurations) can be f
 
 # Next steps?
 
-Consult the [Pyplyn Documentation](https://salesforce.github.io/pyplyn/) for an in-depth explanation of Pyplyn's features. 
+Consult the [Pyplyn Documentation](https://salesforce.github.io/pyplyn/) for an in-depth explanation of Pyplyn's features.
 
-Generate *Javadocs* by running the following Maven target: `mvn package`.
+Alternatively, you can regenerate the *Pyplyn Documentation* by running [docs-gen/generate.sh](docs-gen/generate.sh),
+navigating to the temporary directory created by the script, and running `bundle exec middleman server & sleep 2 && open http://localhost:4567/`
+(if the `open` command fails, simply navigate to [http://localhost:4567/](http://localhost:4567/)).
+
+You can generate *Javadocs* by running the following Maven target: `mvn package`.
 
 If you would like to contribute to Pyplyn, please read the [contributor guide](CONTRIBUTE.md)!
 
