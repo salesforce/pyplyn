@@ -67,15 +67,7 @@ This is where [Refocus steps in](https://medium.com/salesforce-open-source/take-
 - Bash script for managing the service's lifecycle (start, stop, restart, logs, etc.)
 - Since *10.0.0*, Pyplyn releases follow [Semantic versioning](http://semver.org/) guidelines.
 
-## Planned development
-
-### Breaking changes
-
-- Remove *AppConfig.Global.minRepeatIntervalMillis*
-- Rename *HighestValue.messageCodeSource* to *tagMessageCode*
-- Rename the *configurations* moniker since it has proven confusing (in relation to `AppConfig`)
-
-### Roadmap
+## Roadmap
 
 - Extract source: [Execute a Salesforce SOQL query](https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/dome_query.htm)
 - Load destination: Email (via SMTP MTA)
@@ -85,6 +77,9 @@ This is where [Refocus steps in](https://medium.com/salesforce-open-source/take-
 - API for managing connectors
 - Multi-tenancy (support configurations and connectors belonging to different users)
 - Include Pyplyn in the [Maven central](https://search.maven.org/) repository
+- Remove *AppConfig.Global.minRepeatIntervalMillis* (breaking change)
+- Rename *HighestValue.messageCodeSource* to *tagMessageCode* (breaking change)
+- Rename the *configurations* moniker since it has proven confusing (in relation to `AppConfig`) (breaking change)
 
 
 
@@ -129,11 +124,11 @@ This is the only mandatory section of the *AppConfig*. See the following explana
 
 Parameter | Default | Description
 --------- | ------- | -----------
-configurationsPath | required | This should point to a directory which contains the Pyplyn [configurations](#configurations) to process
-connectorsPath | required | A single JSON file which lists service endpoint [connectors](#connectors) used by Pyplyn's plugin to extract data and push results
-updateConfigurationIntervalMillis | required | The number of milliseconds at which Pyplyn periodically reloads all configurations from disk (if any configurations are removed from this directory, they will no longer be processed after the configuration update process' next run)
-ioPoolsThreadSize | optional | Defaults to 100 threads per IO pool; can be updated to increase or decrease the number of threads in the dedicated *Extract* and *Load* thread pools (for tweaking performance depending on the deployment hosts)
-runOnce | optional | Defaults to *false*, which means the service runs indefinitely or until terminated by the host OS; set to *true* to process the specified *configurations* only once, then exit (useful if you want to run Pyplyn with `crontab`, or for testing)
+configurationsPath | required, string | This should point to a directory which contains the Pyplyn [configurations](#configurations) to process. Pyplyn will read all *JSON* files deployed in this directory and merge them to obtain the final list of configurations to process.
+connectorsPath | required, string | A single JSON file which lists service endpoint [connectors](#connectors) used by Pyplyn's plugin to extract data and push results
+updateConfigurationIntervalMillis | required, integer | The number of milliseconds at which Pyplyn periodically reloads all configurations from disk (if any configurations are removed from this directory, they will no longer be processed after the configuration update process' next run)
+ioPoolsThreadSize | optional, integer | Defaults to 100 threads per IO pool; can be updated to increase or decrease the number of threads in the dedicated *Extract* and *Load* thread pools (for tweaking performance depending on the deployment hosts)
+runOnce | optional, boolean | Defaults to *false*, which means the service runs indefinitely or until terminated by the host OS; set to *true* to process the specified *configurations* only once, then exit (useful if you want to run Pyplyn with `crontab`, or for testing)
 
 
 ## AppConfig.Alert
@@ -156,9 +151,9 @@ This section is used to configure Pyplyn's health metrics and monitoring.
 
 Parameter | Default | Description
 --------- | ------- | -----------
-checkIntervalMillis | optional | The number of milliseconds at which Pyplyn checks its health, based on internally collected metrics, and outputs its status; defaults to 300,000 ms (5 minutes)
-enabled | optional | Defaults to *false*; set to *true* to have Pyplyn output its health to the system's console
-thresholds | optional | A `Map<String, Double>`, specifying alerting thresholds for various parts of the system (more below); if not specified, it will default to an empty map
+checkIntervalMillis, integer | optional | The number of milliseconds at which Pyplyn checks its health, based on internally collected metrics, and outputs its status; defaults to 300,000 ms (5 minutes)
+enabled | optional, boolean | Defaults to *false*; set to *true* to have Pyplyn output its health to the system's console
+thresholds | optional, object | A `Map<String, Double>`, specifying alerting thresholds for various parts of the system (more below); if not specified, it will default to an empty map
 
 The key specified in the *thresholds* map determines each value's scope.  The names are formed by concatenating three identifiers:
 
@@ -192,8 +187,8 @@ The key specified in the *thresholds* map determines each value's scope.  The na
 
 Parameter | Default | Description
 --------- | ------- | -----------
-enabled | optional | Defaults to *false*; set to *true* to allow Pyplyn to work in a multi-node [Hazelcast](https://hazelcast.org/) clustering
-config | required | Specifies the path to an XML used to configure the cluster. The available options are described in detail Hazelcast's [documentation](http://docs.hazelcast.org/docs/3.8.1/manual/html-single/index.html)
+enabled | optional, boolean | Defaults to *false*; set to *true* to allow Pyplyn to work in a multi-node [Hazelcast](https://hazelcast.org/) clustering
+config | required, string | Specifies the path to an XML used to configure the cluster. The available options are described in detail Hazelcast's [documentation](http://docs.hazelcast.org/docs/3.8.1/manual/html-single/index.html)
 
 To run Pyplyn in cluster mode, take a look at the [hazelcast.example.xml](https://github.com/salesforce/pyplyn/blob/master/blob/master/duct/src/main/resources/hazelcast.example.xml) configuration file.
 
@@ -255,18 +250,18 @@ Each connector should be defined in the _connectors.json_ file; see the availabl
 
 Parameter | Default | Description
 --------- | ------- | -----------
-id | required | Unique identifier used in various Pyplyn objects, to refer to this endpoint
-endpoint | required | The URL of the service represented by this connector
-username | optional | Username used for authentication, or null if not required
-password | optional | Password required for authenticating to this endpoint, or null if not required; this string **should be [BASE64 encoded](#base64-mime-encoding)**
-proxyHost | optional | A hostname pointing to an HTTP proxy, or null if not used
-proxyPort | optional | The port the proxy listens on, or null if not used
-connectTimeout | optional | How long to wait for connections to initialize; defaults to 10 seconds
-readTimeout | optional | How long to wait for reads from the endpoint; defaults to 10 seconds
-writeTimeout | optional | How long to wait for writes from the endpoint; defaults to 10 seconds
-keystorePath | optional | Used for mutual TLS authentication; should point to a Java keystore file holding the client certificate
-keystorePassword | optional | Password used to access the Java keystore for mutual authentication; should be specified in clear text
-sslContextAlgorithm | optional | Specifies the [algorithm](http://docs.oracle.com/javase/8/docs/technotes/guides/security/StandardNames.html#SSLContext) to use for opening secure connections to this endpoint; if not specified, defaults to **TLSv1.2**
+id | required, string | Unique identifier used in various Pyplyn objects, to refer to this endpoint
+endpoint | required, string | The URL of the service represented by this connector
+username | optional, string | Username used for authentication, or null if not required
+password | optional, string | Password required for authenticating to this endpoint, or null if not required; this string **should be [BASE64 encoded](#base64-mime-encoding)**
+proxyHost | optional, string | A hostname pointing to an HTTP proxy, or null if not used
+proxyPort | optional, integer | The port the proxy listens on, or null if not used
+connectTimeout | optional, integer | How long to wait for connections to initialize; defaults to 10 seconds
+readTimeout | optional, integer | How long to wait for reads from the endpoint; defaults to 10 seconds
+writeTimeout | optional, integer | How long to wait for writes from the endpoint; defaults to 10 seconds
+keystorePath | optional, string | Used for mutual TLS authentication; should point to a Java keystore file holding the client certificate
+keystorePassword | optional, string | Password used to access the Java keystore for mutual authentication; this string **should be [BASE64 encoded](#base64-mime-encoding)**
+sslContextAlgorithm | optional, string | Specifies the [algorithm](http://docs.oracle.com/javase/8/docs/technotes/guides/security/StandardNames.html#SSLContext) to use for opening secure connections to this endpoint; if not specified, defaults to **TLSv1.2**
 
 
 ## Token-based authentication
@@ -275,7 +270,7 @@ sslContextAlgorithm | optional | Specifies the [algorithm](http://docs.oracle.co
 
 ```json
 {
-  "id": "refocus-token",
+  "id": "refocus-api-connector",
   "endpoint": "https://url-to-your-refocus-instance/v1/",
   "username": null,
   "password": "BASE64-encoded-Refocus-token"
@@ -287,7 +282,7 @@ sslContextAlgorithm | optional | Specifies the [algorithm](http://docs.oracle.co
 
 ```json
 {
-  "id": "argus",
+  "id": "argus-api-connector",
   "endpoint": "https://url-to-your-argus-instance/argusws/",
   "username": null,
   "password": "BASE64-encoded-Argus-refresh-token"
@@ -307,7 +302,7 @@ Read more about Argus's [token-based authentication](https://github.com/salesfor
 
 ```json
 {
-  "id": "argus",
+  "id": "argus-api-connector",
   "endpoint": "https://url-to-your-argus-instance/argusws/",
   "keystorePath": "/path/to/keystore.jks",
   "keystorePassword": "password-in-clear-text",
@@ -319,9 +314,9 @@ Additionally, Pyplyn supports sending a *client TLS certificate*, to be used as 
 
 Parameter | Default | Description
 --------- | ------- | -----------
-keystorePath | required | The value should point to a Java keystore file holding the client TLS certificate
-keystorePassword | required | The password used to access keystore file; this string **should be [BASE64 encoded](#base64-mime-encoding)**
-sslContextAlgorithm | optional | Specifies the [algorithm](http://docs.oracle.com/javase/8/docs/technotes/guides/security/StandardNames.html#SSLContext) to use for opening secure connections to this endpoint; if not specified, defaults to **TLSv1.2**
+keystorePath | required, string | The value should point to a Java keystore file holding the client TLS certificate
+keystorePassword | required, string | The password used to access keystore file; this string **should be [BASE64 encoded](#base64-mime-encoding)**
+sslContextAlgorithm | optional, string | Specifies the [algorithm](http://docs.oracle.com/javase/8/docs/technotes/guides/security/StandardNames.html#SSLContext) to use for opening secure connections to this endpoint; if not specified, defaults to **TLSv1.2**
 
 
 ## Configurations
@@ -334,7 +329,7 @@ sslContextAlgorithm | optional | Specifies the [algorithm](http://docs.oracle.co
   "extract" : [
     {
       "format" : "Argus",
-      "endpoint" : "argus",
+      "endpoint" : "argus-api-connector",
       "cacheMillis" : 120000,
       "defaultValue" : 0.0,
       "expression" : "SUM(-6m:-1m:scope:metric{tags}:avg:1m-max,#1m#)",
@@ -382,11 +377,11 @@ The configuration object's parameters are explained below:
 
 Parameter | Default | Description
 --------- | ------- | -----------
-repeatIntervalMillis | required | The frequency at which the configuration is executed.  Currently, the implementation does not allow configuration runs to overlap (the same configuration will not be executed until a previous run finishes processing).
-extract | required | Array of sources from which data is to be extracted.  See the [data sources](#data-sources) section below.
-transform | required | Array of transformation plugins that are applied sequentially to the incoming data.  See the [Transformations](#transformations) section for details on available classes and their functionality.
-load | required | Array which specifies the destination to where the transformed data is to be sent.  See the [Load destinations](#load-destinations) section for additional details.
-disabled | optional | Set to *false* by default; if set to *true*, the configuration will not be processed, allowing for easy management of configuration objects, without having to delete them from Pyplyn's `configurations` directory.
+repeatIntervalMillis | required, integer | The frequency at which the configuration is executed.  Currently, the implementation does not allow configuration runs to overlap (the same configuration will not be executed until a previous run finishes processing).
+extract | required, array | Array of sources from which data is to be extracted.  See the [data sources](#data-sources) section below.
+transform | required, array | Array of transformation plugins that are applied sequentially to the incoming data.  See the [Transformations](#transformations) section for details on available classes and their functionality.
+load | required, array | Array which specifies the destination to where the transformed data is to be sent.  See the [Load destinations](#load-destinations) section for additional details.
+disabled | optional, boolean | Set to *false* by default; if set to *true*, the configuration will not be processed, allowing for easy management of configuration objects, without having to delete them from Pyplyn's `configurations` directory.
 
 <aside class="notice">Pyplyn was built with extensibility in mind.  If you find that the included list of <em>extract</em>, <em>transform</em>, and <em>load</em> implementations are not sufficient, you can easily define new ones;  consult the <a href="#extending-pyplyn">extending Pyplyn</a> section for more details!</aside>
 
@@ -404,7 +399,7 @@ A [Transmutation](https://github.com/salesforce/pyplyn/blob/master/blob/master/p
 "extract" : [
   {
     "format" : "Argus",
-    "endpoint" : "argus",
+    "endpoint" : "argus-api-connector",
     "expression" : "SUM(-6m:-1m:scope:metric{tags}:avg:1m-max,#1m#)",
     "cacheMillis" : 120000,
     "defaultValue" : 0.0,
@@ -419,11 +414,11 @@ Any [metric](https://github.com/salesforce/Argus/wiki/Metric) can be retrieved b
 
 Parameter | Default | Description
 --------- | ------- | -----------
-endpoint | required | Identifies the connector to use (the connection on which this expression will be run on); read more in the (connectors)[#connectors] section
-expression | required | Any valid Argus expression used to load and [transform](https://github.com/salesforce/Argus/wiki/Transforms) [metrics](https://github.com/salesforce/Argus/wiki/Metrics)
-cacheMillis | optional | How long to cache this expression's results (in ms); if the same *expression* is queried on the same *endpoint* before this duration expires, the first (cached) result will be returned
-defaultValue | optional | If no results are returned from the endpoint, having this parameter specified causes the processor to generate one data point with this value and the time set to the moment of execution
-name | required | Used to identify the time series returned by the specified expression, in downstream *transforms*
+endpoint | required, string | Identifies the connector to use (the connection on which this expression will be run on); read more in the (connectors)[#connectors] section
+expression | required, string | An Argus expression used to load and [transform](https://github.com/salesforce/Argus/wiki/Transforms) [metrics](https://github.com/salesforce/Argus/wiki/Metrics)
+cacheMillis | optional, integer | How long to cache this expression's results (in ms); if the same *expression* is queried on the same *endpoint* before this duration expires, the first (cached) result will be returned
+defaultValue | optional, double | If no results are returned from the endpoint, having this parameter specified causes the processor to generate one data point with this value and the time set to the moment of execution
+name | required, string | Used to identify the time series returned by the specified expression, in downstream *transforms*
 
 
 ## InfluxDB
@@ -443,9 +438,9 @@ name | required | Used to identify the time series returned by the specified exp
 
 Parameter | Default | Description
 --------- | ------- | -----------
-endpoint | required | Identifies the connector to use; for InfluxDB, this should match the [database name](https://docs.influxdata.com/influxdb/v1.3/guides/querying_data/#querying-data-using-the-http-api) where the queried measurement exists
-query | required | Represents the measurement to load data for; Please ensure the **time** and **value** columns are included, by writing your queries as: `SELECT * ...` or `SELECT time, value ...`
-name | required | Used to identify the time series returned by the specified expression, in downstream *transforms*
+endpoint | required, string | Identifies the connector to use; for InfluxDB, this should match the [database name](https://docs.influxdata.com/influxdb/v1.3/guides/querying_data/#querying-data-using-the-http-api) where the queried measurement exists
+query | required, string | Represents the measurement to load data for; Please ensure the **time** and **value** columns are included, by writing your queries as: `SELECT * ...` or `SELECT time, value ...`, as the extract processor assumes the existence of *time* and *value* when mapping the results.
+name | required, string | Used to identify the time series returned by the specified expression in downstream *transforms*
 
 <aside class="notice">At the moment, the <strong>InfluxDB</strong> implementation in Pyplyn <strong>does not support authentication!</strong></aside>
 
@@ -455,7 +450,7 @@ name | required | Used to identify the time series returned by the specified exp
 "extract" : [
   {
     "format" : "Refocus",
-    "endpoint" : "refocus-prod",
+    "endpoint" : "refocus-api-connector",
     "subject" : "USA.California.*",
     "actualSubject" : "USA.California.San_Francisco",
     "aspect" : "Population",
@@ -482,12 +477,12 @@ The following parameters show how [samples](https://salesforce.github.io/refocus
 
 Parameter | Default | Description
 --------- | ------- | -----------
-endpoint | required | Identifies the connector to use (the connection on which this expression will be run on); read more in the (connectors)[#connectors] section
-subject | required | Represents the subject to load; this can either be a full subject name (`USA.California.San_Francisco`) or a wildcard, e.g., `USA.California.*`
-actualSubject | optional | Specified only if a wildcard was used for *subject*; it will identify the actual value to return, e.g., `USA.California.San_Francisco`
-aspect | required | The aspect whose value you want to retrieve, e.g., `Population`
-cacheMillis | optional | How long to cache this expression's results (in ms); if the same *subject* and *aspect* are queried on the same *endpoint* before this duration expires the (cached) result set will be used to return the value named by `actualSubject`
-defaultValue | optional | If no results are returned from the endpoint, having this parameter specified causes the processor to generate one data point with this value and the time set to the moment of execution
+endpoint | required, string | Identifies the connector to use (the connection on which this expression will be run on); read more in the (connectors)[#connectors] section
+subject | required, string | Represents the subject to load; this can either be a full subject name (`USA.California.San_Francisco`) or a wildcard, e.g., `USA.California.*`
+actualSubject | optional, string | Specified only if a wildcard was used for *subject*; it will identify the actual value to return, e.g., `USA.California.San_Francisco`
+aspect | required, string | The aspect whose value you want to retrieve, e.g., `Population`
+cacheMillis | optional, integer | How long to cache this expression's results (in ms); if the same *subject* and *aspect* are queried on the same *endpoint* before this duration expires the (cached) result set will be used to return the value named by `actualSubject`
+defaultValue | optional, double | If no results are returned from the endpoint, having this parameter specified causes the processor to generate one data point with this value and the time set to the moment of execution
 
 
 # Transformations
@@ -522,8 +517,8 @@ If *metric1* would return **1.0** and *metric2* would return **2.0**, applying *
 
 Parameter | Default | Description
 --------- | ------- | -----------
-messageCodeSource | optional | This parameter can either be skipped or assigned to a string value of *"ORIGINAL_VALUE"*; if specified, it will result in setting the `Transmutation.Metadata#messageCode` to the corresponding value (for each result), formatted to five characters-max; NOTE: any values between minus one and one (-1,1) will be evaluated as zero (0)
-tagMessageBody | optional | This parameter can either be skipped or set to a string value of *"ORIGINAL_TIMESTAMP"*; if set, it will result in the value's timestamp to be added to `Transmutation.Metadata#messages`
+messageCodeSource | optional, string | This parameter can either be skipped or assigned to a string value of *"ORIGINAL_VALUE"*; if specified, it will result in setting the `Transmutation.Metadata#messageCode` to the corresponding value (for each result), formatted to five characters-max; NOTE: any values between minus one and one (-1,1) will be evaluated as zero (0)
+tagMessageBody | optional, string | This parameter can either be skipped or set to a string value of *"ORIGINAL_TIMESTAMP"*; if set, it will result in the value's timestamp to be added to `Transmutation.Metadata#messages`
 
 This plugin is used in combination with [Threshold](#threshold).  Together they can achieve the effect of grouping multiple time series together, interpreting which has the most urgency (based on their status), and displaying that as a single Refocus ASPECT.
 
@@ -664,14 +659,16 @@ It works by bucketing the four statuses as integers ranging from 0 to 3, which i
 
 Parameter | Default | Description
 --------- | ------- | -----------
-type | optional | Can be set to GREATER_THAN, LESS_THAN to define how values are compared against the specified threshold parameters;  If a *type* is no specified, it will cause the plugin to return the same inputs it was passed
-criticalThreshold | optional | Determines where the CRIT interval starts; leave null to skip
-warningThreshold | optional | Determines where the WARN interval starts; leave null to skip
-infoThreshold | optional | Determines where the INFO interval starts; leave null to skip
-okThreshold | optional | Determines what makes an OK status
-applyToMetricName | optional| If specified, the current transform will only be applied to `Transmutation`s whose name matches this value
+type | optional, string | Can be set to GREATER_THAN, LESS_THAN to define how values are compared against the specified threshold parameters;  If a *type* is not specified, it will cause the plugin to return the same inputs that it was passed
+criticalThreshold | optional, double | Determines where the CRIT interval starts; leave null to skip
+warningThreshold | optional, double | Determines where the WARN interval starts; leave null to skip
+infoThreshold | optional, double | Determines where the INFO interval starts; leave null to skip
+okThreshold | optional, double | Determines what makes an OK status
+applyToMetricName | optional, string | If specified, the current transform will only be applied to `Transmutation`s whose name matches this value
 
-<aside class="notice">Thresholds are evaluated from most critical to least critical. The first one that matches is returned.</aside>
+<aside class="notice">Thresholds are evaluated from most critical to least critical. The first one that matches is returned.  There is no validation performed so that the values of CRIT, WARN, INFO, and OK are in strictly descending or ascending order! </aside>
+
+<aside class="notice">In this context, GREATER_THAN and LESS_THAN are inclusive of the value; e.g., GREATER_THAN 0 means greater than or equal to zero!</aside>
 
 <aside class="notice">A great deal of flexibility can be achieved by skipping some of the thresholds; for example setting <em>criticalThreshold=null</em>, will cause the configuration to at most set a <em>WARN</em> status.</aside>
 
@@ -695,11 +692,13 @@ Similar to the [Threshold](#threshold) plugin, with the difference that this plu
 
 Parameter | Default | Description
 --------- | ------- | -----------
-type | required | Can be set to GREATER_THAN, LESS_THAN to define how values are compared against the specified threshold parameter
-threshold | required | The value which a value has to exceed or fall behind, depending on the chosen *type*
-criticalDurationMillis | required | Determines how long the threshold has to be exceeded to return a status of CRIT
-warnDurationMillis | required | Determines how long the threshold has to be exceeded to return a status of WARN
-infoDurationMillis | required | Determines how long the threshold has to be exceeded to return a status of INFO
+type | required, string | Can be set to GREATER_THAN, LESS_THAN to define how values are compared against the specified threshold parameter
+threshold | required, double | The value which a value has to exceed or fall behind, depending on the chosen *type*
+criticalDurationMillis | required, double | Determines how long the threshold has to be exceeded to return a status of CRIT
+warnDurationMillis | required, double | Determines how long the threshold has to be exceeded to return a status of WARN
+infoDurationMillis | required, double | Determines how long the threshold has to be exceeded to return a status of INFO
+
+<aside class="notice">In this context, GREATER_THAN and LESS_THAN are inclusive of the value; e.g., GREATER_THAN 0 means greater than or equal to zero!</aside>
 
 
 # Load destinations
@@ -737,11 +736,11 @@ See the [Refocus configuration](#setting-up-refocus) section below, to read abou
 
 Parameter | Default | Description
 --------- | ------- | -----------
-format | required | Should be set to "Refocus"
-endpoint | required | Identifies the connector to use when uploading this sample; read more in the (connectors)[#connectors] section
-subject | required | The subject path that defines the sample
-aspect | required | The aspect name that defines the sample
-relatedLinks | optional | A list of links that will be associated with the published Sample; should specify two parameters, _name_ and _URL_
+format | required, string | Should be set to "Refocus"
+endpoint | required, string | Identifies the connector to use when uploading this sample; read more in the (connectors)[#connectors] section
+subject | required, string | The subject path that defines the sample
+aspect | required, string | The aspect name that defines the sample
+relatedLinks | optional, array | A list of links that will be associated with the published Sample; should specify two parameters, _name_ and _URL_
 
 
 # Quickstart
@@ -818,12 +817,14 @@ For this demo, you can skip enforcing security in Refocus. For production deploy
 
 [Maven](https://maven.apache.org/) is a Java build tool (among other things), and it's used to compile and package the Pyplyn project as an executable.
 
-If you're using a Mac, you can install it with [Homebrew](http://brewformulas.org/Maven); if you're on Linux you can use package managers such as `yum` or `apt-get`, otherwise check-out the [Maven on Windows](https://maven.apache.org/guides/getting-started/windows-prerequisites.html) page. We recommend `Apache Maven 3.3.9`.
+If you're using a Mac, you can install it with [Homebrew](http://brewformulas.org/Maven); if you're on Linux you can use package managers such as `yum` or `apt-get`. 
+
+Otherwise check out the [Maven on Windows](https://maven.apache.org/guides/getting-started/windows-prerequisites.html) page. We recommend `Apache Maven 3.3.9`.
 
 
 ### JAVA 8
 
-This should be available on most modern systems. However, you can install it with the same tools listed above. We recommend at least version `1.8.0_131`.
+This should be available on most modern systems. However, you can install it with the same tools listed above. We recommend the latest version of Java 8 (at the time of this writing, this means `1.8.0_131`).
 
 
 ## Configure and run Pyplyn
@@ -869,13 +870,13 @@ mv ~/pyplyn/config/connectors.example.json ~/pyplyn/config/connectors.json
 ```json
 [
   {
-    "id": "refocus-token-connector",
+    "id": "refocus-api-connector",
     "endpoint": "https://url-to-your-refocus-instance/v1/",
     "username": null,
     "password": "BASE64-encoded-Refocus-token"
   },
   {
-    "id": "argus-token-connector",
+    "id": "argus-api-connector",
     "endpoint": "https://url-to-your-argus-instance/argusws/",
     "username": null,
     "password": "BASE64-encoded-Argus-refresh-token"
@@ -938,7 +939,7 @@ perl -e 'use MIME::Base64; print encode_base64("PASSWORD");'
     "extract" : [
       {
         "format" : "Argus",
-        "endpoint" : "argus-token-connector",
+        "endpoint" : "argus-api-connector",
         "cacheMillis" : 0,
         "defaultValue" : 0.0,
         "expression" : "-60s:-0s:argus.jvm:mem.physical.free:avg",
@@ -961,7 +962,7 @@ perl -e 'use MIME::Base64; print encode_base64("PASSWORD");'
     "load" : [
       {
         "format" : "Refocus",
-        "endpoint" : "refocus-token-connector",
+        "endpoint" : "refocus-api-connector",
         "subject" : "Monitor.System.Argus",
         "aspect" : "FREE_MEM",
         "relatedLinks" : []
@@ -978,12 +979,12 @@ In Pyplyn terminology, a configuration is a JSON object which specifies where th
 Let's analyze each section:
 
 - *repeatIntervalMillis*: is set to repeat every 60000 ms (60 seconds)
-- *extract*: We will retrieve one of Argus' internal metrics that tracks free memory from *argus-token-connector* (specified in `connectors.json`);  if no data is found, we will return a `defaultValue` of *0.0*
+- *extract*: We will retrieve one of Argus' internal metrics that tracks free memory from *argus-api-connector* (specified in `connectors.json`);  if no data is found, we will return a `defaultValue` of *0.0*
 - *transform*:
   - First, we filter all but the last datapoint;
   - Then we apply the [Threshold](#threshold) plugin
   - And consider anything less than 2GB to be CRITICAL, 4GB to be a WARNING, and 8GB to be INFO
-- *load*: Finally, after all the transformations have been applied, we load the resulting data in a Refocus sample named `Monitor.System.Argus|FREE_MEM`, on the endpoint defined by *refocus-token-connector*
+- *load*: Finally, after all the transformations have been applied, we load the resulting data in a Refocus sample named `Monitor.System.Argus|FREE_MEM`, on the endpoint defined by *refocus-api-connector*
 
 Save this file in the `~pyplyn/configuration/` directory and issue a `bin/pyplyn.sh logs` command; within the next 10 seconds, you should see a message showing that a new configuration was loaded and then executed.  Open the Refocus perspective you created (*ArgusFreeMemory*), and you will see an entry for this sample!
 
