@@ -51,7 +51,7 @@ public class ShutdownHookTest {
         try {
             // ARRANGE
             fixtures.enableLatches()
-                    .oneArgusToRefocusConfigurationWithRepeatInterval(100)
+                    .oneArgusToRefocusConfigurationWithRepeatInterval(1_000L)
                     .callRealRefocusLoadProcessor()
                     .initializeFixtures()
                     .returnMockedTransformationResultFromAllExtractProcessors();
@@ -86,7 +86,7 @@ public class ShutdownHookTest {
         try {
             // ARRANGE
             fixtures.enableLatches()
-                    .oneArgusToRefocusConfigurationWithRepeatInterval(100)
+                    .oneArgusToRefocusConfigurationWithRepeatInterval(1_000L)
                     .callRealArgusExtractProcessor()
                     .initializeFixtures();
 
@@ -124,7 +124,7 @@ public class ShutdownHookTest {
             // ARRANGE
             // bootstrap
             fixtures.enableLatches()
-                    .oneRefocusToRefocusConfigurationWithRepeatInterval(100)
+                    .oneRefocusToRefocusConfigurationWithRepeatInterval(1_000L)
                     .callRealRefocusExtractProcessor()
                     .initializeFixtures();
 
