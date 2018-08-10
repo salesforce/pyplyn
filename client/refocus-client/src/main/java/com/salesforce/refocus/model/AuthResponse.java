@@ -20,8 +20,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.salesforce.pyplyn.annotations.PyplynImmutableStyle;
-import com.salesforce.pyplyn.util.SensitiveByteArrayDeserializer;
-import com.salesforce.pyplyn.util.SensitiveByteArraySerializer;
+import com.salesforce.pyplyn.util.SensitiveByteArray;
 
 /**
  * Refocus authentication response object
@@ -45,7 +44,7 @@ public abstract class AuthResponse {
 
     @Nullable
     @Value.Redacted
-    @JsonSerialize(using=SensitiveByteArraySerializer.class)
-    @JsonDeserialize(using=SensitiveByteArrayDeserializer.class)
+    @JsonSerialize(using=SensitiveByteArray.Serializer.class)
+    @JsonDeserialize(using=SensitiveByteArray.Deserializer.class)
     public abstract byte[] token();
 }

@@ -26,8 +26,15 @@ import com.salesforce.pyplyn.duct.connector.AppConnectorModule;
 import com.salesforce.pyplyn.duct.etl.configuration.ConfigurationModule;
 import com.salesforce.pyplyn.duct.etl.extract.argus.Argus;
 import com.salesforce.pyplyn.duct.etl.extract.argus.ArgusExtractProcessor;
+import com.salesforce.pyplyn.duct.etl.extract.influxdb.InfluxDB;
+import com.salesforce.pyplyn.duct.etl.extract.influxdb.InfluxDBExtractProcessor;
 import com.salesforce.pyplyn.duct.etl.extract.refocus.Refocus;
 import com.salesforce.pyplyn.duct.etl.extract.refocus.RefocusExtractProcessor;
+import com.salesforce.pyplyn.duct.etl.extract.trust1.Trust1;
+import com.salesforce.pyplyn.duct.etl.extract.trust1.Trust1ExtractProcessor;
+import com.salesforce.pyplyn.duct.etl.extract.virtualinstruments.VirtualInstruments;
+import com.salesforce.pyplyn.duct.etl.extract.virtualinstruments.VirtualInstrumentsExtractProcessor;
+import com.salesforce.pyplyn.duct.etl.load.argus.ArgusLoadProcessor;
 import com.salesforce.pyplyn.duct.etl.load.refocus.RefocusLoadProcessor;
 import com.salesforce.pyplyn.duct.etl.transform.standard.*;
 import com.salesforce.pyplyn.duct.providers.client.ArgusClientModule;
@@ -96,7 +103,10 @@ public class AppBootstrap {
         return Collections.unmodifiableList(Arrays.asList(
                 // Extract
                 ModuleBuilder.forExtract(Argus.class),
+                ModuleBuilder.forExtract(InfluxDB.class),
                 ModuleBuilder.forExtract(Refocus.class),
+                ModuleBuilder.forExtract(Trust1.class),
+                ModuleBuilder.forExtract(VirtualInstruments.class),
 
                 // Transform
                 ModuleBuilder.forTransform(HighestValue.class),
@@ -109,6 +119,7 @@ public class AppBootstrap {
 
                 // Load
                 ModuleBuilder.forLoad(com.salesforce.pyplyn.duct.etl.load.refocus.Refocus.class),
+                ModuleBuilder.forLoad(com.salesforce.pyplyn.duct.etl.load.argus.Argus.class),
 
                 // Deserialization module
                 new PyplynObjectMapperModule()
@@ -138,7 +149,11 @@ public class AppBootstrap {
 
         // processors
         defaultModules.add(ModuleBuilder.forExtractProcessor(ArgusExtractProcessor.class));
+        defaultModules.add(ModuleBuilder.forExtractProcessor(InfluxDBExtractProcessor.class));
         defaultModules.add(ModuleBuilder.forExtractProcessor(RefocusExtractProcessor.class));
+        defaultModules.add(ModuleBuilder.forExtractProcessor(Trust1ExtractProcessor.class));
+        defaultModules.add(ModuleBuilder.forExtractProcessor(VirtualInstrumentsExtractProcessor.class));
+        defaultModules.add(ModuleBuilder.forLoadProcessor(ArgusLoadProcessor.class));
         defaultModules.add(ModuleBuilder.forLoadProcessor(RefocusLoadProcessor.class));
 
         // configuration modules

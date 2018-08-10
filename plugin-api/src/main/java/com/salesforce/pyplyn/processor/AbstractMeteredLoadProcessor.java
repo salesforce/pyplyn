@@ -10,8 +10,7 @@ package com.salesforce.pyplyn.processor;
 
 import com.google.inject.Inject;
 import com.salesforce.pyplyn.model.Load;
-import com.salesforce.pyplyn.status.MeterType;
-import com.salesforce.pyplyn.status.SystemStatus;
+import com.salesforce.pyplyn.status.*;
 
 
 /**
@@ -40,21 +39,21 @@ public abstract class AbstractMeteredLoadProcessor<T extends Load> implements Lo
      * Call this method when the operation has succeeded
      */
     protected void succeeded() {
-        systemStatus.meter(meterName(), MeterType.LoadSuccess).mark();
+        systemStatus.meter(meterName(), new MeterType(null, ProcessStatus.LoadSuccess)).mark();
     }
 
     /**
      * Call this method when the operation has failed
      */
     protected void failed() {
-        systemStatus.meter(meterName(), MeterType.LoadFailure).mark();
+        systemStatus.meter(meterName(), new MeterType(null, ProcessStatus.LoadFailure)).mark();
     }
 
     /**
      * Call this method when attempting to authenticate the endpoint failed
      */
     protected void authenticationFailure() {
-        systemStatus.meter(meterName(), MeterType.AuthenticationFailure).mark();
+        systemStatus.meter(meterName(), new MeterType(null, ProcessStatus.AuthenticationFailure)).mark();
     }
 
     /**

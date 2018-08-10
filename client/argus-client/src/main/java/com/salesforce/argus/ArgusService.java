@@ -10,11 +10,26 @@ package com.salesforce.argus;
 
 import java.util.List;
 
-import com.salesforce.argus.model.*;
+import com.salesforce.argus.model.AlertObject;
+import com.salesforce.argus.model.AuthRequest;
+import com.salesforce.argus.model.AuthToken;
+import com.salesforce.argus.model.DashboardObject;
+import com.salesforce.argus.model.MetricCollectionResponse;
+import com.salesforce.argus.model.MetricResponse;
+import com.salesforce.argus.model.NotificationObject;
+import com.salesforce.argus.model.TriggerObject;
 
 import retrofit2.Call;
 import retrofit2.Retrofit;
-import retrofit2.http.*;
+import retrofit2.http.Body;
+import retrofit2.http.DELETE;
+import retrofit2.http.GET;
+import retrofit2.http.Header;
+import retrofit2.http.Headers;
+import retrofit2.http.POST;
+import retrofit2.http.PUT;
+import retrofit2.http.Path;
+import retrofit2.http.Query;
 
 /**
  * Argus REST service class
@@ -29,6 +44,7 @@ public interface ArgusService {
     /* Authorization header */
     String AUTHORIZATION = "Authorization";
 
+
     /* Authentication */
 
     @POST("v2/auth/login")
@@ -39,16 +55,24 @@ public interface ArgusService {
     @Headers("Content-Type: application/json")
     Call<AuthToken> refresh(@Body AuthToken tokens);
 
+
     /* Metrics operations. */
 
     @GET("metrics")
     Call<List<MetricResponse>> getMetrics(@Header(AUTHORIZATION) String authorization, @Query("expression") List<String> expressions);
+
+    @POST("collection/metrics")
+    @Headers("Content-Type: application/json")
+    Call<MetricCollectionResponse> postMetrics(@Header(AUTHORIZATION) String authorization, @Body List<MetricResponse> metrics);
 
 
     /* Dashboard operations. */
 
     @GET("dashboards")
     Call<List<DashboardObject>> getAllDashboards(@Header(AUTHORIZATION) String authorization);
+
+    @GET("dashboards/meta")
+    Call<List<DashboardObject>> getAllDashboardMetadata(@Header(AUTHORIZATION) String authorization);
 
     @GET("dashboards")
     Call<List<DashboardObject>> getDashboardByName(@Header(AUTHORIZATION) String authorization, @Query("owner") String owner, @Query("dashboardName") String dashboardName);

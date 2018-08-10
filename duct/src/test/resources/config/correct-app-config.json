@@ -2,7 +2,7 @@
   "global": {
     "configurationsPath": "configurationsPath",
     "connectorsPath": "connectorsPath",
-    "minRepeatIntervalMillis": 1,
+    "runOnce": false,
     "updateConfigurationIntervalMillis": 2
   },
   "hazelcast": {

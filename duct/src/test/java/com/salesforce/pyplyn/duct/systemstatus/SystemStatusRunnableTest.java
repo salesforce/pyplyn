@@ -9,7 +9,11 @@
 package com.salesforce.pyplyn.duct.systemstatus;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.verify;
 
@@ -35,12 +39,14 @@ import com.salesforce.pyplyn.status.SystemStatusConsumer;
  * @since 5.0
  */
 public class SystemStatusRunnableTest {
-    AppBootstrapFixtures fixtures;
+    private AppBootstrapFixtures fixtures;
+    private ArgumentCaptor<MeterType> meterTypeArgumentCaptor;
 
     @BeforeMethod
     public void setUp() throws Exception {
         // ARRANGE
         fixtures = new AppBootstrapFixtures();
+        meterTypeArgumentCaptor = ArgumentCaptor.forClass(MeterType.class);
     }
 
     /**
@@ -90,8 +96,9 @@ public class SystemStatusRunnableTest {
             ArgumentCaptor<List<StatusMessage>> argumentCaptor = ArgumentCaptor.forClass(List.class);
 
             // check that meters and timers are initialized
-            verify(fixtures.systemStatus(), atLeastOnce()).meter("Refocus", MeterType.LoadFailure);
-            verify(fixtures.systemStatus(), atLeastOnce()).timer("Refocus", "upsert-samples-bulk." + AppBootstrapFixtures.MOCK_CONNECTOR_NAME);
+            verify(fixtures.systemStatus(), atLeastOnce()).meter(eq("Refocus"), meterTypeArgumentCaptor.capture());
+            assert(meterTypeArgumentCaptor.getValue().processStatus().name().equals("LoadSuccess"));
+            verify(fixtures.systemStatus(), atLeastOnce()).timer("Refocus", "upsert-samples-bulk-batched." + AppBootstrapFixtures.MOCK_CONNECTOR_NAME);
 
             // check that system status was reported to the consumers
             verify(systemStatusConsumer, atLeastOnce()).accept(argumentCaptor.capture());
@@ -107,7 +114,7 @@ public class SystemStatusRunnableTest {
             List<String> timerMessages = timerMessageCaptor.getAllValues().stream().map(Object::toString).collect(Collectors.toList());
 
             assertThat("AppBootstrapFixtures should report timing data for the Refocus Load processor",
-                    timerMessages, hasItem(containsString("Refocus.upsert-samples-bulk." + AppBootstrapFixtures.MOCK_CONNECTOR_NAME)));
+                    timerMessages, hasItem(containsString("Refocus.upsert-samples-bulk-batched.mock-connector")));
 
         } finally {
             AppBootstrapLatches.release();

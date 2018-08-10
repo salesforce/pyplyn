@@ -17,8 +17,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.inject.Key;
 import com.salesforce.pyplyn.configuration.Configuration;
@@ -34,7 +34,7 @@ import com.salesforce.pyplyn.status.SystemStatus;
  * See the execute() {@link #execute(Class, String...)} )} for additional details on how to implement an extension plugin
  */
 public final class DuctMain {
-    private static final Logger logger = LoggerFactory.getLogger(DuctMain.class);
+    private static final Logger logger = LogManager.getLogger(DuctMain.class);
     private static String programName = "pyplyn";
 
     private static final Long SHUTDOWN_TIMEOUT_MILLIS = 10000L;
@@ -116,7 +116,7 @@ public final class DuctMain {
 
         } catch (ConfigParseException e) {
             // nothing to do, allow the program to exit gracefully
-
+            logger.error("Failed to parse configuration, program will exit.", e);
         } catch (Exception e) {
             logger.error("Unexpected exception", e);
 

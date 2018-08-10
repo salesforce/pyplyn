@@ -8,7 +8,7 @@
 
 package com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test;
 
-import static com.salesforce.pyplyn.model.ThresholdType.GREATER_THAN;
+import static com.salesforce.pyplyn.model.ThresholdType.GREATER_THAN_OR_EQ;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -19,7 +19,16 @@ import com.salesforce.pyplyn.configuration.Configuration;
 import com.salesforce.pyplyn.configuration.ImmutableConfiguration;
 import com.salesforce.pyplyn.duct.etl.extract.argus.ImmutableArgus;
 import com.salesforce.pyplyn.duct.etl.extract.refocus.ImmutableRefocus;
-import com.salesforce.pyplyn.duct.etl.transform.standard.*;
+import com.salesforce.pyplyn.duct.etl.transform.standard.HighestValue;
+import com.salesforce.pyplyn.duct.etl.transform.standard.ImmutableHighestValue;
+import com.salesforce.pyplyn.duct.etl.transform.standard.ImmutableInfoStatus;
+import com.salesforce.pyplyn.duct.etl.transform.standard.ImmutableLastDatapoint;
+import com.salesforce.pyplyn.duct.etl.transform.standard.ImmutableSaveMetricMetadata;
+import com.salesforce.pyplyn.duct.etl.transform.standard.ImmutableThreshold;
+import com.salesforce.pyplyn.duct.etl.transform.standard.InfoStatus;
+import com.salesforce.pyplyn.duct.etl.transform.standard.LastDatapoint;
+import com.salesforce.pyplyn.duct.etl.transform.standard.SaveMetricMetadata;
+import com.salesforce.pyplyn.duct.etl.transform.standard.Threshold;
 import com.salesforce.pyplyn.model.Extract;
 import com.salesforce.pyplyn.model.Load;
 import com.salesforce.pyplyn.model.Transform;
@@ -45,20 +54,18 @@ public class ConfigurationsTestHelper {
      * Create a customized {@link Configuration} object and allows control over argus/refocus parameters
      */
     public static Configuration createCustomConfiguration(String argusEndpoint, String refocusEndpoint,
-                                                          String argusExpression, String argusName,
-                                                          String refocusSubject, String refocusAspect,
-                                                          long repeatIntervalMillis, boolean disabled) {
+            String argusExpression, String argusName,
+            String refocusSubject, String refocusAspect,
+            long repeatIntervalMillis, boolean disabled) {
         List<Extract> extracts = asList(
                 ImmutableArgus.of(argusEndpoint, argusExpression, argusName, 1, 2d),
-                ImmutableRefocus.of(refocusEndpoint, refocusSubject, null, refocusAspect, 1, 2d)
-        );
+                ImmutableRefocus.builder().endpoint(refocusEndpoint).subject(refocusSubject).aspect(refocusAspect).cacheMillis(1).defaultValue(2d).build());
 
         List<Transform> transform = createThresholdTransforms("metric");
 
         List<Load> load = singletonList(
                 com.salesforce.pyplyn.duct.etl.load.refocus.ImmutableRefocus.of(refocusEndpoint, refocusSubject, refocusAspect,
-                        "defaultMessageCode", "defaultMessageBody", emptyList())
-        );
+                        "defaultMessageCode", "defaultMessageBody", emptyList()));
 
         return ImmutableConfiguration.of(repeatIntervalMillis, extracts, transform, load, disabled);
     }
@@ -69,7 +76,7 @@ public class ConfigurationsTestHelper {
     public static List<Transform> createThresholdTransforms(String metricName) {
         LastDatapoint lastDatapoint = ImmutableLastDatapoint.builder().build();
         SaveMetricMetadata saveMetricMetadata = ImmutableSaveMetricMetadata.builder().build();
-        Threshold threshold = ImmutableThreshold.of(metricName, 1000d, 100d, 10d, GREATER_THAN);
+        Threshold threshold = ImmutableThreshold.of(metricName, 1000d, 100d, 10d, GREATER_THAN_OR_EQ);
         InfoStatus infoStatus = ImmutableInfoStatus.builder().build();
         HighestValue highestValue = ImmutableHighestValue.of(HighestValue.Display.ORIGINAL_VALUE, HighestValue.Display.ORIGINAL_TIMESTAMP);
         return asList(lastDatapoint, saveMetricMetadata, threshold, infoStatus, highestValue);

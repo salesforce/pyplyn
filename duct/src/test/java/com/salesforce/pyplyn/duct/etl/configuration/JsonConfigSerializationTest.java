@@ -35,8 +35,19 @@ import com.salesforce.pyplyn.configuration.ImmutableConfiguration;
 import com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test.AppBootstrapFixtures;
 import com.salesforce.pyplyn.duct.etl.extract.argus.ImmutableArgus;
 import com.salesforce.pyplyn.duct.etl.extract.refocus.ImmutableRefocus;
-import com.salesforce.pyplyn.duct.etl.transform.standard.*;
-import com.salesforce.pyplyn.model.*;
+import com.salesforce.pyplyn.duct.etl.transform.standard.ImmutableHighestValue;
+import com.salesforce.pyplyn.duct.etl.transform.standard.ImmutableInfoStatus;
+import com.salesforce.pyplyn.duct.etl.transform.standard.ImmutableLastDatapoint;
+import com.salesforce.pyplyn.duct.etl.transform.standard.ImmutableMetadata;
+import com.salesforce.pyplyn.duct.etl.transform.standard.ImmutableSaveMetricMetadata;
+import com.salesforce.pyplyn.duct.etl.transform.standard.ImmutableThreshold;
+import com.salesforce.pyplyn.duct.etl.transform.standard.ImmutableThresholdMetForDuration;
+import com.salesforce.pyplyn.model.Extract;
+import com.salesforce.pyplyn.model.Load;
+import com.salesforce.pyplyn.model.PollingTransform;
+import com.salesforce.pyplyn.model.ThresholdType;
+import com.salesforce.pyplyn.model.Transform;
+import com.salesforce.pyplyn.model.Transmutation;
 
 /**
  * Integration test for testing that configurations and connectors can be deserialized

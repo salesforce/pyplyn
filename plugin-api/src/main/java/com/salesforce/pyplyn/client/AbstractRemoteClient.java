@@ -9,14 +9,20 @@
 package com.salesforce.pyplyn.client;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
-import java.io.*;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
-import java.security.*;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.util.Arrays;
 import java.util.Optional;
@@ -40,6 +46,7 @@ import okhttp3.Headers;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import retrofit2.Call;
+import retrofit2.Converter;
 import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.jackson.JacksonConverterFactory;
@@ -127,9 +134,16 @@ public abstract class AbstractRemoteClient<S> implements RemoteClient {
     }
 
     /**
-     * Class constructor that allows setting timeout parameters
+     * Default class constructor; initializes Retrofit with Jackson support via {@link JacksonConverterFactory}
      */
     protected AbstractRemoteClient(EndpointConnector connector, Class<S> cls) {
+        this(connector, JacksonConverterFactory.create(), cls);
+    }
+
+    /**
+     * Class constructor that allows replacing (or removing the {@link Converter.Factory}
+     */
+    protected AbstractRemoteClient(EndpointConnector connector, Converter.Factory converterFactory, Class<S> cls) {
         Preconditions.checkNotNull(connector, "Passed connector is null for " + this.getClass().getSimpleName());
         this.connector = connector;
 
@@ -144,12 +158,16 @@ public abstract class AbstractRemoteClient<S> implements RemoteClient {
         }
 
         // build the retrofit service implementation, using a specified client and relying on Jackson serialization/deserialization
-        retrofit = new Retrofit.Builder()
+        Retrofit.Builder builder = new Retrofit.Builder()
                 .baseUrl(connector.endpoint())
-                .client(client)
-                .addConverterFactory(JacksonConverterFactory.create())
-                .build();
+                .client(client);
 
+        // if a converter factory was specified, add one
+        if (nonNull(converterFactory)) {
+            builder.addConverterFactory(converterFactory);
+        }
+
+        retrofit = builder.build();
         this.svc = retrofit.create(cls);
     }
 
@@ -186,21 +204,23 @@ public abstract class AbstractRemoteClient<S> implements RemoteClient {
     private static void initSSLSocketFactory(EndpointConnector connector, OkHttpClient.Builder builder) {
         char[] keystorePassword = byteToCharArray(connector.keystorePassword());
         try {
-            // initialize keystore
+            // setup trust manager factory that has the same trusted CAs as the default (weird but necessary)
+            TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            trustManagerFactory.init((KeyStore)null);
+            X509TrustManager trustManager = (X509TrustManager)trustManagerFactory.getTrustManagers()[0];
+            
+            // initialize client keystore that contains the certificates that will be presented for mutual tls
             //   the default type is 'jks';  however, this can be changed by updating the `keystore.type` property
             //   in `$JAVA_HOME/lib/security/java.security`
-            KeyStore keystore = KeyStore.getInstance(KeyStore.getDefaultType());
-            keystore.load(new FileInputStream(connector.keystorePath()), keystorePassword);
-
-
-            // setup trust manager factory
-            TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-            trustManagerFactory.init(keystore);
-            X509TrustManager trustManager = (X509TrustManager)trustManagerFactory.getTrustManagers()[0];
-
+            KeyStore clientKeystore = KeyStore.getInstance(KeyStore.getDefaultType());
+            try (FileInputStream fis = new FileInputStream(connector.keystorePath())) {
+                clientKeystore.load(fis, keystorePassword);
+            }
+            
             // setup key manager factory
             KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-            keyManagerFactory.init(keystore, keystorePassword);
+            keyManagerFactory.init(clientKeystore, keystorePassword);
+            
 
             // initialize an SSL context using the same protocol as the default and init
             SSLContext sslContext = SSLContext.getInstance(connector.sslContextAlgorithm());
@@ -266,6 +286,56 @@ public abstract class AbstractRemoteClient<S> implements RemoteClient {
     }
 
     /**
+     * Executes the remote call and returns the response or returns <b>defaultFailureResponse</b> if the operation fails
+     * after all the retry attempts are exhausted.
+     * <p>
+     * The call is retried retryCount times provided by the user if the operation fails due to an {@link Exception}.
+     * 
+     * @return if successful, returns the result of calling {@link Response}.body() on the resulting response
+     * @throws UnauthorizedException if the endpoint could not be authenticated
+     */
+    protected <T> T executeAndRetrieveBody(Call<T> call, T defaultFailResponse, int retryCount) throws UnauthorizedException {
+        T result = defaultFailResponse;
+
+        // Retry loop.
+        for (int attemptNum = 0; attemptNum <= retryCount; attemptNum++) {
+            try {
+                // NOTE: We are intentionally invoking the method that retries on authorization errors. This is intentional
+                // because authorization errors and the re-authentication errors are expected intermittently.
+                result = Optional.ofNullable(executeCallInternalRetryIfUnauthorized(call))
+                        .map(Response::body)
+                        .orElse(defaultFailResponse);
+
+                // Retrofit calls can return null if they fail so this check is necessary.
+                if (nonNull(result)) {
+                    // Success so break out of the retry loop.
+                    break;
+                }
+            } catch (Exception e) {
+                // Prepare for retry if needed.
+                if (attemptNum < retryCount) {
+                    logger.info("Unexpected exception occurred while retriving data. Call will be retried.", e);
+
+                    // Retrofit throws if you reuse the same Call so clone it.
+                    try {
+                        int backOffMillis = (attemptNum + 1) * 1000;
+                        Thread.sleep(backOffMillis);
+                    } catch (InterruptedException exception) {
+                        // Ignore interrupted exception so the retires continue
+                        logger.info("Interrupted exception occurred, when trying to invoke Thread.sleep", exception);
+                    }
+                } else {
+                    logger.info("Unexpected exception occurred while retriving data and number of retries has been exceeded.", e);
+                }
+            } finally {
+                // Assign new call object if the method is going to be retried.
+                call = attemptNum > 0 && attemptNum < retryCount ? call.clone() : call;
+            }
+        }
+        return result;
+    }
+
+    /**
      * Executes the remote call and returns the HTTP response headers
      *
      * @throws UnauthorizedException if the endpoint could not be authenticated
@@ -277,13 +347,22 @@ public abstract class AbstractRemoteClient<S> implements RemoteClient {
     }
 
     /**
+     * Executes the remote call and returns the HTTP response headers
+     *
+     * @throws UnauthorizedException if the endpoint could not be authenticated
+     */
+    protected <T> Response<T> execute(Call<T> call) throws UnauthorizedException {
+        return Optional.ofNullable(executeCallInternal(call)).orElse(null);
+    }
+
+    /**
      * Executes the {@link Retrofit} call
      *   if the initial call fails with {@link UnauthorizedException}, the authentication operation is called one more
      *   time and the call is then retried
      *
      * @throws UnauthorizedException if the call fails after attempting to re-authenticate
      */
-    private <T> Response<T> executeCallInternalRetryIfUnauthorized(Call<T> call) throws UnauthorizedException {
+    protected <T> Response<T> executeCallInternalRetryIfUnauthorized(Call<T> call) throws UnauthorizedException {
         try {
             return executeCallInternal(call);
 

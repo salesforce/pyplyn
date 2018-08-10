@@ -23,15 +23,16 @@ import com.salesforce.pyplyn.model.Transform;
 /**
  * ETL Configuration model
  * <p/>
- * <p/>This class is the base of all the {@link Extract}/{@link Transform}/{@link Load} definitions and defines the high-level structure
- *   of what should be retrieved, how it should be processed, and where it should be delivered to
  * <p/>
- * <p/>This class is {@link Serializable}.
+ * This class is the base of all the {@link Extract}/{@link Transform}/{@link Load} definitions and defines the high-level structure
+ * of what should be retrieved, how it should be processed, and where it should be delivered to
+ * <p/>
+ * <p/>
+ * This class is {@link Serializable}.
  *
  * @see Extract data sources
  * @see Transform transformation to apply on the extracted data
  * @see Load where to publish the transformation results
- *
  * @author Mihai Bojin &lt;mbojin@salesforce.com&gt;
  * @since 3.0
  */

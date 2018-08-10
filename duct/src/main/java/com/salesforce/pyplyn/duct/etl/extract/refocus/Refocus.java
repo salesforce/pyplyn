@@ -51,7 +51,6 @@ public abstract class Refocus implements Extract {
      *
      * @return {@link Refocus#actualSubject} if specified, or otherwise {@link Refocus#subject}, since in that case they are the same
      */
-    @Nullable
     @Value.Default
     public String actualSubject() {
         return subject();

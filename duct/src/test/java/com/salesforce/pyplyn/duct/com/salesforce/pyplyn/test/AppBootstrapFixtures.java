@@ -10,12 +10,23 @@ package com.salesforce.pyplyn.duct.com.salesforce.pyplyn.test;
 
 import static java.util.Collections.emptyList;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doCallRealMethod;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.spy;
 
 import java.nio.charset.Charset;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -25,7 +36,12 @@ import org.mockito.MockitoAnnotations;
 
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.Timer;
-import com.google.inject.*;
+import com.google.inject.AbstractModule;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+import com.google.inject.Key;
+import com.google.inject.Module;
+import com.google.inject.TypeLiteral;
 import com.hazelcast.core.IMap;
 import com.salesforce.argus.ArgusClient;
 import com.salesforce.argus.model.MetricResponse;
@@ -56,7 +72,11 @@ import com.salesforce.pyplyn.duct.etl.load.refocus.RefocusLoadProcessor;
 import com.salesforce.pyplyn.duct.etl.transform.standard.ImmutableLastDatapoint;
 import com.salesforce.pyplyn.duct.systemstatus.ConsoleOutputConsumer;
 import com.salesforce.pyplyn.duct.systemstatus.SystemStatusRunnable;
-import com.salesforce.pyplyn.model.*;
+import com.salesforce.pyplyn.model.Extract;
+import com.salesforce.pyplyn.model.ImmutableTransmutation;
+import com.salesforce.pyplyn.model.Load;
+import com.salesforce.pyplyn.model.Transform;
+import com.salesforce.pyplyn.model.Transmutation;
 import com.salesforce.pyplyn.processor.ExtractProcessor;
 import com.salesforce.pyplyn.processor.LoadProcessor;
 import com.salesforce.pyplyn.status.SystemStatus;
@@ -92,10 +112,8 @@ public class AppBootstrapFixtures {
     @Mock
     private Timer systemStatusTimer;
 
-    @Mock
     private ArgusClient argusClient;
 
-    @Mock
     private RefocusClient refocusClient;
 
     @Mock
@@ -170,6 +188,14 @@ public class AppBootstrapFixtures {
         doReturn(30000L).when(connector).connectTimeout();
         doReturn(30000L).when(connector).readTimeout();
         doReturn(30000L).when(connector).writeTimeout();
+
+        // need to pass the right connector into these classes
+        refocusClient = spy(new RefocusClient(connector));
+        argusClient = spy(new ArgusClient(connector));
+
+        // need to pass the right connector into these classes
+        refocusClient = spy(new RefocusClient(connector));
+        argusClient = spy(new ArgusClient(connector));
 
         // System status delegates
         doReturn(systemStatusMeter).when(systemStatus).meter(any(), any());
@@ -337,12 +363,12 @@ public class AppBootstrapFixtures {
      */
 
     private void initTaskManager() {
-        taskManager = spy(new TaskManagerWithLatches<>(appConfigMocks().appConfig, extractProcessors, loadProcessors, shutdownHook));
+        taskManager = spy(new TaskManagerWithLatches<>(appConfigMocks().appConfig, extractProcessors, loadProcessors, shutdownHook, injector));
     }
 
     public AppBootstrapFixtures initConfigurationManager() {
         initTaskManager();
-        configurationManager = spy(new ConfigurationUpdateManager(configurationLoader, taskManager, cluster, shutdownHook));
+        configurationManager = spy(new ConfigurationUpdateManager(configurationLoader, taskManager, cluster, shutdownHook, injector));
         configurationManager.initialize();
         return this;
     }
@@ -745,6 +771,7 @@ public class AppBootstrapFixtures {
     public static class ConfigurationMocks {
         Boolean isEnabled = false;
         Long repeatIntervalMillis = 10_000L;
+        double taskDelayCoefficient = 0.5;
         List<Extract> extract = new ArrayList<>();
         List<Transform> transform = new ArrayList<>();
         List<Load> load = new ArrayList<>();
@@ -811,8 +838,9 @@ public class AppBootstrapFixtures {
      * Attaches a latch to detect when all tasks have been processed
      */
     private static class TaskManagerWithLatches<T extends Configuration> extends TaskManager<T> {
-        public TaskManagerWithLatches(AppConfig config, Set<ExtractProcessor<? extends Extract>> extractProcessors, Set<LoadProcessor<? extends Load>> loadProcessors, ShutdownHook shutdownHook) {
-            super(config, extractProcessors, loadProcessors, shutdownHook);
+        public TaskManagerWithLatches(AppConfig config, Set<ExtractProcessor<? extends Extract>> extractProcessors, Set<LoadProcessor<? extends Load>> loadProcessors,
+                ShutdownHook shutdownHook, Injector injector) {
+            super(config, extractProcessors, loadProcessors, shutdownHook, injector);
         }
 
         /**

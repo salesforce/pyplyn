@@ -8,17 +8,17 @@
 
 package com.salesforce.pyplyn.duct.etl.extract.argus;
 
+import static java.util.stream.Collectors.toCollection;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import java.time.Instant;
-import java.util.Collections;
-import java.util.List;
-import java.util.TreeMap;
+import java.util.*;
 
 import org.mockito.ArgumentCaptor;
 import org.testng.annotations.BeforeMethod;
@@ -41,11 +41,13 @@ import com.salesforce.pyplyn.status.MeterType;
  */
 public class ArgusExtractProcessorTest {
     private AppBootstrapFixtures fixtures;
+    private ArgumentCaptor<MeterType> meterTypeArgumentCaptor;
 
     @BeforeMethod
     public void setUp() throws Exception {
         // ARRANGE
         fixtures = new AppBootstrapFixtures();
+        meterTypeArgumentCaptor = ArgumentCaptor.forClass(MeterType.class);
     }
 
     @Test
@@ -70,8 +72,9 @@ public class ArgusExtractProcessorTest {
 
 
         // ASSERT
-        // since we had no real client, expecting ArgusExtractProcessor to have logged a failure
-        verify(fixtures.systemStatus(), times(1)).meter("Argus", MeterType.ExtractFailure);
+        // since we had no real client, expecting ArgusExtractProcessor to have logged a failure (ExtractFailure and AuthenticationFailure)
+        verify(fixtures.systemStatus(), times(2)).meter(eq("Argus"), meterTypeArgumentCaptor.capture());
+        assert(meterTypeArgumentCaptor.getAllValues().stream().anyMatch(meterType -> meterType.processStatus().name().equals("ExtractFailure")));
     }
 
 
@@ -99,9 +102,8 @@ public class ArgusExtractProcessorTest {
         fixtures.awaitUntilAllTasksHaveBeenProcessed(true);
 
         // ASSERT
-        verify(fixtures.systemStatus(), times(1)).meter("Argus", MeterType.ExtractSuccess);
-        verify(fixtures.systemStatus(), times(0)).meter("Argus", MeterType.ExtractFailure);
-        verify(fixtures.systemStatus(), times(0)).meter("Argus", MeterType.ExtractNoDataReturned);
+        verify(fixtures.systemStatus(), times(1)).meter(eq("Argus"), meterTypeArgumentCaptor.capture());
+        assert(meterTypeArgumentCaptor.getValue().processStatus().name().equals("ExtractSuccess"));
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<List<Transmutation>> dataCaptor = ArgumentCaptor.forClass(List.class);
@@ -148,7 +150,11 @@ public class ArgusExtractProcessorTest {
         fixtures.awaitUntilAllTasksHaveBeenProcessed(true);
 
         // ASSERT
-        verify(fixtures.systemStatus(), times(2)).meter("Argus", MeterType.ExtractSuccess);
+        // two instances of ExtractSuccess
+        verify(fixtures.systemStatus(), times(2)).meter(eq("Argus"), meterTypeArgumentCaptor.capture());
+        meterTypeArgumentCaptor.getAllValues().forEach(meterType -> {
+            assert(meterType.processStatus().name().equals("ExtractSuccess"));
+        });
         verify(fixtures.metricResponseCache(), times(4)).isCached("argus-metric");
         verify(fixtures.metricResponseCache(), times(1)).cache(any(), anyLong());
     }
@@ -173,7 +179,6 @@ public class ArgusExtractProcessorTest {
             // init app
             ConfigurationUpdateManager manager = fixtures.configurationManager();
 
-
             // ACT
             manager.run();
             AppBootstrapLatches.holdOffBeforeExtractProcessorStarts().countDown();
@@ -187,8 +192,17 @@ public class ArgusExtractProcessorTest {
 
 
             // ASSERT
-            verify(fixtures.systemStatus(), times(1)).meter("Argus", MeterType.ExtractSuccess);
-            verify(fixtures.systemStatus(), times(1)).meter("Argus", MeterType.ExtractNoDataReturned);
+
+            // one of each of ExtractSuccess and ExtractNoDataReturned
+            verify(fixtures.systemStatus(), times(2)).meter(eq("Argus"), meterTypeArgumentCaptor.capture());
+            List<String> processStatuses = meterTypeArgumentCaptor.getAllValues()
+                                                                  .stream()
+                                                                  .map(meterType -> meterType.processStatus().name())
+                                                                  .collect(toCollection(ArrayList::new));
+            assert(processStatuses.contains("ExtractSuccess"));
+            assert(processStatuses.contains("ExtractNoDataReturned"));
+            assertThat(String.format("Expected 2 elements, found %d", processStatuses.size()), processStatuses.size() == 2);
+
             verify(fixtures.metricResponseCache(), times(2)).isCached("argus-metric");
             verify(fixtures.metricResponseCache(), times(0)).cache(any(), anyLong());
 
@@ -202,7 +216,10 @@ public class ArgusExtractProcessorTest {
         testWithMetricResponse(null);
 
         // ASSERT
-        verify(fixtures.systemStatus(), times(1)).meter("Argus", MeterType.ExtractFailure);
+        // since no default value is specified, should throw ExtractFailure and ExtractNoDataReturned
+        verify(fixtures.systemStatus(), times(2)).meter(eq("Argus"), meterTypeArgumentCaptor.capture());
+        assert(meterTypeArgumentCaptor.getAllValues().stream().anyMatch(meterType -> meterType.processStatus().name().equals("ExtractNoDataReturned")));
+        assert(meterTypeArgumentCaptor.getAllValues().stream().anyMatch(meterType -> meterType.processStatus().name().equals("ExtractFailure")));
     }
 
     @Test
@@ -217,7 +234,9 @@ public class ArgusExtractProcessorTest {
 
 
         // ASSERT
-        verify(fixtures.systemStatus(), times(1)).meter("Argus", MeterType.ExtractNoDataReturned);
+        // expecting ExtractSuccess and ExtractNoDataReturned
+        verify(fixtures.systemStatus(), times(2)).meter(eq("Argus"), meterTypeArgumentCaptor.capture());
+        assert(meterTypeArgumentCaptor.getAllValues().stream().anyMatch(meterType -> meterType.processStatus().name().equals("ExtractNoDataReturned")));
     }
 
 
@@ -243,7 +262,8 @@ public class ArgusExtractProcessorTest {
 
 
         // ASSERT
-        verify(fixtures.systemStatus(), times(1)).meter("Argus", MeterType.ExtractFailure);
+        verify(fixtures.systemStatus(), times(1)).meter(eq("Argus"), meterTypeArgumentCaptor.capture());
+        assert(meterTypeArgumentCaptor.getAllValues().stream().anyMatch(meterType -> meterType.processStatus().name().equals("ExtractFailure")));
     }
 
 

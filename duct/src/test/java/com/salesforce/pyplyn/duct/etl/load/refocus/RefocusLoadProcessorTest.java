@@ -8,9 +8,11 @@
 
 package com.salesforce.pyplyn.duct.etl.load.refocus;
 
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import org.mockito.ArgumentCaptor;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -26,12 +28,14 @@ import com.salesforce.pyplyn.status.MeterType;
  */
 public class RefocusLoadProcessorTest {
     AppBootstrapFixtures fixtures;
+    ArgumentCaptor<MeterType> meterTypeArgumentCaptor;
 
 
     @BeforeMethod
     public void setUp() throws Exception {
         // ARRANGE
         fixtures = new AppBootstrapFixtures();
+        meterTypeArgumentCaptor = ArgumentCaptor.forClass(MeterType.class);
     }
 
     @Test
@@ -57,7 +61,8 @@ public class RefocusLoadProcessorTest {
 
 
         // ASSERT
-        // since we had no real client, expecting ArgusExtractProcessor to have logged a failure
-        verify(fixtures.systemStatus(), times(1)).meter("Refocus", MeterType.LoadFailure);
+        // since we had no real client, expecting ArgusExtractProcessor to have logged a failure (LoadFailure and AuthenticationFailure)
+        verify(fixtures.systemStatus(), times(2)).meter(eq("Refocus"), meterTypeArgumentCaptor.capture());
+        assert(meterTypeArgumentCaptor.getAllValues().stream().anyMatch(meterType -> meterType.processStatus().name().equals("LoadFailure")));
     }
 }

@@ -11,6 +11,7 @@ package com.salesforce.pyplyn.duct.etl.configuration;
 import java.util.Set;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.Injector;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
@@ -35,8 +36,9 @@ public class ConfigurationModule extends AbstractModule {
 
     @Provides
     @Singleton
-    ConfigurationUpdateManager configurationManager(ConfigurationLoader loader, TaskManager<Configuration> taskRegistry, Cluster cluster, ShutdownHook shutdownHook) {
-        ConfigurationUpdateManager manager = new ConfigurationUpdateManager(loader, taskRegistry, cluster, shutdownHook);
+    ConfigurationUpdateManager configurationManager(ConfigurationLoader loader, TaskManager<Configuration> taskRegistry, Cluster cluster,
+            ShutdownHook shutdownHook, Injector injector) {
+        ConfigurationUpdateManager manager = new ConfigurationUpdateManager(loader, taskRegistry, cluster, shutdownHook, injector);
         manager.initialize();
         return manager;
     }

@@ -1,89 +1,199 @@
+
 <!doctype html>
 <html>
   <head>
     <meta charset="utf-8">
     <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-    <title>Pyplyn Documentation</title>
+    <title>Pyplyn-Pre-Production Documentation</title>
 
     <style>
       .highlight table td { padding: 5px; }
 .highlight table pre { margin: 0; }
-.highlight, .highlight .w {
-  color: #f8f8f2;
-  background-color: #272822;
+.highlight .gh {
+  color: #999999;
 }
-.highlight .err {
-  color: #272822;
-  background-color: #f92672;
+.highlight .sr {
+  color: #f6aa11;
 }
-.highlight .c, .highlight .cd, .highlight .cm, .highlight .c1, .highlight .cs {
+.highlight .go {
+  color: #888888;
+}
+.highlight .gp {
+  color: #555555;
+}
+.highlight .gs {
+}
+.highlight .gu {
+  color: #aaaaaa;
+}
+.highlight .nb {
+  color: #f6aa11;
+}
+.highlight .cm {
   color: #75715e;
 }
 .highlight .cp {
-  color: #f4bf75;
+  color: #75715e;
 }
-.highlight .nt {
-  color: #f4bf75;
+.highlight .c1 {
+  color: #75715e;
 }
-.highlight .o, .highlight .ow {
-  color: #f8f8f2;
+.highlight .cs {
+  color: #75715e;
 }
-.highlight .p, .highlight .pi {
-  color: #f8f8f2;
+.highlight .c, .highlight .cd {
+  color: #75715e;
 }
-.highlight .gi {
-  color: #a6e22e;
+.highlight .err {
+  color: #960050;
+}
+.highlight .gr {
+  color: #960050;
+}
+.highlight .gt {
+  color: #960050;
 }
 .highlight .gd {
-  color: #f92672;
+  color: #49483e;
 }
-.highlight .gh {
-  color: #66d9ef;
-  background-color: #272822;
-  font-weight: bold;
+.highlight .gi {
+  color: #49483e;
 }
-.highlight .k, .highlight .kn, .highlight .kp, .highlight .kr, .highlight .kv {
-  color: #ae81ff;
+.highlight .ge {
+  color: #49483e;
 }
 .highlight .kc {
-  color: #fd971f;
-}
-.highlight .kt {
-  color: #fd971f;
-}
-.highlight .kd {
-  color: #fd971f;
-}
-.highlight .s, .highlight .sb, .highlight .sc, .highlight .sd, .highlight .s2, .highlight .sh, .highlight .sx, .highlight .s1 {
-  color: #a6e22e;
-}
-.highlight .sr {
-  color: #a1efe4;
-}
-.highlight .si {
-  color: #cc6633;
-}
-.highlight .se {
-  color: #cc6633;
-}
-.highlight .nn {
-  color: #f4bf75;
-}
-.highlight .nc {
-  color: #f4bf75;
-}
-.highlight .no {
-  color: #f4bf75;
-}
-.highlight .na {
   color: #66d9ef;
 }
-.highlight .m, .highlight .mf, .highlight .mh, .highlight .mi, .highlight .il, .highlight .mo, .highlight .mb, .highlight .mx {
-  color: #a6e22e;
+.highlight .kd {
+  color: #66d9ef;
+}
+.highlight .kr {
+  color: #66d9ef;
+}
+.highlight .no {
+  color: #66d9ef;
+}
+.highlight .kt {
+  color: #66d9ef;
+}
+.highlight .mf {
+  color: #ae81ff;
+}
+.highlight .mh {
+  color: #ae81ff;
+}
+.highlight .il {
+  color: #ae81ff;
+}
+.highlight .mi {
+  color: #ae81ff;
+}
+.highlight .mo {
+  color: #ae81ff;
+}
+.highlight .m, .highlight .mb, .highlight .mx {
+  color: #ae81ff;
+}
+.highlight .sc {
+  color: #ae81ff;
+}
+.highlight .se {
+  color: #ae81ff;
 }
 .highlight .ss {
+  color: #ae81ff;
+}
+.highlight .sd {
+  color: #e6db74;
+}
+.highlight .s2 {
+  color: #e6db74;
+}
+.highlight .sb {
+  color: #e6db74;
+}
+.highlight .sh {
+  color: #e6db74;
+}
+.highlight .si {
+  color: #e6db74;
+}
+.highlight .sx {
+  color: #e6db74;
+}
+.highlight .s1 {
+  color: #e6db74;
+}
+.highlight .s {
+  color: #e6db74;
+}
+.highlight .na {
   color: #a6e22e;
+}
+.highlight .nc {
+  color: #a6e22e;
+}
+.highlight .nd {
+  color: #a6e22e;
+}
+.highlight .ne {
+  color: #a6e22e;
+}
+.highlight .nf {
+  color: #a6e22e;
+}
+.highlight .vc {
+  color: #ffffff;
+}
+.highlight .nn {
+  color: #ffffff;
+}
+.highlight .nl {
+  color: #ffffff;
+}
+.highlight .ni {
+  color: #ffffff;
+}
+.highlight .bp {
+  color: #ffffff;
+}
+.highlight .vg {
+  color: #ffffff;
+}
+.highlight .vi {
+  color: #ffffff;
+}
+.highlight .nv {
+  color: #ffffff;
+}
+.highlight .w {
+  color: #ffffff;
+}
+.highlight {
+  color: #ffffff;
+}
+.highlight .n, .highlight .py, .highlight .nx {
+  color: #ffffff;
+}
+.highlight .ow {
+  color: #f92672;
+}
+.highlight .nt {
+  color: #f92672;
+}
+.highlight .k, .highlight .kv {
+  color: #f92672;
+}
+.highlight .kn {
+  color: #f92672;
+}
+.highlight .kp {
+  color: #f92672;
+}
+.highlight .o {
+  color: #f92672;
 }
     </style>
     <link href="stylesheets/screen.css" rel="stylesheet" media="screen" />
@@ -95,19 +205,171 @@
     <a href="#" id="nav-button">
       <span>
         NAV
-        <img src="images/logo.png" alt="Logo" />
+        <img src="images/navbar.png" alt="Navbar" />
       </span>
     </a>
-    <div class="tocify-wrapper">
-      <div style="margin:0 0 0 36px;width:150px">
-        <img src="images/logo.png" width="150" title="Pyplyn logo" alt="Logo" />
-      </div>
+    <div class="toc-wrapper">
+      <img src="images/logo.png" class="logo" alt="Logo" />
         <div class="search">
           <input type="text" class="search" id="input-search" placeholder="Search">
         </div>
         <ul class="search-results"></ul>
-      <div id="toc">
-      </div>
+      <ul id="toc" class="toc-list-h1">
+          <li>
+            <a href="#introduction" class="toc-h1 toc-link" data-title="Introduction">Introduction</a>
+          </li>
+          <li>
+            <a href="#what-does-pyplyn-solve" class="toc-h1 toc-link" data-title="What does Pyplyn solve?">What does Pyplyn solve?</a>
+          </li>
+          <li>
+            <a href="#overview" class="toc-h1 toc-link" data-title="Overview">Overview</a>
+              <ul class="toc-list-h2">
+                  <li>
+                    <a href="#key-features" class="toc-h2 toc-link" data-title="Key features">Key features</a>
+                  </li>
+                  <li>
+                    <a href="#improvements-from-release-11-x" class="toc-h2 toc-link" data-title="Improvements from release 11.x">Improvements from release 11.x</a>
+                  </li>
+                  <li>
+                    <a href="#planned-developments" class="toc-h2 toc-link" data-title="Planned developments">Planned developments</a>
+                  </li>
+              </ul>
+          </li>
+          <li>
+            <a href="#concepts" class="toc-h1 toc-link" data-title="Concepts">Concepts</a>
+              <ul class="toc-list-h2">
+                  <li>
+                    <a href="#appconfig" class="toc-h2 toc-link" data-title="AppConfig">AppConfig</a>
+                  </li>
+                  <li>
+                    <a href="#appconfig-global" class="toc-h2 toc-link" data-title="AppConfig.Global">AppConfig.Global</a>
+                  </li>
+                  <li>
+                    <a href="#appconfig-alert" class="toc-h2 toc-link" data-title="AppConfig.Alert">AppConfig.Alert</a>
+                  </li>
+                  <li>
+                    <a href="#appconfig-hazelcast" class="toc-h2 toc-link" data-title="AppConfig.Hazelcast">AppConfig.Hazelcast</a>
+                  </li>
+                  <li>
+                    <a href="#appconfig-database" class="toc-h2 toc-link" data-title="AppConfig.Database">AppConfig.Database</a>
+                  </li>
+                  <li>
+                    <a href="#connectors" class="toc-h2 toc-link" data-title="Connectors">Connectors</a>
+                  </li>
+                  <li>
+                    <a href="#token-based-authentication" class="toc-h2 toc-link" data-title="Token-based authentication">Token-based authentication</a>
+                  </li>
+                  <li>
+                    <a href="#mutual-tls-authentication" class="toc-h2 toc-link" data-title="Mutual TLS authentication">Mutual TLS authentication</a>
+                  </li>
+                  <li>
+                    <a href="#configurations" class="toc-h2 toc-link" data-title="Configurations">Configurations</a>
+                  </li>
+                  <li>
+                    <a href="#uploading-configurations-via-rest-api" class="toc-h2 toc-link" data-title="Uploading Configurations via REST API">Uploading Configurations via REST API</a>
+                  </li>
+                  <li>
+                    <a href="#transmutation" class="toc-h2 toc-link" data-title="Transmutation">Transmutation</a>
+                  </li>
+              </ul>
+          </li>
+          <li>
+            <a href="#data-sources" class="toc-h1 toc-link" data-title="Data sources">Data sources</a>
+              <ul class="toc-list-h2">
+                  <li>
+                    <a href="#argus" class="toc-h2 toc-link" data-title="Argus">Argus</a>
+                  </li>
+                  <li>
+                    <a href="#influxdb" class="toc-h2 toc-link" data-title="InfluxDB">InfluxDB</a>
+                  </li>
+                  <li>
+                    <a href="#refocus" class="toc-h2 toc-link" data-title="Refocus">Refocus</a>
+                  </li>
+              </ul>
+          </li>
+          <li>
+            <a href="#transformations" class="toc-h1 toc-link" data-title="Transformations">Transformations</a>
+              <ul class="toc-list-h2">
+                  <li>
+                    <a href="#highestvalue" class="toc-h2 toc-link" data-title="HighestValue">HighestValue</a>
+                  </li>
+                  <li>
+                    <a href="#infostatus" class="toc-h2 toc-link" data-title="InfoStatus">InfoStatus</a>
+                  </li>
+                  <li>
+                    <a href="#metadata" class="toc-h2 toc-link" data-title="Metadata">Metadata</a>
+                  </li>
+                  <li>
+                    <a href="#lastdatapoint" class="toc-h2 toc-link" data-title="LastDatapoint">LastDatapoint</a>
+                  </li>
+                  <li>
+                    <a href="#savemetricmetadata" class="toc-h2 toc-link" data-title="SaveMetricMetadata">SaveMetricMetadata</a>
+                  </li>
+                  <li>
+                    <a href="#threshold" class="toc-h2 toc-link" data-title="Threshold">Threshold</a>
+                  </li>
+                  <li>
+                    <a href="#thresholdmetforduration" class="toc-h2 toc-link" data-title="ThresholdMetForDuration">ThresholdMetForDuration</a>
+                  </li>
+              </ul>
+          </li>
+          <li>
+            <a href="#load-destinations" class="toc-h1 toc-link" data-title="Load destinations">Load destinations</a>
+              <ul class="toc-list-h2">
+                  <li>
+                    <a href="#refocus-as-a-destination" class="toc-h2 toc-link" data-title="Refocus as a destination">Refocus as a destination</a>
+                  </li>
+              </ul>
+          </li>
+          <li>
+            <a href="#quickstart" class="toc-h1 toc-link" data-title="Quickstart">Quickstart</a>
+              <ul class="toc-list-h2">
+                  <li>
+                    <a href="#prerequisites" class="toc-h2 toc-link" data-title="Prerequisites">Prerequisites</a>
+                  </li>
+                  <li>
+                    <a href="#configure-and-run-pyplyn" class="toc-h2 toc-link" data-title="Configure and run Pyplyn">Configure and run Pyplyn</a>
+                  </li>
+                  <li>
+                    <a href="#base64-mime-encoding" class="toc-h2 toc-link" data-title="BASE64-MIME encoding">BASE64-MIME encoding</a>
+                  </li>
+                  <li>
+                    <a href="#create-a-configuration-for-processing" class="toc-h2 toc-link" data-title="Create a configuration for processing">Create a configuration for processing</a>
+                  </li>
+                  <li>
+                    <a href="#startup-script-bin-pyplyn-sh" class="toc-h2 toc-link" data-title="Startup script (bin/pyplyn.sh)">Startup script (bin/pyplyn.sh)</a>
+                  </li>
+              </ul>
+          </li>
+          <li>
+            <a href="#extending-pyplyn" class="toc-h1 toc-link" data-title="Extending Pyplyn">Extending Pyplyn</a>
+              <ul class="toc-list-h2">
+                  <li>
+                    <a href="#common-use-cases" class="toc-h2 toc-link" data-title="Common use-cases">Common use-cases</a>
+                  </li>
+                  <li>
+                    <a href="#how-do-i-replace-augment-pyplyn-39-s-bootstrap" class="toc-h2 toc-link" data-title="How do I replace/augment Pyplyn's bootstrap?">How do I replace/augment Pyplyn's bootstrap?</a>
+                  </li>
+                  <li>
+                    <a href="#how-do-i-create-a-new-transform" class="toc-h2 toc-link" data-title="How do I create a new Transform?">How do I create a new Transform?</a>
+                  </li>
+                  <li>
+                    <a href="#starting-stopping-a-pyplyn-extension-project" class="toc-h2 toc-link" data-title="Starting/stopping a Pyplyn-extension project">Starting/stopping a Pyplyn-extension project</a>
+                  </li>
+                  <li>
+                    <a href="#tech-stack" class="toc-h2 toc-link" data-title="Tech stack">Tech stack</a>
+                  </li>
+              </ul>
+          </li>
+          <li>
+            <a href="#contributing-to-pyplyn" class="toc-h1 toc-link" data-title="Contributing to Pyplyn">Contributing to Pyplyn</a>
+              <ul class="toc-list-h2">
+                  <li>
+                    <a href="#licensing-requirements" class="toc-h2 toc-link" data-title="Licensing requirements">Licensing requirements</a>
+                  </li>
+              </ul>
+          </li>
+      </ul>
         <ul class="toc-footer">
             <li><a href="https://github.com/salesforce/pyplyn">Pyplyn repository on GitHub.com</a></li>
             <li><a href="https://github.com/tripit/slate">Documentation Powered by Slate</a></li>
@@ -151,46 +413,41 @@ extracts data from various sources, transforms and gives it meaning, and sends i
 <li>Configurations can be added/updated/removed without restarting the process</li>
 <li>Publishes operational metrics (errors, p95, etc.) for monitoring service health</li>
 </ul>
-<h2 id='improvements-from-release-9-x'>Improvements from release 9.x</h2>
+<h2 id='improvements-from-release-11-x'>Improvements from release 11.x</h2>
 <ul>
-<li>Faster processing speed with the use of RxJava (4.3x faster, tested on our reference dataset)</li>
-<li>Cleaner code, mainly after converting models <em>Immutables</em>-annotated abstract classes</li>
-<li>Support mutual TLS authentication for endpoints, by specifying a Java keystore and password</li>
-<li>Connect, read, and write timeouts can now be specified for each <em>connector</em></li>
-<li>All <em>Jackson</em>-based models can now be serialized (with the <em>type</em> specifier field)</li>
-<li><code>AppConfig.Global.minRepeatIntervalMillis</code> was deprecated (replaced with <code>AppConfig.Global.runOnce</code>)</li>
-<li>Bash script for managing the service&#39;s lifecycle (start, stop, restart, logs, etc.)</li>
-<li>Since <em>10.0.0</em>, Pyplyn releases follow <a href="http://semver.org/">Semantic versioning</a> guidelines.</li>
+<li>Deprecation of the unloved refocus-batcher</li>
+<li>Staggered execution of work to reduce strain on downstream systems</li>
+<li>Automatic log rotation and compression to avoid disk space issues</li>
+<li>Fixes for user-reported bugs</li>
+<li>Support for more customizable thresholds (LESS_THAN_OR_EQ, EQUAL_TO, GREATER_THAN_OR_EQ)</li>
+<li>More robust key refreshing for Argus endpoint</li>
 </ul>
-<h2 id='planned-development'>Planned development</h2><h3 id='breaking-changes'>Breaking changes</h3>
+<h2 id='planned-developments'>Planned developments</h2><h3 id='breaking-changes'>Breaking changes</h3>
 <ul>
-<li>Remove <em>AppConfig.Global.minRepeatIntervalMillis</em></li>
-<li>Rename <em>HighestValue.messageCodeSource</em> to <em>tagMessageCode</em></li>
-<li>Rename the <em>configurations</em> moniker since it has proven confusing (in relation to <code>AppConfig</code>)</li>
+<li>REST API that handles upload, management, and deletion of configurations</li>
+<li>Connection with a PostgreSQL database</li>
+<li>Ability to read configurations locally or from database</li>
 </ul>
 <h3 id='roadmap'>Roadmap</h3>
 <ul>
-<li>Extract source: <a href="https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/dome_query.htm">Execute a Salesforce SOQL query</a></li>
-<li>Load destination: Email (via SMTP MTA)</li>
-<li>Load destination: <a href="https://developer.salesforce.com/docs/atlas.en-us.chatterapi.meta/chatterapi/quickreference_post_feed_item.htm">Post a Salesforce Chatter Feed Item</a></li>
-<li>Load destination: <a href="https://developer.salesforce.com/docs/atlas.en-us.api_rest.meta/api_rest/dome_sobject_create.htm">Create a Salesforce Record</a></li>
-<li>API for managing configurations</li>
-<li>API for managing connectors</li>
-<li>Multi-tenancy (support configurations and connectors belonging to different users)</li>
-<li>Include Pyplyn in the <a href="https://search.maven.org/">Maven central</a> repository</li>
+<li>Auditable alerts</li>
+<li>Alerts analytics API</li>
+<li>Configuration-level metadata</li>
+<li>Datacenter and instance wildcard expansion</li>
 </ul>
 <h1 id='concepts'>Concepts</h1>
 <p>Let&#39;s start with an overview of a few basic concepts in Pyplyn.</p>
 <h2 id='appconfig'>AppConfig</h2>
 <p>The <a href="https://github.com/salesforce/pyplyn/blob/master/duct/src/main/java/com/salesforce/pyplyn/duct/appconfig/AppConfig.java">AppConfig</a> represents the primary object used to configure Pyplyn&#39;s behavior (endpoint connectors, the path to configurations, self-monitoring alerting threshold, and high-availability settings).</p>
 
-<p>The application config has three sections: <em>global</em>, <em>alert</em>, and <em>hazelcast</em>; they are explained below.</p>
+<p>The application config has four sections: <em>global</em>, <em>alert</em>, <em>hazelcast</em>, and <em>database</em>; they are explained below.</p>
 <h2 id='appconfig-global'>AppConfig.Global</h2><pre class="highlight json tab-json"><code><span class="p">{</span><span class="w">
   </span><span class="s2">"global"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
     </span><span class="s2">"configurationsPath"</span><span class="p">:</span><span class="w"> </span><span class="s2">"/path/to/configurations/dir"</span><span class="p">,</span><span class="w">
     </span><span class="s2">"connectorsPath"</span><span class="p">:</span><span class="w"> </span><span class="s2">"/path/to/connectors.json"</span><span class="p">,</span><span class="w">
-    </span><span class="s2">"updateConfigurationIntervalMillis"</span><span class="p">:</span><span class="w"> </span><span class="mi">300000</span><span class="w">
+    </span><span class="s2">"updateConfigurationIntervalMillis"</span><span class="p">:</span><span class="w"> </span><span class="mi">300000</span><span class="p">,</span><span class="w">
     </span><span class="s2">"runOnce"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span><span class="w">
+    </span><span class="s2">"dataSource"</span><span class="p">:</span><span class="w"> </span><span class="s2">"fileSystem"</span><span class="w">
   </span><span class="p">},</span><span class="w">
 
   </span><span class="s2">"alert"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
@@ -202,8 +459,8 @@ extracts data from various sources, transforms and gives it meaning, and sends i
   </span><span class="p">},</span><span class="w">
 
   </span><span class="s2">"hazelcast"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
-    </span><span class="s2">"config"</span><span class="p">:</span><span class="w"> </span><span class="s2">"/hazelcast.xml"</span><span class="w">
-    </span><span class="s2">"enabled"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span><span class="w">
+    </span><span class="s2">"config"</span><span class="p">:</span><span class="w"> </span><span class="s2">"/hazelcast.xml"</span><span class="p">,</span><span class="w">
+    </span><span class="s2">"enabled"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="w">
   </span><span class="p">}</span><span class="w">
 </span><span class="p">}</span><span class="w">
 </span></code></pre>
@@ -218,12 +475,12 @@ extracts data from various sources, transforms and gives it meaning, and sends i
 </thead><tbody>
 <tr>
 <td>configurationsPath</td>
-<td>required</td>
-<td>This should point to a directory which contains the Pyplyn <a href="#configurations">configurations</a> to process</td>
+<td>null</td>
+<td>This should point to a directory which contains the Pyplyn <a href="#configurations">configurations</a> to process <em>if using local file system</em></td>
 </tr>
 <tr>
 <td>connectorsPath</td>
-<td>required</td>
+<td>required, string</td>
 <td>A single JSON file which lists service endpoint <a href="#connectors">connectors</a> used by Pyplyn&#39;s plugin to extract data and push results</td>
 </tr>
 <tr>
@@ -233,13 +490,18 @@ extracts data from various sources, transforms and gives it meaning, and sends i
 </tr>
 <tr>
 <td>ioPoolsThreadSize</td>
-<td>optional</td>
+<td>100</td>
 <td>Defaults to 100 threads per IO pool; can be updated to increase or decrease the number of threads in the dedicated <em>Extract</em> and <em>Load</em> thread pools (for tweaking performance depending on the deployment hosts)</td>
 </tr>
 <tr>
 <td>runOnce</td>
-<td>optional</td>
-<td>Defaults to <em>false</em>, which means the service runs indefinitely or until terminated by the host OS; set to <em>true</em> to process the specified <em>configurations</em> only once, then exit (useful if you want to run Pyplyn with <code>crontab</code>, or for testing)</td>
+<td>false</td>
+<td>Defaults to false, which means the service runs indefinitely or until terminated by the host OS; set to true to process the specified configurations only once, then exit (useful if you want to run Pyplyn with <code>crontab</code>, or for testing)</td>
+</tr>
+<tr>
+<td>dataSource</td>
+<td>fileSystem</td>
+<td>Specifies the source of the configurations. If <code>fileSystem</code>, checks <em>configurationsPath</em> for configuration files. If <code>database</code>, relies on parameters in <a href="#appconfig-database">AppConfig.Database</a> to know where the database is.</td>
 </tr>
 </tbody></table>
 <h2 id='appconfig-alert'>AppConfig.Alert</h2>
@@ -267,25 +529,25 @@ extracts data from various sources, transforms and gives it meaning, and sends i
 </tr>
 </thead><tbody>
 <tr>
-<td>checkIntervalMillis</td>
+<td>checkIntervalMillis, integer</td>
 <td>optional</td>
 <td>The number of milliseconds at which Pyplyn checks its health, based on internally collected metrics, and outputs its status; defaults to 300,000 ms (5 minutes)</td>
 </tr>
 <tr>
 <td>enabled</td>
-<td>optional</td>
+<td>optional, boolean</td>
 <td>Defaults to <em>false</em>; set to <em>true</em> to have Pyplyn output its health to the system&#39;s console</td>
 </tr>
 <tr>
 <td>thresholds</td>
-<td>optional</td>
+<td>optional, object</td>
 <td>A <code>Map&lt;String, Double&gt;</code>, specifying alerting thresholds for various parts of the system (more below); if not specified, it will default to an empty map</td>
 </tr>
 </tbody></table>
 
 <p>The key specified in the <em>thresholds</em> map determines each value&#39;s scope.  The names are formed by concatenating three identifiers:</p>
 
-<p>1. <code>MeterName</code>: points to the type of service being queries, e.g., Argus or Refocus
+<p>1. <code>MeterName</code>: points to the type of service being queries, e.g., Argus, Refocus, InfluxDB, etc.
 2. <code>MeterType</code>: an enumeration of available operation types, defined in <a href="https://github.com/salesforce/pyplyn/blob/master/plugin-api/src/main/java/com/salesforce/pyplyn/status/MeterType.java">MeterType.java</a>; each type also defines the logic to use for comparison (<em>GREATER_THAN</em> or <em>LESS_THAN</em>)
 3. <code>StatusCode</code>: <a href="https://github.com/salesforce/pyplyn/blob/master/plugin-api/src/main/java/com/salesforce/pyplyn/model/StatusCode.java">StatusCode.java</a></p>
 <h2 id='appconfig-hazelcast'>AppConfig.Hazelcast</h2>
@@ -317,17 +579,113 @@ extracts data from various sources, transforms and gives it meaning, and sends i
 </thead><tbody>
 <tr>
 <td>enabled</td>
-<td>optional</td>
+<td>optional, boolean</td>
 <td>Defaults to <em>false</em>; set to <em>true</em> to allow Pyplyn to work in a multi-node <a href="https://hazelcast.org/">Hazelcast</a> clustering</td>
 </tr>
 <tr>
 <td>config</td>
-<td>required</td>
+<td>required, string</td>
 <td>Specifies the path to an XML used to configure the cluster. The available options are described in detail Hazelcast&#39;s <a href="http://docs.hazelcast.org/docs/3.8.1/manual/html-single/index.html">documentation</a></td>
 </tr>
 </tbody></table>
 
 <p>To run Pyplyn in cluster mode, take a look at the <a href="https://github.com/salesforce/pyplyn/blob/master/blob/master/duct/src/main/resources/hazelcast.example.xml">hazelcast.example.xml</a> configuration file.</p>
+<h2 id='appconfig-database'>AppConfig.Database</h2>
+<p>The options defined here help Hibernate figure out how to facilitate the connection between Pyplyn and the database.</p>
+
+<table><thead>
+<tr>
+<th>Parameter</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead><tbody>
+<tr>
+<td>url</td>
+<td>required</td>
+<td>JDBC URL</td>
+</tr>
+<tr>
+<td>bytecodeReflectionOptimizer</td>
+<td>true</td>
+<td>Enables the use of CGLIB instead of runtime reflection (System-level property). Reflection can sometimes be useful when troubleshooting. Hibernate always requires CGLIB even if you turn off the optimizer.</td>
+</tr>
+<tr>
+<td>driverClass</td>
+<td>org.postgresql.Driver</td>
+<td>JDBC Driver</td>
+</tr>
+<tr>
+<td>appUserSecretKey</td>
+<td>null</td>
+<td>The secret key for the app user (regular permissions)</td>
+</tr>
+<tr>
+<td>adminUserSecretKey</td>
+<td>null</td>
+<td>The secret key for the admin user (heightened permissions)</td>
+</tr>
+<tr>
+<td>appUser</td>
+<td>null</td>
+<td>The username for the app user (regular permissions)</td>
+</tr>
+<tr>
+<td>adminUser</td>
+<td>null</td>
+<td>The username for the admin user (heightened permissions)</td>
+</tr>
+<tr>
+<td>appUserPassword</td>
+<td>null</td>
+<td></td>
+</tr>
+<tr>
+<td>adminUserPassword</td>
+<td>null</td>
+<td></td>
+</tr>
+<tr>
+<td>dialect</td>
+<td>org.hibernate.dialect.PostgreSQL82Dialect</td>
+<td>The classname of a Hibernate org.hibernate.dialect.Dialect which allows Hibernate to generate SQL optimized for a particular relational database.</td>
+</tr>
+<tr>
+<td>showSql</td>
+<td>true</td>
+<td>Write all SQL statements to console. This is an alternative to setting the log category org.hibernate.SQL to debug.</td>
+</tr>
+<tr>
+<td>timezone</td>
+<td>UTC</td>
+<td>The timezone used for persistence statistics in the database (namely, last_updated and created_date)</td>
+</tr>
+<tr>
+<td>lazyLoad</td>
+<td>true</td>
+<td>&quot;Lazy loading&quot; means that an entity will be loaded only when you actually accesses the entity for the first time.</td>
+</tr>
+<tr>
+<td>currentSessionContext</td>
+<td>thread</td>
+<td>Supply a custom strategy for the scoping of the &quot;current&quot; Session. See <a href="https://docs.jboss.org/hibernate/orm/3.3/reference/en-US/html/architecture.html#architecture-current-session">this writeup</a> for more information about the built-in strategies.</td>
+</tr>
+<tr>
+<td>formatSql</td>
+<td>true</td>
+<td>Pretty print the SQL in the log and console. e.g. true</td>
+</tr>
+<tr>
+<td>useSqlComments</td>
+<td>true</td>
+<td>If turned on, Hibernate will generate comments inside the SQL, for easier debugging, defaults to false.</td>
+</tr>
+<tr>
+<td>onStartup</td>
+<td>update</td>
+<td>Determines what happens to the schema on creation. Options include validate, update, create, and create-drop.</td>
+</tr>
+</tbody></table>
 <h2 id='connectors'>Connectors</h2>
 <blockquote>
 <p>Refocus: without authentication</p>
@@ -384,62 +742,62 @@ extracts data from various sources, transforms and gives it meaning, and sends i
 </thead><tbody>
 <tr>
 <td>id</td>
-<td>required</td>
+<td>required, string</td>
 <td>Unique identifier used in various Pyplyn objects, to refer to this endpoint</td>
 </tr>
 <tr>
 <td>endpoint</td>
-<td>required</td>
+<td>required, string</td>
 <td>The URL of the service represented by this connector</td>
 </tr>
 <tr>
 <td>username</td>
-<td>optional</td>
+<td>optional, string</td>
 <td>Username used for authentication, or null if not required</td>
 </tr>
 <tr>
 <td>password</td>
-<td>optional</td>
+<td>optional, string</td>
 <td>Password required for authenticating to this endpoint, or null if not required; this string <strong>should be <a href="#base64-mime-encoding">BASE64 encoded</a></strong></td>
 </tr>
 <tr>
 <td>proxyHost</td>
-<td>optional</td>
+<td>optional, string</td>
 <td>A hostname pointing to an HTTP proxy, or null if not used</td>
 </tr>
 <tr>
 <td>proxyPort</td>
-<td>optional</td>
+<td>optional, integer</td>
 <td>The port the proxy listens on, or null if not used</td>
 </tr>
 <tr>
 <td>connectTimeout</td>
-<td>optional</td>
+<td>optional, integer</td>
 <td>How long to wait for connections to initialize; defaults to 10 seconds</td>
 </tr>
 <tr>
 <td>readTimeout</td>
-<td>optional</td>
+<td>optional, integer</td>
 <td>How long to wait for reads from the endpoint; defaults to 10 seconds</td>
 </tr>
 <tr>
 <td>writeTimeout</td>
-<td>optional</td>
+<td>optional, integer</td>
 <td>How long to wait for writes from the endpoint; defaults to 10 seconds</td>
 </tr>
 <tr>
 <td>keystorePath</td>
-<td>optional</td>
+<td>optional, string</td>
 <td>Used for mutual TLS authentication; should point to a Java keystore file holding the client certificate</td>
 </tr>
 <tr>
 <td>keystorePassword</td>
-<td>optional</td>
-<td>Password used to access the Java keystore for mutual authentication; should be specified in clear text</td>
+<td>optional, string</td>
+<td>Password used to access the Java keystore for mutual authentication; this string <strong>should be <a href="#base64-mime-encoding">BASE64 encoded</a></strong></td>
 </tr>
 <tr>
 <td>sslContextAlgorithm</td>
-<td>optional</td>
+<td>optional, string</td>
 <td>Specifies the <a href="http://docs.oracle.com/javase/8/docs/technotes/guides/security/StandardNames.html#SSLContext">algorithm</a> to use for opening secure connections to this endpoint; if not specified, defaults to <strong>TLSv1.2</strong></td>
 </tr>
 </tbody></table>
@@ -448,7 +806,7 @@ extracts data from various sources, transforms and gives it meaning, and sends i
 <p>Refocus: JWT token</p>
 </blockquote>
 <pre class="highlight json tab-json"><code><span class="p">{</span><span class="w">
-  </span><span class="s2">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"refocus-token"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"refocus-api-connector"</span><span class="p">,</span><span class="w">
   </span><span class="s2">"endpoint"</span><span class="p">:</span><span class="w"> </span><span class="s2">"https://url-to-your-refocus-instance/v1/"</span><span class="p">,</span><span class="w">
   </span><span class="s2">"username"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">
   </span><span class="s2">"password"</span><span class="p">:</span><span class="w"> </span><span class="s2">"BASE64-encoded-Refocus-token"</span><span class="w">
@@ -458,7 +816,7 @@ extracts data from various sources, transforms and gives it meaning, and sends i
 <p>Argus: refresh token</p>
 </blockquote>
 <pre class="highlight json tab-json"><code><span class="p">{</span><span class="w">
-  </span><span class="s2">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"argus"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"argus-api-connector"</span><span class="p">,</span><span class="w">
   </span><span class="s2">"endpoint"</span><span class="p">:</span><span class="w"> </span><span class="s2">"https://url-to-your-argus-instance/argusws/"</span><span class="p">,</span><span class="w">
   </span><span class="s2">"username"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w">
   </span><span class="s2">"password"</span><span class="p">:</span><span class="w"> </span><span class="s2">"BASE64-encoded-Argus-refresh-token"</span><span class="w">
@@ -474,7 +832,7 @@ extracts data from various sources, transforms and gives it meaning, and sends i
 <p>Argus: with mutual TLS authentication</p>
 </blockquote>
 <pre class="highlight json tab-json"><code><span class="p">{</span><span class="w">
-  </span><span class="s2">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"argus"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"argus-api-connector"</span><span class="p">,</span><span class="w">
   </span><span class="s2">"endpoint"</span><span class="p">:</span><span class="w"> </span><span class="s2">"https://url-to-your-argus-instance/argusws/"</span><span class="p">,</span><span class="w">
   </span><span class="s2">"keystorePath"</span><span class="p">:</span><span class="w"> </span><span class="s2">"/path/to/keystore.jks"</span><span class="p">,</span><span class="w">
   </span><span class="s2">"keystorePassword"</span><span class="p">:</span><span class="w"> </span><span class="s2">"password-in-clear-text"</span><span class="p">,</span><span class="w">
@@ -492,17 +850,17 @@ extracts data from various sources, transforms and gives it meaning, and sends i
 </thead><tbody>
 <tr>
 <td>keystorePath</td>
-<td>required</td>
+<td>required, string</td>
 <td>The value should point to a Java keystore file holding the client TLS certificate</td>
 </tr>
 <tr>
 <td>keystorePassword</td>
-<td>required</td>
+<td>required, string</td>
 <td>The password used to access keystore file; this string <strong>should be <a href="#base64-mime-encoding">BASE64 encoded</a></strong></td>
 </tr>
 <tr>
 <td>sslContextAlgorithm</td>
-<td>optional</td>
+<td>optional, string</td>
 <td>Specifies the <a href="http://docs.oracle.com/javase/8/docs/technotes/guides/security/StandardNames.html#SSLContext">algorithm</a> to use for opening secure connections to this endpoint; if not specified, defaults to <strong>TLSv1.2</strong></td>
 </tr>
 </tbody></table>
@@ -515,7 +873,7 @@ extracts data from various sources, transforms and gives it meaning, and sends i
   </span><span class="s2">"extract"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
     </span><span class="p">{</span><span class="w">
       </span><span class="s2">"format"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"Argus"</span><span class="p">,</span><span class="w">
-      </span><span class="s2">"endpoint"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"argus"</span><span class="p">,</span><span class="w">
+      </span><span class="s2">"endpoint"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"argus-api-connector"</span><span class="p">,</span><span class="w">
       </span><span class="s2">"cacheMillis"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">120000</span><span class="p">,</span><span class="w">
       </span><span class="s2">"defaultValue"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span><span class="w">
       </span><span class="s2">"expression"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"SUM(-6m:-1m:scope:metric{tags}:avg:1m-max,#1m#)"</span><span class="p">,</span><span class="w">
@@ -569,38 +927,86 @@ how it should be processed (<em>transform</em>), and where it should be publishe
 </thead><tbody>
 <tr>
 <td>repeatIntervalMillis</td>
-<td>required</td>
+<td>required, integer</td>
 <td>The frequency at which the configuration is executed.  Currently, the implementation does not allow configuration runs to overlap (the same configuration will not be executed until a previous run finishes processing).</td>
 </tr>
 <tr>
 <td>extract</td>
-<td>required</td>
-<td>Array of sources from which data is to be extracted.  See the <a href="#argus">Argus</a> and <a href="#refocus">Refocus</a> sections under <a href="#data-sources">data sources</a> below.</td>
+<td>required, array</td>
+<td>Array of sources from which data is to be extracted.  See the <a href="#data-sources">data sources</a> section below.</td>
 </tr>
 <tr>
 <td>transform</td>
-<td>required</td>
+<td>required, array</td>
 <td>Array of transformation plugins that are applied sequentially to the incoming data.  See the <a href="#transformations">Transformations</a> section for details on available classes and their functionality.</td>
 </tr>
 <tr>
 <td>load</td>
-<td>required</td>
+<td>required, array</td>
 <td>Array which specifies the destination to where the transformed data is to be sent.  See the <a href="#load-destinations">Load destinations</a> section for additional details.</td>
 </tr>
 <tr>
 <td>disabled</td>
-<td>optional</td>
+<td>optional, boolean</td>
 <td>Set to <em>false</em> by default; if set to <em>true</em>, the configuration will not be processed, allowing for easy management of configuration objects, without having to delete them from Pyplyn&#39;s <code>configurations</code> directory.</td>
 </tr>
 </tbody></table>
 
 <aside class="notice">Pyplyn was built with extensibility in mind.  If you find that the included list of <em>extract</em>, <em>transform</em>, and <em>load</em> implementations are not sufficient, you can easily define new ones;  consult the <a href="#extending-pyplyn">extending Pyplyn</a> section for more details!</aside>
+<h2 id='uploading-configurations-via-rest-api'>Uploading Configurations via REST API</h2>
+<p>Beginning in version <em>13.x.x</em>, Pyplyn will accept configurations via a web url.</p>
+
+<table><thead>
+<tr>
+<th>Endpoint</th>
+<th>Operation</th>
+<th>Request</th>
+<th>Response</th>
+<th>Description</th>
+</tr>
+</thead><tbody>
+<tr>
+<td>/v1/configurations</td>
+<td>POST</td>
+<td>JSON list of configurations</td>
+<td>X records created successfully</td>
+<td>Upload a list of configurations; creates new records in database</td>
+</tr>
+<tr>
+<td>/v1/configurations</td>
+<td>GET</td>
+<td></td>
+<td>JSON list of configurations</td>
+<td>Retrieve all configurations for your user</td>
+</tr>
+<tr>
+<td>/v1/configurations/{id}</td>
+<td>GET</td>
+<td></td>
+<td>Configuration with specified id</td>
+<td>Retrieve a particular configuration</td>
+</tr>
+<tr>
+<td>/v1/configurations/{id}</td>
+<td>PUT</td>
+<td>JSON Configuration</td>
+<td></td>
+<td>Update a particular configuration</td>
+</tr>
+<tr>
+<td>/v1/configurations/{id}</td>
+<td>DELETE</td>
+<td></td>
+<td></td>
+<td>Delete a particular configuration</td>
+</tr>
+</tbody></table>
 <h2 id='transmutation'>Transmutation</h2>
 <p>A <a href="https://github.com/salesforce/pyplyn/blob/master/blob/master/plugin-api/src/main/java/com/salesforce/pyplyn/model/Transmutation.java">Transmutation</a> is the model representing data as it flows through and is transformed by Pyplyn&#39;s plugins.</p>
 <h1 id='data-sources'>Data sources</h1><h2 id='argus'>Argus</h2><pre class="highlight json tab-json"><code><span class="s2">"extract"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
   </span><span class="p">{</span><span class="w">
     </span><span class="s2">"format"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"Argus"</span><span class="p">,</span><span class="w">
-    </span><span class="s2">"endpoint"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"argus"</span><span class="p">,</span><span class="w">
+    </span><span class="s2">"endpoint"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"argus-api-connector"</span><span class="p">,</span><span class="w">
     </span><span class="s2">"expression"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"SUM(-6m:-1m:scope:metric{tags}:avg:1m-max,#1m#)"</span><span class="p">,</span><span class="w">
     </span><span class="s2">"cacheMillis"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">120000</span><span class="p">,</span><span class="w">
     </span><span class="s2">"defaultValue"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span><span class="w">
@@ -621,34 +1027,70 @@ how it should be processed (<em>transform</em>), and where it should be publishe
 </thead><tbody>
 <tr>
 <td>endpoint</td>
-<td>required</td>
+<td>required, string</td>
 <td>Identifies the connector to use (the connection on which this expression will be run on); read more in the (connectors)[#connectors] section</td>
 </tr>
 <tr>
 <td>expression</td>
-<td>required</td>
-<td>Any valid Argus expression used to load and <a href="https://github.com/salesforce/Argus/wiki/Transforms">transform</a> <a href="https://github.com/salesforce/Argus/wiki/Metrics">metrics</a></td>
+<td>required, string</td>
+<td>An Argus expression used to load and <a href="https://github.com/salesforce/Argus/wiki/Transforms">transform</a> <a href="https://github.com/salesforce/Argus/wiki/Metrics">metrics</a></td>
 </tr>
 <tr>
 <td>cacheMillis</td>
-<td>optional</td>
+<td>optional, integer</td>
 <td>How long to cache this expression&#39;s results (in ms); if the same <em>expression</em> is queried on the same <em>endpoint</em> before this duration expires, the first (cached) result will be returned</td>
 </tr>
 <tr>
 <td>defaultValue</td>
-<td>optional</td>
+<td>optional, double</td>
 <td>If no results are returned from the endpoint, having this parameter specified causes the processor to generate one data point with this value and the time set to the moment of execution</td>
 </tr>
 <tr>
 <td>name</td>
-<td>required</td>
+<td>required, string</td>
 <td>Used to identify the time series returned by the specified expression, in downstream <em>transforms</em></td>
 </tr>
 </tbody></table>
+<h2 id='influxdb'>InfluxDB</h2><pre class="highlight json tab-json"><code><span class="s2">"extract"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+  </span><span class="p">{</span><span class="w">
+    </span><span class="s2">"format"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"InfluxDB"</span><span class="p">,</span><span class="w">
+    </span><span class="s2">"endpoint"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"influxdb-database-name"</span><span class="p">,</span><span class="w">
+    </span><span class="s2">"query"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"SELECT time, value FROM a_measurement WHERE time &gt;= now() - 1m"</span><span class="p">,</span><span class="w">
+    </span><span class="s2">"name"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"influxdb-result-name"</span><span class="w">
+  </span><span class="p">}</span><span class="w">
+</span><span class="p">]</span><span class="w">
+</span></code></pre>
+<p><a href="https://www.influxdata.com/time-series-platform/influxdb/">InfluxDB</a> is a time-series data store that can store and query large amounts of time-stamped data.</p>
+
+<table><thead>
+<tr>
+<th>Parameter</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead><tbody>
+<tr>
+<td>endpoint</td>
+<td>required, string</td>
+<td>Identifies the connector to use; for InfluxDB, this should match the <a href="https://docs.influxdata.com/influxdb/v1.3/guides/querying_data/#querying-data-using-the-http-api">database name</a> where the queried measurement exists</td>
+</tr>
+<tr>
+<td>query</td>
+<td>required, string</td>
+<td>Represents the measurement to load data for; Please ensure the <strong>time</strong> and <strong>value</strong> columns are included, by writing your queries as: <code>SELECT * ...</code> or <code>SELECT time, value ...</code>, as the extract processor assumes the existence of <em>time</em> and <em>value</em> when mapping the results.</td>
+</tr>
+<tr>
+<td>name</td>
+<td>required, string</td>
+<td>Used to identify the time series returned by the specified expression in downstream <em>transforms</em></td>
+</tr>
+</tbody></table>
+
+<aside class="notice">At the moment, the <strong>InfluxDB</strong> implementation in Pyplyn <strong>does not support authentication!</strong></aside>
 <h2 id='refocus'>Refocus</h2><pre class="highlight json tab-json"><code><span class="s2">"extract"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
   </span><span class="p">{</span><span class="w">
     </span><span class="s2">"format"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"Refocus"</span><span class="p">,</span><span class="w">
-    </span><span class="s2">"endpoint"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"refocus-prod"</span><span class="p">,</span><span class="w">
+    </span><span class="s2">"endpoint"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"refocus-api-connector"</span><span class="p">,</span><span class="w">
     </span><span class="s2">"subject"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"USA.California.*"</span><span class="p">,</span><span class="w">
     </span><span class="s2">"actualSubject"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"USA.California.San_Francisco"</span><span class="p">,</span><span class="w">
     </span><span class="s2">"aspect"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"Population"</span><span class="p">,</span><span class="w">
@@ -680,32 +1122,32 @@ how it should be processed (<em>transform</em>), and where it should be publishe
 </thead><tbody>
 <tr>
 <td>endpoint</td>
-<td>required</td>
+<td>required, string</td>
 <td>Identifies the connector to use (the connection on which this expression will be run on); read more in the (connectors)[#connectors] section</td>
 </tr>
 <tr>
 <td>subject</td>
-<td>required</td>
+<td>required, string</td>
 <td>Represents the subject to load; this can either be a full subject name (<code>USA.California.San_Francisco</code>) or a wildcard, e.g., <code>USA.California.*</code></td>
 </tr>
 <tr>
 <td>actualSubject</td>
-<td>optional</td>
+<td>optional, string</td>
 <td>Specified only if a wildcard was used for <em>subject</em>; it will identify the actual value to return, e.g., <code>USA.California.San_Francisco</code></td>
 </tr>
 <tr>
 <td>aspect</td>
-<td>required</td>
+<td>required, string</td>
 <td>The aspect whose value you want to retrieve, e.g., <code>Population</code></td>
 </tr>
 <tr>
 <td>cacheMillis</td>
-<td>optional</td>
+<td>optional, integer</td>
 <td>How long to cache this expression&#39;s results (in ms); if the same <em>subject</em> and <em>aspect</em> are queried on the same <em>endpoint</em> before this duration expires the (cached) result set will be used to return the value named by <code>actualSubject</code></td>
 </tr>
 <tr>
 <td>defaultValue</td>
-<td>optional</td>
+<td>optional, double</td>
 <td>If no results are returned from the endpoint, having this parameter specified causes the processor to generate one data point with this value and the time set to the moment of execution</td>
 </tr>
 </tbody></table>
@@ -740,12 +1182,12 @@ how it should be processed (<em>transform</em>), and where it should be publishe
 </thead><tbody>
 <tr>
 <td>messageCodeSource</td>
-<td>optional</td>
+<td>optional, string</td>
 <td>This parameter can either be skipped or assigned to a string value of <em>&quot;ORIGINAL_VALUE&quot;</em>; if specified, it will result in setting the <code>Transmutation.Metadata#messageCode</code> to the corresponding value (for each result), formatted to five characters-max; NOTE: any values between minus one and one (-1,1) will be evaluated as zero (0)</td>
 </tr>
 <tr>
 <td>tagMessageBody</td>
-<td>optional</td>
+<td>optional, string</td>
 <td>This parameter can either be skipped or set to a string value of <em>&quot;ORIGINAL_TIMESTAMP&quot;</em>; if set, it will result in the value&#39;s timestamp to be added to <code>Transmutation.Metadata#messages</code></td>
 </tr>
 </tbody></table>
@@ -858,37 +1300,39 @@ Metadata:
 </thead><tbody>
 <tr>
 <td>type</td>
-<td>optional</td>
-<td>Can be set to GREATER_THAN, LESS_THAN to define how values are compared against the specified threshold parameters;  If a <em>type</em> is no specified, it will cause the plugin to return the same inputs it was passed</td>
+<td>optional, string</td>
+<td>Can be set to GREATER_THAN, LESS_THAN to define how values are compared against the specified threshold parameters;  If a <em>type</em> is not specified, it will cause the plugin to return the same inputs that it was passed</td>
 </tr>
 <tr>
 <td>criticalThreshold</td>
-<td>optional</td>
+<td>optional, double</td>
 <td>Determines where the CRIT interval starts; leave null to skip</td>
 </tr>
 <tr>
 <td>warningThreshold</td>
-<td>optional</td>
+<td>optional, double</td>
 <td>Determines where the WARN interval starts; leave null to skip</td>
 </tr>
 <tr>
 <td>infoThreshold</td>
-<td>optional</td>
+<td>optional, double</td>
 <td>Determines where the INFO interval starts; leave null to skip</td>
 </tr>
 <tr>
 <td>okThreshold</td>
-<td>optional</td>
+<td>optional, double</td>
 <td>Determines what makes an OK status</td>
 </tr>
 <tr>
 <td>applyToMetricName</td>
-<td>optional</td>
+<td>optional, string</td>
 <td>If specified, the current transform will only be applied to <code>Transmutation</code>s whose name matches this value</td>
 </tr>
 </tbody></table>
 
-<aside class="notice">Thresholds are evaluated from most critical to least critical. The first one that matches is returned.</aside>
+<aside class="notice">Thresholds are evaluated from most critical to least critical. The first one that matches is returned.  There is no validation performed so that the values of CRIT, WARN, INFO, and OK are in strictly descending or ascending order! </aside>
+
+<aside class="notice">In this context, GREATER_THAN and LESS_THAN are inclusive of the value; e.g., GREATER_THAN 0 means greater than or equal to zero!</aside>
 
 <aside class="notice">A great deal of flexibility can be achieved by skipping some of the thresholds; for example setting <em>criticalThreshold=null</em>, will cause the configuration to at most set a <em>WARN</em> status.</aside>
 <h2 id='thresholdmetforduration'>ThresholdMetForDuration</h2><pre class="highlight json tab-json"><code><span class="p">{</span><span class="w">
@@ -911,30 +1355,32 @@ Metadata:
 </thead><tbody>
 <tr>
 <td>type</td>
-<td>required</td>
+<td>required, string</td>
 <td>Can be set to GREATER_THAN, LESS_THAN to define how values are compared against the specified threshold parameter</td>
 </tr>
 <tr>
 <td>threshold</td>
-<td>required</td>
+<td>required, double</td>
 <td>The value which a value has to exceed or fall behind, depending on the chosen <em>type</em></td>
 </tr>
 <tr>
 <td>criticalDurationMillis</td>
-<td>required</td>
+<td>required, double</td>
 <td>Determines how long the threshold has to be exceeded to return a status of CRIT</td>
 </tr>
 <tr>
 <td>warnDurationMillis</td>
-<td>required</td>
+<td>required, double</td>
 <td>Determines how long the threshold has to be exceeded to return a status of WARN</td>
 </tr>
 <tr>
 <td>infoDurationMillis</td>
-<td>required</td>
+<td>required, double</td>
 <td>Determines how long the threshold has to be exceeded to return a status of INFO</td>
 </tr>
 </tbody></table>
+
+<aside class="notice">In this context, GREATER_THAN and LESS_THAN are inclusive of the value; e.g., GREATER_THAN 0 means greater than or equal to zero!</aside>
 <h1 id='load-destinations'>Load destinations</h1>
 <p>At this time <em>Pyplyn</em> only supports publishing results to Refocus.  More load destinations are planned in a <a href="#planned-future-changes">future release</a>.  </p>
 
@@ -970,27 +1416,27 @@ Metadata:
 </thead><tbody>
 <tr>
 <td>format</td>
-<td>required</td>
+<td>required, string</td>
 <td>Should be set to &quot;Refocus&quot;</td>
 </tr>
 <tr>
 <td>endpoint</td>
-<td>required</td>
+<td>required, string</td>
 <td>Identifies the connector to use when uploading this sample; read more in the (connectors)[#connectors] section</td>
 </tr>
 <tr>
 <td>subject</td>
-<td>required</td>
+<td>required, string</td>
 <td>The subject path that defines the sample</td>
 </tr>
 <tr>
 <td>aspect</td>
-<td>required</td>
+<td>required, string</td>
 <td>The aspect name that defines the sample</td>
 </tr>
 <tr>
 <td>relatedLinks</td>
-<td>optional</td>
+<td>optional, array</td>
 <td>A list of links that will be associated with the published Sample; should specify two parameters, <em>name</em> and <em>URL</em></td>
 </tr>
 </tbody></table>
@@ -1052,9 +1498,11 @@ Metadata:
 <h3 id='maven'>Maven</h3>
 <p><a href="https://maven.apache.org/">Maven</a> is a Java build tool (among other things), and it&#39;s used to compile and package the Pyplyn project as an executable.</p>
 
-<p>If you&#39;re using a Mac, you can install it with <a href="http://brewformulas.org/Maven">Homebrew</a>; if you&#39;re on Linux you can use package managers such as <code>yum</code> or <code>apt-get</code>, otherwise check-out the <a href="https://maven.apache.org/guides/getting-started/windows-prerequisites.html">Maven on Windows</a> page. We recommend <code>Apache Maven 3.3.9</code>.</p>
+<p>If you&#39;re using a Mac, you can install it with <a href="http://brewformulas.org/Maven">Homebrew</a>; if you&#39;re on Linux you can use package managers such as <code>yum</code> or <code>apt-get</code>. </p>
+
+<p>Otherwise check out the <a href="https://maven.apache.org/guides/getting-started/windows-prerequisites.html">Maven on Windows</a> page. We recommend <code>Apache Maven 3.3.9</code>.</p>
 <h3 id='java-8'>JAVA 8</h3>
-<p>This should be available on most modern systems. However, you can install it with the same tools listed above. We recommend at least version <code>1.8.0_131</code>.</p>
+<p>This should be available on most modern systems. However, you can install it with the same tools listed above. We recommend the latest version of Java 8 (at the time of this writing, this means <code>1.8.0_131</code>).</p>
 <h2 id='configure-and-run-pyplyn'>Configure and run Pyplyn</h2><pre class="highlight shell"><code><span class="c"># Clone the Pyplyn repository</span>
 git clone https://github.com/salesforce/pyplyn /tmp/pyplyn
 </code></pre><pre class="highlight shell"><code><span class="c"># Build the project with Maven</span>
@@ -1079,8 +1527,8 @@ mkdir ~/pyplyn
 <span class="c"># 2. Copy Pyplyn's files (this assumes you've cloned Pyplyn in `/tmp/pyplyn`)</span>
 cp -R /tmp/pyplyn/target/pyplyn-<span class="k">*</span>.jar /tmp/pyplyn/target/config /tmp/pyplyn/target/bin ~/pyplyn/
 
-<span class="c"># 3. Create a new directory for your configurations</span>
-mkdir ~/pyplyn/configurations
+<span class="c"># 3. Create directories for your configurations</span>
+mkdir ~/pyplyn/config <span class="o">&amp;&amp;</span> mkdir ~/pyplyn/config/configurations
 
 <span class="c"># 4. Rename app-config.example.json and make the required changes</span>
 mv ~/pyplyn/config/app-config.example.json ~/pyplyn/config/pyplyn-config.json
@@ -1093,13 +1541,13 @@ mv ~/pyplyn/config/connectors.example.json ~/pyplyn/config/connectors.json
 <code>json
 [
   {
-    &quot;id&quot;: &quot;refocus-token-connector&quot;,
+    &quot;id&quot;: &quot;refocus-api-connector&quot;,
     &quot;endpoint&quot;: &quot;https://url-to-your-refocus-instance/v1/&quot;,
     &quot;username&quot;: null,
     &quot;password&quot;: &quot;BASE64-encoded-Refocus-token&quot;
   },
   {
-    &quot;id&quot;: &quot;argus-token-connector&quot;,
+    &quot;id&quot;: &quot;argus-api-connector&quot;,
     &quot;endpoint&quot;: &quot;https://url-to-your-argus-instance/argusws/&quot;,
     &quot;username&quot;: null,
     &quot;password&quot;: &quot;BASE64-encoded-Argus-refresh-token&quot;
@@ -1107,7 +1555,7 @@ mv ~/pyplyn/config/connectors.example.json ~/pyplyn/config/connectors.json
 ]
 </code></p>
 </blockquote>
-<pre class="highlight shell"><code><span class="c"># 6\. Edit ~/pyplyn/bin/pyplyn.sh and set _LOCATION_ to the absolute path of the _pyplyn_ directory</span>
+<pre class="highlight shell"><code><span class="c"># 6\. Edit ~/pyplyn/bin/pyplyn.sh and set _LOCATION_ to the absolute path of the _pyplyn_ directory (optional)</span>
 <span class="nv">LOCATION</span><span class="o">=</span>/path/to/pyplyn
 
 <span class="c"># 7\. Start pyplyn and check logs</span>
@@ -1120,11 +1568,11 @@ bash ~/pyplyn/bin/pyplyn.sh logs
 
 <p>2. Create a directory (e.g., <code>~/pyplyn</code>) and copy the generated artifacts</p>
 
-<p>3. Create an empty directory (e.g., <code>~/pyplyn/configurations</code>)</p>
+<p>3. Also create <code>~/pyplyn/config</code> and <code>~/pyplyn/config/configurations</code></p>
 
 <p>4. Rename <em>app-config.example.json</em> to <em>pyplyn-config</em>.json and set the following:
-  - <code>configurationsPath</code>: &quot;../configurations&quot;
-  - <code>connectorsPath</code>: &quot;./connectors.json&quot;
+  - <code>configurationsPath</code>: &quot;./config/configurations&quot;
+  - <code>connectorsPath</code>: &quot;./config/connectors.json&quot;
   - <code>updateConfigurationIntervalMillis</code>: 10000</p>
 
 <p>5. Rename <em>connectors.example.json</em> to <em>connectors.json</em>, erase existing contents, and define Argus and Refocus connectors; don&#39;t forget to update the endpoints, <a href="#base64-mime-encoding">BASE64 encode</a> your access tokens, and update their values in this file!</p>
@@ -1142,7 +1590,7 @@ perl -e <span class="s1">'use MIME::Base64; print encode_base64("PASSWORD");'</s
 <aside class="warning">NOTE: <strong>All password strings (including tokens) need to be encoded with the BASE64-MIME variant!</strong></aside>
 <h2 id='create-a-configuration-for-processing'>Create a configuration for processing</h2>
 <blockquote>
-<p>Create a new file named <code>~/pyplyn/configurations/one.json</code> and paste the following:</p>
+<p>Create a new file named <code>~/pyplyn/config/configurations/one.json</code> and paste the following:</p>
 </blockquote>
 <pre class="highlight json tab-json"><code><span class="p">[</span><span class="w">
   </span><span class="p">{</span><span class="w">
@@ -1150,7 +1598,7 @@ perl -e <span class="s1">'use MIME::Base64; print encode_base64("PASSWORD");'</s
     </span><span class="s2">"extract"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
       </span><span class="p">{</span><span class="w">
         </span><span class="s2">"format"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"Argus"</span><span class="p">,</span><span class="w">
-        </span><span class="s2">"endpoint"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"argus-token-connector"</span><span class="p">,</span><span class="w">
+        </span><span class="s2">"endpoint"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"argus-api-connector"</span><span class="p">,</span><span class="w">
         </span><span class="s2">"cacheMillis"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w">
         </span><span class="s2">"defaultValue"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mf">0.0</span><span class="p">,</span><span class="w">
         </span><span class="s2">"expression"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"-60s:-0s:argus.jvm:mem.physical.free:avg"</span><span class="p">,</span><span class="w">
@@ -1173,7 +1621,7 @@ perl -e <span class="s1">'use MIME::Base64; print encode_base64("PASSWORD");'</s
     </span><span class="s2">"load"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
       </span><span class="p">{</span><span class="w">
         </span><span class="s2">"format"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"Refocus"</span><span class="p">,</span><span class="w">
-        </span><span class="s2">"endpoint"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"refocus-token-connector"</span><span class="p">,</span><span class="w">
+        </span><span class="s2">"endpoint"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"refocus-api-connector"</span><span class="p">,</span><span class="w">
         </span><span class="s2">"subject"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"Monitor.System.Argus"</span><span class="p">,</span><span class="w">
         </span><span class="s2">"aspect"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"FREE_MEM"</span><span class="p">,</span><span class="w">
         </span><span class="s2">"relatedLinks"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">[]</span><span class="w">
@@ -1190,7 +1638,7 @@ perl -e <span class="s1">'use MIME::Base64; print encode_base64("PASSWORD");'</s
 
 <ul>
 <li><em>repeatIntervalMillis</em>: is set to repeat every 60000 ms (60 seconds)</li>
-<li><em>extract</em>: We will retrieve one of Argus&#39; internal metrics that tracks free memory from <em>argus-token-connector</em> (specified in <code>connectors.json</code>);  if no data is found, we will return a <code>defaultValue</code> of <em>0.0</em></li>
+<li><em>extract</em>: We will retrieve one of Argus&#39; internal metrics that tracks free memory from <em>argus-api-connector</em> (specified in <code>connectors.json</code>);  if no data is found, we will return a <code>defaultValue</code> of <em>0.0</em></li>
 <li><em>transform</em>:
 
 <ul>
@@ -1198,7 +1646,7 @@ perl -e <span class="s1">'use MIME::Base64; print encode_base64("PASSWORD");'</s
 <li>Then we apply the <a href="#threshold">Threshold</a> plugin</li>
 <li>And consider anything less than 2GB to be CRITICAL, 4GB to be a WARNING, and 8GB to be INFO</li>
 </ul></li>
-<li><em>load</em>: Finally, after all the transformations have been applied, we load the resulting data in a Refocus sample named <code>Monitor.System.Argus|FREE_MEM</code>, on the endpoint defined by <em>refocus-token-connector</em></li>
+<li><em>load</em>: Finally, after all the transformations have been applied, we load the resulting data in a Refocus sample named <code>Monitor.System.Argus|FREE_MEM</code>, on the endpoint defined by <em>refocus-api-connector</em></li>
 </ul>
 
 <p>Save this file in the <code>~pyplyn/configuration/</code> directory and issue a <code>bin/pyplyn.sh logs</code> command; within the next 10 seconds, you should see a message showing that a new configuration was loaded and then executed.  Open the Refocus perspective you created (<em>ArgusFreeMemory</em>), and you will see an entry for this sample!</p>

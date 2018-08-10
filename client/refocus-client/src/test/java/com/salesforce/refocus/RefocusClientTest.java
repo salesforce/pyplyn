@@ -214,22 +214,22 @@ public class RefocusClientTest {
 
 
     @Test
-    public void upsertSamples() throws Exception {
+    public void upsertSamplesBulk() throws Exception {
         // ARRANGE
-        ResponseBody okBody = ResponseBody.create(MediaType.parse(""), "OK");
-        Response<ResponseBody> response = Response.success(okBody);
+        Response<UpsertResponse> response = Response.success(ImmutableUpsertResponse.of("OK", 0));
 
         @SuppressWarnings("unchecked")
-        Call<ResponseBody> responseCall = mock(Call.class);
+        Call<UpsertResponse> responseCall = mock(Call.class);
         doReturn(response).when(responseCall).execute();
         doReturn(request).when(responseCall).request();
         doReturn(responseCall).when(svc).upsertSamplesBulk(any(), any());
 
         // ACT
-        boolean result = refocus.upsertSamplesBulk(Collections.singletonList(sample));
+        UpsertResponse result = refocus.upsertSamplesBulk(Collections.singletonList(sample));
 
         // ASSERT
-        assertThat(result, equalTo(true));
+        assertThat(result, notNullValue());
+        assertThat(result.status(), equalTo("OK"));
     }
 
     @Test(expectedExceptions = NullPointerException.class)
@@ -241,20 +241,20 @@ public class RefocusClientTest {
     @Test
     public void upsertSamplesFailWithSamples() throws Exception {
         // AA
-        boolean result = upsertSamplesFailWithSample(Collections.singletonList(sample));
+        UpsertResponse result = upsertSamplesFailWithSample(Collections.singletonList(sample));
 
         // ASSERT
-        assertThat(result, equalTo(false));
+        assertThat(result, nullValue());
     }
 
     // Helper that prepares the upsert test
-    private boolean upsertSamplesFailWithSample(List<Sample> samples) throws IOException, UnauthorizedException {
+    private UpsertResponse upsertSamplesFailWithSample(List<Sample> samples) throws IOException, UnauthorizedException {
         // ARRANGE
         ResponseBody errorBody = ResponseBody.create(MediaType.parse(""), "FAIL");
-        Response<ResponseBody> response = Response.error(400, errorBody);
+        Response<UpsertResponse> response = Response.error(400, errorBody);
 
         @SuppressWarnings("unchecked")
-        Call<ResponseBody> responseCall = mock(Call.class);
+        Call<UpsertResponse> responseCall = mock(Call.class);
         doReturn(response).when(responseCall).execute();
         doReturn(request).when(responseCall).request();
         doReturn(responseCall).when(svc).upsertSamplesBulk(any(), any());
@@ -345,24 +345,6 @@ public class RefocusClientTest {
         assertThat(results.get(0).id(), is("id"));
     }
 
-    @Test
-    public void upsertSamplesBulk() throws Exception {
-    	// ARRANGE
-        Response<List<Sample>> response = Response.success(Collections.singletonList(sample));
-
-        @SuppressWarnings("unchecked")
-        Call<List<Sample>> responseCall = mock(Call.class);
-        doReturn(response).when(responseCall).execute();
-        doReturn(request).when(responseCall).request();
-        doReturn(responseCall).when(svc).upsertSamplesBulk(any(), any());
-
-        // ACT
-        boolean result = refocus.upsertSamplesBulk(Collections.singletonList(sample));
-
-        // ASSERT
-        assertThat(result, is(true));
-    }
-    
     @Test
     public void deleteSample() throws Exception {
     	// ARRANGE

@@ -9,7 +9,9 @@
 package com.salesforce.pyplyn.duct.etl.transform.standard;
 
 import static com.salesforce.pyplyn.model.StatusCode.*;
-import static com.salesforce.pyplyn.model.ThresholdType.LESS_THAN;
+import static com.salesforce.pyplyn.model.ThresholdType.EQUAL_TO;
+import static com.salesforce.pyplyn.model.ThresholdType.LESS_THAN_OR_EQ;
+import static com.salesforce.pyplyn.model.ThresholdType.GREATER_THAN_OR_EQ;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
@@ -48,51 +50,51 @@ public class ThresholdTest {
     }
 
     @Test
-    public void testLessThanValueIsOk() throws Exception {
-        testThresholdAgainst(LESS_THAN, 1d, 1d, 1d, OK);
+    public void testLessThanOrEqualToValueIsOk() throws Exception {
+        testThresholdAgainst(LESS_THAN_OR_EQ, 1d, 1d, 1d, OK);
     }
 
     @Test
-    public void testLessThanValueIsInfo() throws Exception {
-        testThresholdAgainst(LESS_THAN, 1d, 1d, 10d, INFO);
+    public void testLessThanOrEqualToValueIsInfo() throws Exception {
+        testThresholdAgainst(LESS_THAN_OR_EQ, 1d, 1d, 10d, INFO);
     }
 
     @Test
-    public void testLessThanValueIsWarn() throws Exception {
-        testThresholdAgainst(LESS_THAN, 1d, 10d, 10d, WARN);
+    public void testLessThanOrEqualToValueIsWarn() throws Exception {
+        testThresholdAgainst(LESS_THAN_OR_EQ, 1d, 10d, 10d, WARN);
     }
 
     @Test
-    public void testLessThanValueIsCrit() throws Exception {
-        testThresholdAgainst(LESS_THAN, 10d, 10d, 10d, CRIT);
+    public void testLessThanOrEqualToValueIsCrit() throws Exception {
+        testThresholdAgainst(LESS_THAN_OR_EQ, 10d, 10d, 10d, CRIT);
     }
 
     @Test
-    public void testGreaterThanValueIsOk() throws Exception {
-        testThresholdAgainst(ThresholdType.GREATER_THAN, 20d, 20d, 20d, OK);
+    public void testGreaterThanOrEqualToValueIsOk() throws Exception {
+        testThresholdAgainst(GREATER_THAN_OR_EQ, 20d, 20d, 20d, OK);
     }
 
     @Test
-    public void testGreaterThanValueIsInfo() throws Exception {
-        testThresholdAgainst(ThresholdType.GREATER_THAN, 20d, 20d, 10d, INFO);
+    public void testGreaterThanOrEqualToValueIsInfo() throws Exception {
+        testThresholdAgainst(GREATER_THAN_OR_EQ, 20d, 20d, 10d, INFO);
     }
 
     @Test
-    public void testGreaterThanValueIsWarn() throws Exception {
-        testThresholdAgainst(ThresholdType.GREATER_THAN, 20d, 10d, 10d, WARN);
+    public void testGreaterThanOrEqualToValueIsWarn() throws Exception {
+        testThresholdAgainst(GREATER_THAN_OR_EQ, 20d, 10d, 10d, WARN);
     }
 
     @Test
-    public void testGreaterThanValueIsCrit() throws Exception {
-        testThresholdAgainst(ThresholdType.GREATER_THAN, 10d, 10d, 10d, CRIT);
+    public void testGreaterThanOrEqualToValueIsCrit() throws Exception {
+        testThresholdAgainst(GREATER_THAN_OR_EQ, 10d, 10d, 10d, CRIT);
     }
 
     @Test
     public void testEquality() throws Exception {
         // ARRANGE
-        Threshold threshold1 = ImmutableThreshold.of("metric", 10d, 10d, 10d, LESS_THAN);
-        Threshold threshold2 = ImmutableThreshold.of(null, null, null, null, LESS_THAN);
-        Threshold threshold3 = ImmutableThreshold.of("metric", 10d, 10d, 10d, LESS_THAN);
+        Threshold threshold1 = ImmutableThreshold.of("metric", 10d, 10d, 10d, EQUAL_TO);
+        Threshold threshold2 = ImmutableThreshold.of(null, null, null, null, EQUAL_TO);
+        Threshold threshold3 = ImmutableThreshold.of("metric", 10d, 10d, 10d, EQUAL_TO);
 
         // ACT/ASSERT
         assertThat(threshold1, not(equalTo(threshold2)));

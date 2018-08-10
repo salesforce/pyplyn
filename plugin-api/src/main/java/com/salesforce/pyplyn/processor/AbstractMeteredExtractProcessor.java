@@ -10,8 +10,8 @@ package com.salesforce.pyplyn.processor;
 
 import com.google.inject.Inject;
 import com.salesforce.pyplyn.model.Extract;
-import com.salesforce.pyplyn.status.MeterType;
-import com.salesforce.pyplyn.status.SystemStatus;
+import com.salesforce.pyplyn.model.ThresholdType;
+import com.salesforce.pyplyn.status.*;
 
 
 /**
@@ -40,28 +40,28 @@ public abstract class AbstractMeteredExtractProcessor<T extends Extract> impleme
      * Call this method when the operation has succeeded
      */
     protected void succeeded() {
-        systemStatus.meter(meterName(), MeterType.ExtractSuccess).mark();
+        systemStatus.meter(meterName(), new MeterType(null, ProcessStatus.ExtractSuccess)).mark();
     }
 
     /**
      * Call this method when the operation has failed
      */
     protected void failed() {
-        systemStatus.meter(meterName(), MeterType.ExtractFailure).mark();
+        systemStatus.meter(meterName(), new MeterType(null, ProcessStatus.ExtractFailure)).mark();
     }
 
     /**
      * Call this method when the endpoint returns no data
      */
     protected void noData() {
-        systemStatus.meter(meterName(), MeterType.ExtractNoDataReturned).mark();
+        systemStatus.meter(meterName(), new MeterType(null, ProcessStatus.ExtractNoDataReturned)).mark();
     }
 
     /**
      * Call this method when attempting to authenticate to the endpoint failed
      */
     protected void authenticationFailure() {
-        systemStatus.meter(meterName(), MeterType.AuthenticationFailure).mark();
+        systemStatus.meter(meterName(), new MeterType(null, ProcessStatus.AuthenticationFailure)).mark();
     }
 
     /**

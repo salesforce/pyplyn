@@ -25,8 +25,8 @@ public class MeterTypeTest {
     @Test
     public void testMeterHasSetAlertLevel() throws Exception {
         // ARRANGE
-        MeterType success = MeterType.ExtractSuccess;
-        MeterType failure = MeterType.ExtractFailure;
+        MeterType success = new MeterType(ThresholdType.GREATER_THAN, ProcessStatus.ExtractSuccess);
+        MeterType failure = new MeterType(ThresholdType.LESS_THAN, ProcessStatus.ExtractFailure);
 
 
         // ACT
@@ -34,7 +34,7 @@ public class MeterTypeTest {
         ThresholdType failureAlertType = failure.alertType();
 
         // ASSERT
-        assertThat(successAlertType, equalTo(ThresholdType.LESS_THAN));
-        assertThat(failureAlertType, equalTo(ThresholdType.GREATER_THAN));
+        assertThat(successAlertType, equalTo(ThresholdType.GREATER_THAN));
+        assertThat(failureAlertType, equalTo(ThresholdType.LESS_THAN));
     }
 }

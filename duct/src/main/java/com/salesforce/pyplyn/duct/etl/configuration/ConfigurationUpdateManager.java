@@ -19,9 +19,16 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+import com.google.inject.Injector;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
-import com.hazelcast.core.*;
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.MemberAttributeEvent;
+import com.hazelcast.core.MembershipEvent;
+import com.hazelcast.core.MembershipListener;
+import com.hazelcast.core.MigrationEvent;
+import com.hazelcast.core.MigrationListener;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryEvictedListener;
 import com.hazelcast.map.listener.EntryRemovedListener;
@@ -55,16 +62,19 @@ public class ConfigurationUpdateManager implements Runnable, Provider<Set<Config
     private final TaskManager<Configuration> taskManager;
     private final Cluster cluster;
     private final ShutdownHook shutdownHook;
+    private final Injector injector;
 
     private Map<String, Configuration> configurations;
     private final CountDownLatch IS_CONFIGURED_LATCH = new CountDownLatch(1);
 
     @Inject
-    public ConfigurationUpdateManager(ConfigurationLoader loader, TaskManager<Configuration> taskManager, Cluster cluster, ShutdownHook shutdownHook) {
+    public ConfigurationUpdateManager(ConfigurationLoader loader, TaskManager<Configuration> taskManager, Cluster cluster, ShutdownHook shutdownHook,
+            Injector injector) {
         this.loader = loader;
         this.taskManager = taskManager;
         this.cluster = cluster;
         this.shutdownHook = shutdownHook;
+        this.injector = injector;
     }
 
     /**
@@ -179,7 +189,10 @@ public class ConfigurationUpdateManager implements Runnable, Provider<Set<Config
                 .forEach(new DeleteTaskConsumer((always) -> true));
 
         // upsert all local configurations, to ensure all that should be running are running
-        localConfigurations.forEach(new UpsertTaskConsumer((always) -> true));
+        localConfigurations.stream()
+                // transient members may have been cleared so re-inject them
+                .peek(cfg -> injector.injectMembers(cfg))
+                .forEach(new UpsertTaskConsumer((always) -> true));
     }
 
 
@@ -303,7 +316,8 @@ public class ConfigurationUpdateManager implements Runnable, Provider<Set<Config
         @Override
         public void entryRemoved(EntryEvent<String, Configuration> event) {
             logger.info("[CLUSTER] Removed task for {}", event.getKey());
-            taskManager.remove(event.getValue());
+            // since the entry has been removed, we need the old value rather than the current value
+            taskManager.remove(event.getOldValue());
         }
 
         @Override

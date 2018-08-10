@@ -17,10 +17,20 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com.google.common.base.Preconditions;
-import com.salesforce.argus.model.*;
+import com.salesforce.argus.model.AlertObject;
+import com.salesforce.argus.model.AuthToken;
+import com.salesforce.argus.model.DashboardObject;
+import com.salesforce.argus.model.ImmutableAuthRequest;
+import com.salesforce.argus.model.ImmutableAuthToken;
+import com.salesforce.argus.model.MetricCollectionResponse;
+import com.salesforce.argus.model.MetricResponse;
+import com.salesforce.argus.model.NotificationObject;
+import com.salesforce.argus.model.TriggerObject;
 import com.salesforce.pyplyn.client.AbstractRemoteClient;
 import com.salesforce.pyplyn.client.UnauthorizedException;
 import com.salesforce.pyplyn.configuration.EndpointConnector;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Argus client implementation
@@ -31,6 +41,7 @@ import com.salesforce.pyplyn.configuration.EndpointConnector;
 public class ArgusClient extends AbstractRemoteClient<ArgusService> {
     
     private static final String AUTH_HEADER_PREFIX = "Bearer ";
+    private static final Logger logger = LoggerFactory.getLogger(ArgusClient.class);
 
     // authentication tokens
     private volatile byte[] accessToken;
@@ -62,8 +73,21 @@ public class ArgusClient extends AbstractRemoteClient<ArgusService> {
      */
     @Override
     protected boolean auth() throws UnauthorizedException {
-        if (nonNull(refreshToken)) {
-            AuthToken token = refresh(refreshToken);
+        if (nonNull(this.refreshToken)) {
+            AuthToken token;
+            try {
+                token = refresh(this.refreshToken);
+
+            } catch (UnauthorizedException e) {
+
+                // Attempt to refresh could have failed due to an expired refresh token
+                // Re-attempt authentication with credentials if possible
+                if (isNull(this.refreshToken) && nonNull(connector().username())) {
+                    return auth();
+                } else {
+                    throw new UnauthorizedException("Invalid refresh token. This cannot be refreshed without a username and password");
+                }
+            }
 
             // if we have successfully retrieved the tokens, memoize them and mark success
             if (nonNull(token)) {
@@ -77,8 +101,13 @@ public class ArgusClient extends AbstractRemoteClient<ArgusService> {
 
         // if an username is not specified, we consider the password to be the refreshToken and call itself recursively
         //   this is safe to do as long as this call is made through AbstractRemoteClient.authenticate() (thread-safe)
+
         String username = connector().username();
         if (isNull(username)) {
+            if(isNull(connector().password())){
+                // both username and password are null
+                throw new UnauthorizedException("No credentials supplied.");
+            }
             this.refreshToken = connector().password();
             return auth();
         }
@@ -86,7 +115,7 @@ public class ArgusClient extends AbstractRemoteClient<ArgusService> {
         // retrieve password
         byte[] password = connector().password();
         try {
-            AuthToken token = executeNoRetry(svc().login(ImmutableAuthRequest.of(connector().username(), password)), null);
+            AuthToken token = executeNoRetry(svc().login(ImmutableAuthRequest.of(username, password)), null);
 
             // failed to retrieve a token, stop here
             if (isNull(token)) {
@@ -106,12 +135,18 @@ public class ArgusClient extends AbstractRemoteClient<ArgusService> {
         }
     }
 
+    protected byte[] getAccessToken() {
+        //used only for testing purposes
+        return this.accessToken;
+    }
+
     /**
      * Clears the authentication tokens
      */
     @Override
     protected void resetAuth() {
-        this.refreshToken = null;
+        // only get rid of the access token
+        // this lets the authentication mechanism know to refresh with the refresh token
         this.accessToken = null;
     }
 
@@ -122,7 +157,18 @@ public class ArgusClient extends AbstractRemoteClient<ArgusService> {
      * @throws UnauthorizedException if it cannot successfully update the tokens
      */
     private AuthToken refresh(byte[] refreshToken) throws UnauthorizedException {
-        return executeNoRetry(svc().refresh(ImmutableAuthToken.of(new byte[0], refreshToken)), null);
+        try {
+            return executeNoRetry(svc().refresh(ImmutableAuthToken.of(new byte[0], refreshToken)), null);
+        }catch(UnauthorizedException e){
+            logger.info("Clearing refresh token since it may have expired.", e);
+            this.refreshToken = null;
+            throw e;
+        }
+    }
+
+    protected byte [] getRefreshToken() {
+        // for testing purposes
+        return this.refreshToken;
     }
 
     /**
@@ -141,7 +187,19 @@ public class ArgusClient extends AbstractRemoteClient<ArgusService> {
      */
     public List<MetricResponse> getMetrics(List<String> expressions) throws UnauthorizedException {
         Preconditions.checkNotNull(expressions, "Expressions should not be null");
-        return executeAndRetrieveBody(svc().getMetrics(authorizationHeader(), expressions), null);
+        return executeAndRetrieveBody(svc().getMetrics(authorizationHeader(), expressions), null, 2);
+    }
+
+    /**
+     * Posts metrics to a remote endpoint
+     *
+     * @return A list of error messages and count of successes and failures
+     * @throws UnauthorizedException
+     */
+    public MetricCollectionResponse postMetrics(List<MetricResponse> metrics) throws UnauthorizedException {
+        Preconditions.checkNotNull(metrics, "Metrics should not be null");
+        Preconditions.checkArgument(!metrics.isEmpty(), "Metrics should not be empty");
+        return executeAndRetrieveBody(svc().postMetrics(authorizationHeader(), metrics), null);
     }
 
     /**
@@ -169,14 +227,14 @@ public class ArgusClient extends AbstractRemoteClient<ArgusService> {
      * Get an existing alert by ID.
      */
     public AlertObject loadAlert(long id) throws UnauthorizedException {
-        return executeAndRetrieveBody(svc().getAlert(authorizationHeader(), id), null);
+        return executeAndRetrieveBody(svc().getAlert(authorizationHeader(), id), null, 2);
     }
 
     /**
      * Get all alerts owned by the logged in user
      */
     public List<AlertObject> loadAllAlerts() throws UnauthorizedException {
-        return executeAndRetrieveBody(svc().getAllAlerts(authorizationHeader()), emptyList());
+        return executeAndRetrieveBody(svc().getAllAlerts(authorizationHeader()), emptyList(), 2);
     }
 
 
@@ -190,7 +248,7 @@ public class ArgusClient extends AbstractRemoteClient<ArgusService> {
 
         // The Argus API does not currently respect just the ownername filter and returns all visible alerts so as
         // a workaround filter it here.
-        return executeAndRetrieveBody(svc().getAlertsByOwner(authorizationHeader(), ownerName), emptyList())
+        return executeAndRetrieveBody(svc().getAlertsByOwner(authorizationHeader(), ownerName), emptyList(), 2)
                         .stream().filter(a -> ownerName.equals(a.ownerName())).collect(Collectors.toList());
     }
     
@@ -203,7 +261,7 @@ public class ArgusClient extends AbstractRemoteClient<ArgusService> {
      */
     public List<AlertObject> loadAlertsMetadataByOwner(String ownerName) throws UnauthorizedException {
         Preconditions.checkNotNull(ownerName, "Owner name should not be null");
-        return executeAndRetrieveBody(svc().getAlertMetadataByOwner(authorizationHeader(), ownerName), emptyList())
+        return executeAndRetrieveBody(svc().getAlertMetadataByOwner(authorizationHeader(), ownerName), emptyList(), 2)
                         .stream().filter(a -> ownerName.equals(a.ownerName())).collect(Collectors.toList());
     }
 
@@ -227,7 +285,7 @@ public class ArgusClient extends AbstractRemoteClient<ArgusService> {
      */
     public List<TriggerObject> loadTriggersForAlert(long alertId) throws UnauthorizedException {
         Preconditions.checkNotNull(alertId, "Alert id should not be null");
-        return executeAndRetrieveBody(svc().getTriggersForAlert(authorizationHeader(), alertId), emptyList());
+        return executeAndRetrieveBody(svc().getTriggersForAlert(authorizationHeader(), alertId), emptyList(), 2);
     }
 
     /**
@@ -274,7 +332,7 @@ public class ArgusClient extends AbstractRemoteClient<ArgusService> {
     public NotificationObject getNotification(long alertId, long notificationId) throws UnauthorizedException {
         Preconditions.checkNotNull(alertId, "Alert id should not be null");
         Preconditions.checkNotNull(notificationId, "Notification id should not be null");
-        return executeAndRetrieveBody(svc().getNotification(authorizationHeader(), alertId, notificationId), null);
+        return executeAndRetrieveBody(svc().getNotification(authorizationHeader(), alertId, notificationId), null, 2);
     }
 
     /**
@@ -284,7 +342,7 @@ public class ArgusClient extends AbstractRemoteClient<ArgusService> {
      */
     public List<NotificationObject> getNotificationsForAlert(long alertId) throws UnauthorizedException {
         Preconditions.checkNotNull(alertId, "Alert id should not be null");
-        return executeAndRetrieveBody(svc().getNotificationsForAlert(authorizationHeader(), alertId), emptyList());
+        return executeAndRetrieveBody(svc().getNotificationsForAlert(authorizationHeader(), alertId), emptyList(), 2);
     }
 
     /**
@@ -349,7 +407,18 @@ public class ArgusClient extends AbstractRemoteClient<ArgusService> {
      * Load all dashboards available in Argus available to this user
      */
     public List<DashboardObject> getAllDashboards() throws UnauthorizedException {
-        return executeAndRetrieveBody(svc().getAllDashboards(authorizationHeader()), emptyList());
+        return executeAndRetrieveBody(svc().getAllDashboards(authorizationHeader()), emptyList(), 2);
+    }
+
+    /**
+     * Load metadata for all dashboards in Argus available to this user.
+     * <p/>
+     * WARNING: Use of this method is highly discouraged since the instances of {@link DashboardObject} returned
+     * do not have their content field populated. This method exists because it returns more quickly than
+     * {@link #getAllDashboards()}, which should be used instead wherever possible.
+     */
+    public List<DashboardObject> getAllDashboardMetadata() throws UnauthorizedException {
+        return executeAndRetrieveBody(svc().getAllDashboardMetadata(authorizationHeader()), emptyList(), 2);
     }
 
     /**
@@ -368,7 +437,7 @@ public class ArgusClient extends AbstractRemoteClient<ArgusService> {
 
         // The argus API returns a list of dashboards for this API call despite a unique constraint on owner and dashboard name. If there
         // is not a match it returns an empty list. To avoid making callers deal with this strangeness just handle it here.
-        List<DashboardObject> result = executeAndRetrieveBody(svc().getDashboardByName(authorizationHeader(), owner, dashboardName), null);
+        List<DashboardObject> result = executeAndRetrieveBody(svc().getDashboardByName(authorizationHeader(), owner, dashboardName), null, 2);
         if (isNull(result) || result.isEmpty()) {
             return null;
         }
@@ -414,6 +483,6 @@ public class ArgusClient extends AbstractRemoteClient<ArgusService> {
      */
     public DashboardObject getDashboardById(long dashboardId) throws UnauthorizedException {
         Preconditions.checkNotNull(dashboardId, "Dashboard id should not be null");
-        return executeAndRetrieveBody(svc().getDashboardById(authorizationHeader(), dashboardId), null);
+        return executeAndRetrieveBody(svc().getDashboardById(authorizationHeader(), dashboardId), null, 2);
     }
 }

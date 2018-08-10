@@ -8,11 +8,14 @@
 
 package com.salesforce.pyplyn.duct.app;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import java.util.concurrent.ExecutorService;
 
+import org.mockito.ArgumentCaptor;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -33,6 +36,7 @@ import com.salesforce.pyplyn.status.MeterType;
 public class ShutdownHookTest {
     AppBootstrapFixtures fixtures;
     ExecutorService executor;
+    private ArgumentCaptor<MeterType> meterTypeArgumentCaptor;
 
     @BeforeMethod
     public void setUp() throws Exception {
@@ -40,6 +44,7 @@ public class ShutdownHookTest {
         fixtures = new AppBootstrapFixtures();
         executor = ExecutorTestHelper.initSingleThreadExecutor();
         fixtures.shutdownHook().registerExecutor(executor);
+        meterTypeArgumentCaptor = ArgumentCaptor.forClass(MeterType.class);
     }
 
     /**
@@ -51,7 +56,7 @@ public class ShutdownHookTest {
         try {
             // ARRANGE
             fixtures.enableLatches()
-                    .oneArgusToRefocusConfigurationWithRepeatInterval(100)
+                    .oneArgusToRefocusConfigurationWithRepeatInterval(1_000L)
                     .callRealRefocusLoadProcessor()
                     .initializeFixtures()
                     .returnMockedTransformationResultFromAllExtractProcessors();
@@ -73,8 +78,8 @@ public class ShutdownHookTest {
 
             // ASSERT
             // since the load scheduler was interrupted, expecting no interactions
-            verify(fixtures.systemStatus(), times(0)).meter("Refocus", MeterType.LoadSuccess);
-            verify(fixtures.systemStatus(), times(1)).meter("Refocus", MeterType.LoadFailure);
+            verify(fixtures.systemStatus(), times(1)).meter(eq("Refocus"), meterTypeArgumentCaptor.capture());
+            assert(meterTypeArgumentCaptor.getValue().processStatus().name().equals("LoadFailure"));
 
         } finally {
             AppBootstrapLatches.release();
@@ -86,7 +91,7 @@ public class ShutdownHookTest {
         try {
             // ARRANGE
             fixtures.enableLatches()
-                    .oneArgusToRefocusConfigurationWithRepeatInterval(100)
+                    .oneArgusToRefocusConfigurationWithRepeatInterval(1_000L)
                     .callRealArgusExtractProcessor()
                     .initializeFixtures();
 
@@ -106,8 +111,7 @@ public class ShutdownHookTest {
 
             // ASSERT
             // expecting no failures or successes to be logged when the app was shutdown
-            verify(fixtures.systemStatus(), times(0)).meter("Argus", MeterType.ExtractFailure);
-            verify(fixtures.systemStatus(), times(0)).meter("Argus", MeterType.ExtractSuccess);
+            verify(fixtures.systemStatus(), times(0)).meter(eq("Argus"), any());
 
         } finally {
             AppBootstrapLatches.release();
@@ -124,7 +128,7 @@ public class ShutdownHookTest {
             // ARRANGE
             // bootstrap
             fixtures.enableLatches()
-                    .oneRefocusToRefocusConfigurationWithRepeatInterval(100)
+                    .oneRefocusToRefocusConfigurationWithRepeatInterval(1_000L)
                     .callRealRefocusExtractProcessor()
                     .initializeFixtures();
 

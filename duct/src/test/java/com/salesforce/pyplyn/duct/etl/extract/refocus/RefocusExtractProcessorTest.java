@@ -12,13 +12,13 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import org.mockito.ArgumentCaptor;
 import org.testng.annotations.BeforeMethod;
@@ -40,11 +40,13 @@ import com.salesforce.refocus.model.Sample;
  */
 public class RefocusExtractProcessorTest {
     AppBootstrapFixtures fixtures;
+    ArgumentCaptor<MeterType> meterTypeArgumentCaptor;
 
     @BeforeMethod
     public void setUp() throws Exception {
         // ARRANGE
         fixtures = new AppBootstrapFixtures();
+        meterTypeArgumentCaptor = ArgumentCaptor.forClass(MeterType.class);
     }
 
 
@@ -69,8 +71,9 @@ public class RefocusExtractProcessorTest {
 
 
         // ASSERT
-        // since we had no real client, expecting RefocusExtractProcessor to have logged a failure
-        verify(fixtures.systemStatus(), times(1)).meter("Refocus", MeterType.ExtractFailure);
+        // since we had no real client, expecting RefocusExtractProcessor to have logged a failure (ExtractFailure and AuthenticationFailure)
+        verify(fixtures.systemStatus(), times(2)).meter(eq("Refocus"), meterTypeArgumentCaptor.capture());
+        assert(meterTypeArgumentCaptor.getAllValues().stream().anyMatch(meterType -> meterType.processStatus().name().equals("ExtractFailure")));
     }
 
     @Test
@@ -101,9 +104,8 @@ public class RefocusExtractProcessorTest {
 
 
         // ASSERT
-        // since we had no real client, expecting RefocusExtractProcessor to have logged a failure
-        verify(fixtures.systemStatus(), times(0)).meter("Refocus", MeterType.ExtractFailure);
-        verify(fixtures.systemStatus(), times(0)).meter("Refocus", MeterType.ExtractNoDataReturned);
+        verify(fixtures.systemStatus(), times(1)).meter(eq("Refocus"), meterTypeArgumentCaptor.capture());
+        assert(meterTypeArgumentCaptor.getValue().processStatus().name().equals("ExtractSuccess"));
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<List<Transmutation>> dataCaptor = ArgumentCaptor.forClass(List.class);
@@ -151,7 +153,10 @@ public class RefocusExtractProcessorTest {
 
         // ASSERT
         // since we had no real client, expecting RefocusExtractProcessor to have logged a failure
-        verify(fixtures.systemStatus(), times(2)).meter("Refocus", MeterType.ExtractSuccess);
+        verify(fixtures.systemStatus(), times(2)).meter(eq("Refocus"), meterTypeArgumentCaptor.capture());
+        for(MeterType m: meterTypeArgumentCaptor.getAllValues()){
+            assert(m.processStatus().name().equals("ExtractSuccess"));
+        }
         verify(fixtures.sampleCache(), times(2)).isCached("subject|aspect");
         verify(fixtures.sampleCache(), times(1)).cache(any(), anyLong());
     }
@@ -250,7 +255,8 @@ public class RefocusExtractProcessorTest {
 
         // ASSERT
         // since we had no real client, expecting RefocusExtractProcessor to have logged a failure
-        verify(fixtures.systemStatus(), times(1)).meter("Refocus", MeterType.ExtractFailure);
+        verify(fixtures.systemStatus(), times(1)).meter(eq("Refocus"), meterTypeArgumentCaptor.capture());
+        assert(meterTypeArgumentCaptor.getValue().processStatus().name().equals("ExtractFailure"));
     }
 
     /**
@@ -278,7 +284,15 @@ public class RefocusExtractProcessorTest {
 
         // ASSERT
         // since we had no real client, expecting RefocusExtractProcessor to have logged a failure
-        verify(fixtures.systemStatus(), times(1)).meter("Refocus", MeterType.ExtractFailure);
-        verify(fixtures.systemStatus(), times(1)).meter("Refocus", MeterType.ExtractNoDataReturned);
+        // need one of each of ExtractFailure and ExtractNoDataReturned
+
+        verify(fixtures.systemStatus(), times(2)).meter(eq("Refocus"), meterTypeArgumentCaptor.capture());
+        List<String> processStatuses = new ArrayList<>();
+        meterTypeArgumentCaptor.getAllValues().forEach((meterType) -> {
+            processStatuses.add(meterType.processStatus().name());
+        });
+        assert(processStatuses.contains("ExtractFailure"));
+        assert(processStatuses.contains("ExtractNoDataReturned"));
+        assert(processStatuses.size() == 2);
     }
 }

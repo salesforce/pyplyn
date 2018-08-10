@@ -59,6 +59,12 @@ public abstract class Subject {
     @Nullable
     public abstract String description();
 
+    @Nullable
+    public abstract String helpEmail();
+
+    @Nullable
+    public abstract String helpUrl();
+
     public abstract boolean isPublished();
 
     @JsonProperty(access = WRITE_ONLY)

@@ -1,10 +1,16 @@
 package com.salesforce.pyplyn.duct.etl.load.refocus;
 
 import static com.salesforce.pyplyn.util.FormatUtils.formatNumber;
+import static java.util.Objects.isNull;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -33,14 +39,20 @@ import com.salesforce.refocus.model.Sample;
 @Singleton
 public class RefocusLoadProcessor extends AbstractMeteredLoadProcessor<Refocus> {
     private static final Logger logger = LoggerFactory.getLogger(RefocusLoadProcessor.class);
-
+ 
     private final AppConnectors appConnectors;
     private final ShutdownHook shutdownHook;
+
+    /**
+     * Thread-safe map of rebatcher instances, one per endpoint ID.
+     */
+    private final ConcurrentHashMap<String, RefocusBatcher> rebatchers;
 
     @Inject
     public RefocusLoadProcessor(AppConnectors appConnectors, ShutdownHook shutdownHook) {
         this.appConnectors = appConnectors;
         this.shutdownHook = shutdownHook;
+        this.rebatchers = new ConcurrentHashMap<String, RefocusBatcher>();
     }
 
     /**
@@ -66,23 +78,6 @@ public class RefocusLoadProcessor extends AbstractMeteredLoadProcessor<Refocus> 
                     // retrieve client endpoint
                     String endpointId = destinationEntry.getKey();
                     final List<Refocus> loadDestinations = destinationEntry.getValue();
-
-                    // retrieve Refocus client and cache for the specified endpoint
-                    AppConnectors.ClientAndCache<RefocusClient, Sample> cc = appConnectors.retrieveOrBuildClient(endpointId, RefocusClient.class, Sample.class);
-                    final RefocusClient client = cc.client();
-
-                    // TODO: move this someplace better
-                    try {
-                        client.authenticate();
-
-                    } catch (UnauthorizedException e) {
-                        // log auth failure if this exception type was thrown
-                        authenticationFailure();
-
-                        // stop here if we could not authenticate
-                        logger.warn("", e);
-                        return Boolean.FALSE;
-                    }
 
                     // for all expressions belonging to this client
                     List<Sample> allSamplesForEndpoint = loadDestinations.stream()
@@ -114,26 +109,66 @@ public class RefocusLoadProcessor extends AbstractMeteredLoadProcessor<Refocus> 
 
                     // if shutting down, do not post to the Refocus endpoint
                     if (shutdownHook.isShutdown()) {
-                        return Boolean.FALSE;
+                        return null;
+                    }
+                    
+                    // Get or build rebatcher instance for endpoint.
+                    RefocusBatcher batcher = rebatchers.computeIfAbsent(endpointId, id -> {
+                        // retrieve Refocus client and cache for the specified endpoint
+                        AppConnectors.ClientAndCache<RefocusClient, Sample> cc = appConnectors.retrieveOrBuildClient(endpointId, RefocusClient.class, Sample.class);
+                        final RefocusClient client = cc.client();
+
+                        // Handle inability to build client, most likely due to a misconfigured connector.
+                        if (isNull(client)) {
+                            logger.error("Unable to build client for Refocus endpoint {}. Please check connector configurations.", endpointId);
+                            return null;
+                        }
+
+                        // TODO: move this someplace better
+                        try {
+                            client.authenticate();
+                        } catch (UnauthorizedException e) {
+                            // log auth failure if this exception type was thrown
+                            authenticationFailure();
+
+                            // stop here if we could not authenticate
+                            logger.warn("", e);
+                            return null;
+                        }
+
+                        // Build rebatcher for endpoint.
+                        RefocusBatcher newBatcher = new RefocusBatcher(client, id, systemStatus, shutdownHook);
+
+                        // Schedule execution.
+                        ScheduledExecutorService svc = Executors.newScheduledThreadPool(1);
+                        svc.scheduleAtFixedRate(newBatcher, 0, 60, TimeUnit.SECONDS);
+
+                        // Register for shutdown.
+                        shutdownHook.registerOperation(() -> svc.shutdown());
+
+                        return newBatcher;
+                    });
+
+                    // Handle inability to load batcher for endpoint.
+                    if (isNull(batcher)) {
+                        logger.error("Unable to build refocus batcher for endpoint {}, likely due to missing connector configurations. Load will not be processed.",
+                                endpointId);
+                        return null;
                     }
 
-                    // send expressions to Refocus endpoint
-                    try (Timer.Context context = systemStatus.timer(meterName(), "upsert-samples-bulk." + endpointId).time()) {
-                        return client.upsertSamplesBulk(allSamplesForEndpoint);
-
-                        // return failure
-                    } catch (UnauthorizedException e) {
-                        logger.error("Could not complete request for {}; failed samples={}", endpointId, allSamplesForEndpoint);
-                        return Boolean.FALSE;
+                    // Finally perform update.
+                    try (Timer.Context context = systemStatus.timer(meterName(), "upsert-samples-bulk-batched." + endpointId).time()) {
+                        batcher.enqueue(allSamplesForEndpoint);
+                        logger.info("Sent to RefocusBatcher {}", allSamplesForEndpoint);
+                        return Optional.of(1); // fake job id
                     }
+
                 })
 
                 // return true if all Samples are successfully upserted into all endpoints
-                .allMatch(s -> s.equals(Boolean.TRUE));
+                .allMatch(Objects::nonNull);
 
         // log result of operation
-        //   Note: the upsertSamplesBulk Refocus API call, will always return OK, so failures will be marked
-        //         only if the endpoint does not respond at all, or we cannot authorize against it
         if (allUpserted) {
             succeeded();
         } else {
@@ -143,7 +178,6 @@ public class RefocusLoadProcessor extends AbstractMeteredLoadProcessor<Refocus> 
         // return final result
         return Collections.singletonList(allUpserted);
     }
-
 
     /**
      * Create a string containing the sample's metadata messages, each on an individual line

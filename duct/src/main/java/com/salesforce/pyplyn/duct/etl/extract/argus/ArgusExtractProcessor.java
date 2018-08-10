@@ -27,6 +27,7 @@ import com.google.common.collect.Iterables;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.salesforce.argus.ArgusClient;
+import com.salesforce.argus.model.ImmutableMetricResponse;
 import com.salesforce.argus.model.MetricResponse;
 import com.salesforce.pyplyn.cache.Cache;
 import com.salesforce.pyplyn.client.UnauthorizedException;
@@ -104,7 +105,6 @@ public class ArgusExtractProcessor extends AbstractMeteredExtractProcessor<Argus
                             .filter(Objects::nonNull)
                             .collect(Collectors.toList());
 
-
                     // prepare Argus expressions as strings
                     List<String> expressions = endpointExpressions.getValue().stream()
 
@@ -127,12 +127,15 @@ public class ArgusExtractProcessor extends AbstractMeteredExtractProcessor<Argus
                         if (!expressions.isEmpty()) {
                             try (Timer.Context context = systemStatus.timer(meterName(), "get-metrics." + endpointId).time()) {
                                 metricResponses = client.getMetrics(expressions);
-                            }
 
-                            // determine if the retrieval failed; stop here if that's the case
-                            if (isNull(metricResponses)) {
-                                failed();
-                                return null;
+                                // determine if the retrieval failed
+                                // or if it succeeded but didn't retrieve anything
+                                if (isNull(metricResponses) || metricResponses.isEmpty()) {
+                                    failed();
+
+                                    metricResponses = getDefaultMetricResponses(data);
+                                    return fillDefaultsIfNecessary(cachedResponses, metricResponses, defaultValueMap, endpointId);
+                                }
                             }
 
                             // cache expressions that should be cached, based on their cacheMillis() settings mapped in canCache
@@ -141,6 +144,7 @@ public class ArgusExtractProcessor extends AbstractMeteredExtractProcessor<Argus
                                     .filter(ArgusExtractProcessor::responseHasDatapoints)
                                     .forEach(result -> tryCache(endpointCache, result, cacheSettings));
                         } else {
+                            // if no new expressions, rely on cached expressions
                             metricResponses = Collections.emptyList();
                         }
 
@@ -152,69 +156,7 @@ public class ArgusExtractProcessor extends AbstractMeteredExtractProcessor<Argus
                                 cachedResponses.size(), metricResponses.size(), endpointId);
 
                         // check all metrics with noData and populate with defaults, if required
-                        return Stream.concat(cachedResponses.stream(), metricResponses.stream())
-
-                                // if there is missing data, add default datapoints
-                                .map(result -> {
-                                    // nothing to do if the response already has datapoints
-                                    if (responseHasDatapoints(result)) {
-                                        logger.info("Loaded data for {}, endpoint {}", result.metric(), endpointId);
-                                        return mapDatapointsAsResults(result, endpointId);
-                                    }
-
-                                    // if the response does not have any datapoints and a default value was not specified
-                                    Double defaultValue = defaultValueMap.get(result.metric());
-                                    if (isNull(defaultValue)) {
-                                        // log no-data events
-                                        logger.warn("No data for {}, endpoint {}", result.metric(), endpointId);
-                                        noData();
-
-                                        // stop here, cannot create a Transmutation from no points
-                                        return null;
-                                    }
-
-                                    // creates a default datapoint, based on the specified defaultValueMap
-                                    final Map.Entry<String, String> defaultMetricEntry = createDefaultDatapoint(defaultValue);
-
-                                    // tags the result with a message, to denote that this is a default value and not extracted from the endpoint
-                                    final String defaultValueMessage =
-                                            generateDefaultValueMessage(result.metric(), defaultValue);
-
-                                    // return the default value, tagged with
-                                    return Optional.ofNullable(
-                                            // attempt to create a result
-                                            createResult(defaultMetricEntry.getKey(),
-                                                    defaultMetricEntry.getValue(),
-                                                    result.metric(),
-                                                    endpointId))
-
-                                            // tag each datapoint with the originating MetricResponse object
-                                            .map(transmutation -> addOriginalDatapoint(transmutation, result))
-
-                                            // add a default message
-                                            .map(transResult -> {
-                                                logger.info("Default data provided for {}={}, endpoint {}", result.metric(), transResult.value(), endpointId);
-                                                return ImmutableTransmutation.builder().from(transResult)
-                                                        .metadata(ImmutableTransmutation.Metadata.builder()
-                                                                .from(transResult.metadata())
-                                                                .addMessages(defaultValueMessage)
-                                                                .build())
-                                                        .build();
-
-                                            })
-
-                                            // and map to a list, which is the expected return type
-                                            .map(Collections::singletonList)
-
-                                            // or return an empty collection, for any failures
-                                            .orElse(null);
-
-                                })
-
-                                // filter out any errors due to no-data or when creating the default response
-                                .filter(Objects::nonNull)
-
-                                .collect(Collectors.toList());
+                        return fillDefaultsIfNecessary(cachedResponses, metricResponses, defaultValueMap, endpointId);
 
                         // catch any endpoint failures
                     } catch (UnauthorizedException e) {
@@ -229,6 +171,86 @@ public class ArgusExtractProcessor extends AbstractMeteredExtractProcessor<Argus
                 // filter failures and return as List<MetricResponse>
                 .filter(Objects::nonNull)
                 .flatMap(Collection::stream)
+                .collect(Collectors.toList());
+    }
+
+
+    private List<MetricResponse> getDefaultMetricResponses(List<Argus> data){
+        // for each expression, create a dummy response with the name as the metric
+        return data.stream().filter(argus -> nonNull(argus.name()))
+                .map(argus -> ImmutableMetricResponse.of(null,
+                        argus.name(), new HashMap<String, String>(),
+                        null, null, null,
+                        new TreeMap<String, String>()))
+                .collect(Collectors.toList());
+    }
+
+    private List<List<Transmutation>> fillDefaultsIfNecessary(List<MetricResponse> cachedResponses, List<MetricResponse> metricResponses, Map<String, Double> defaultValueMap, String endpointId){
+
+        // check all metrics with noData and populate with defaults, if required
+        return Stream.concat(cachedResponses.stream(), metricResponses.stream())
+
+                // if there is missing data, add default datapoints
+                .map(result -> {
+                    // nothing to do if the response already has datapoints
+
+                    if (responseHasDatapoints(result)) {
+                        logger.info("Loaded data for {}, endpoint {}", result.metric(), endpointId);
+                        return mapDatapointsAsResults(result, endpointId);
+                    }
+
+                    // if the response does not have any datapoints and a default value was not specified
+                    Double defaultValue = defaultValueMap.get(result.metric());
+                    if (isNull(defaultValue)) {
+                        // log no-data events
+                        logger.warn("No data for {}, endpoint {}", result.metric(), endpointId);
+                        noData();
+
+                        // stop here, cannot create a Transmutation from no points
+                        return null;
+                    }
+
+                    // creates a default datapoint, based on the specified defaultValueMap
+                    final Map.Entry<String, String> defaultMetricEntry = createDefaultDatapoint(defaultValue);
+
+                    // tags the result with a message, to denote that this is a default value and not extracted from the endpoint
+                    final String defaultValueMessage =
+                            generateDefaultValueMessage(result.metric(), defaultValue);
+
+                    // return the default value, tagged with
+                    return Optional.ofNullable(
+                            // attempt to create a result
+                            createResult(defaultMetricEntry.getKey(),
+                                    defaultMetricEntry.getValue(),
+                                    result.metric(),
+                                    endpointId))
+
+                            // tag each datapoint with the originating MetricResponse object
+                            .map(transmutation -> addOriginalDatapoint(transmutation, result))
+
+                            // add a default message
+                            .map(transResult -> {
+                                logger.info("Default data provided for {}={}, endpoint {}", result.metric(), transResult.value(), endpointId);
+                                return ImmutableTransmutation.builder().from(transResult)
+                                        .metadata(ImmutableTransmutation.Metadata.builder()
+                                                .from(transResult.metadata())
+                                                .addMessages(defaultValueMessage)
+                                                .build())
+                                        .build();
+
+                            })
+
+                            // and map to a list, which is the expected return type
+                            .map(Collections::singletonList)
+
+                            // or return an empty collection, for any failures
+                            .orElse(null);
+
+                })
+
+                // filter out any errors due to no-data or when creating the default response
+                .filter(Objects::nonNull)
+
                 .collect(Collectors.toList());
     }
 

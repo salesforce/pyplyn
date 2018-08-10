@@ -20,12 +20,16 @@ public class RawJsonCollectionDeserializer<T> extends JsonDeserializer<List<T>> 
 
     @Override
     public JsonDeserializer<?> createContextual(DeserializationContext ctxt, BeanProperty property) throws JsonMappingException {
-        JavaType contentType = ctxt.getContextualType().getContentType();
+        // validate contextual type
+        final JavaType contextualType = ctxt.getContextualType();
+        if (isNull(contextualType)) {
+            throw ctxt.instantiationException(Collection.class, "Could not identify contextual type!");
+        }
 
         return new JsonDeserializer<Object>() {
             @Override
             public Object deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-                return deserializeWithRetry(p, ctxt, contentType);
+                return deserializeWithRetry(p, ctxt, contextualType.getContentType());
             }
         };
     }

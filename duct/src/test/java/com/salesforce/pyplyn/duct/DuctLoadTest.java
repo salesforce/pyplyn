@@ -31,12 +31,16 @@ import com.salesforce.pyplyn.duct.etl.load.refocus.Refocus;
 import com.salesforce.pyplyn.duct.etl.load.refocus.RefocusLoadProcessor;
 import com.salesforce.pyplyn.model.ImmutableTransmutation;
 import com.salesforce.pyplyn.model.Transmutation;
+import com.salesforce.pyplyn.status.SystemStatus;
 
 public class DuctLoadTest {
     private static final String ACTUAL_NAME = "TransformationName";
 
     @Mock
     private ShutdownHook shutdownHook;
+
+    @Mock
+    private SystemStatus status;
 
     private AppBootstrapFixtures fixtures;
     private Transmutation result;
@@ -56,7 +60,6 @@ public class DuctLoadTest {
     @Test
     public void processRefocus() throws Exception {
         //ARRANGE
-        @SuppressWarnings("unchecked")
         RefocusLoadProcessor refocusLoadProcessor = spy(new RefocusLoadProcessor(fixtures.appConnectors(), shutdownHook));
         Refocus refocus = ImmutableRefocus.of("endpoint", "subject", "aspect",
                 "defaultMessageCode", "defaultMessageBody", Collections.emptyList());

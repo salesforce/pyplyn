@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+#  Copyright (c) 2016-2017, Salesforce.com, Inc.
+#  All rights reserved.
+#  Licensed under the BSD 3-Clause license.
+#  For full license text, see the LICENSE.txt file in repo root
+#    or https://opensource.org/licenses/BSD-3-Clause
+-->
+<configuration>
+    <properties>
+        <property name="name">pyplyn</property>
+        <property name="pattern">%d{ISO8601} [%5p] %34.34t  %c{1}:%M:%L   -&gt;%m%n</property>
+        <property name="basePath">./logs</property>
+    </properties>
+    <appenders>
+        <Console name="Console" target="SYSTEM_OUT"></Console>
+        <RollingFile fileName="${basePath}/pyplyn.current.log" filePattern="${basePath}/pyplyn-%d{yyyy-MM-dd}.log.%i.gz" name="RollingFile">
+            <!-- Rotated everyday -->
+            <!-- e.g. pyplyn-2018-06-27.log.1.gz -->
+            <PatternLayout>
+                <pattern>${pattern}</pattern>
+            </PatternLayout>
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+                <SizeBasedTriggeringPolicy size="100 MB"/> <!-- Or every 100 MB -->
+            </Policies>
+            <DefaultRolloverStrategy max="4"> <!-- at most 4 logs per day -->
+                <Delete basePath="${basePath}" maxDepth="1">
+                    <IfFileName glob="pyplyn*"/>
+                    <IfLastModified age="30d"/> <!-- delete logs after 30 days -->
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingFile>
+    </appenders>
+    <loggers>
+        <root level="debug">
+            <appender-ref ref="RollingFile"/> <!-- And to a rotated file -->
+        </root>
+    </loggers>
+</configuration>

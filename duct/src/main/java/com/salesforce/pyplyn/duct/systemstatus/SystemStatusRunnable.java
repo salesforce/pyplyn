@@ -9,8 +9,7 @@
 package com.salesforce.pyplyn.duct.systemstatus;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import static com.salesforce.pyplyn.model.ThresholdType.GREATER_THAN;
-import static com.salesforce.pyplyn.model.ThresholdType.LESS_THAN;
+import static java.util.Objects.isNull;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -25,10 +24,8 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.salesforce.pyplyn.duct.appconfig.AppConfig;
 import com.salesforce.pyplyn.model.StatusCode;
-import com.salesforce.pyplyn.status.MeterType;
-import com.salesforce.pyplyn.status.StatusMessage;
-import com.salesforce.pyplyn.status.SystemStatus;
-import com.salesforce.pyplyn.status.SystemStatusConsumer;
+import com.salesforce.pyplyn.model.ThresholdType;
+import com.salesforce.pyplyn.status.*;
 import com.salesforce.pyplyn.util.FormatUtils;
 
 /**
@@ -154,7 +151,7 @@ public class SystemStatusRunnable implements SystemStatus {
      * Creates a meter name by combining the meter's name and type
      */
     private static String buildMeterName(String name, MeterType type) {
-        return name + type.name();
+        return name + type.alertType() + type.processStatus();
     }
 
 
@@ -166,25 +163,22 @@ public class SystemStatusRunnable implements SystemStatus {
     private Optional<StatusMessage> checkRateOfMeter(String meterName, StatusCode level, double meterValue) {
         // get meter type or stop if not found
         Optional<MeterType> meterType = getMeterType(meterName);
-        if (!meterType.isPresent()) {
+        if (isNull(meterType)) {
             return Optional.empty();
         }
 
         // get specified threshold, or stop if not found
         Optional<Double> thresholdFor = getThresholdFor(meterName, level);
-        if (!thresholdFor.isPresent()) {
+        if (isNull(thresholdFor)) {
             return Optional.empty();
         }
 
         MeterType type = meterType.get();
         Double threshold = thresholdFor.get();
 
-        // check greater-than threshhold; the alert is fired when the threshold is hit
-        if (type.alertType() == GREATER_THAN && meterValue >= threshold) {
-            return Optional.of(createMeterStatusMessage(meterName, level, meterValue));
 
-        // check less-than threshhold; the alert is fired when value goes below thethreshold
-        } else if (type.alertType() == LESS_THAN && meterValue <= threshold) {
+        // check threshold; the alert is fired when the threshold condition is satisfied
+        if(type.alertType().matches(meterValue, threshold)){
             return Optional.of(createMeterStatusMessage(meterName, level, meterValue));
         }
 
@@ -213,7 +207,17 @@ public class SystemStatusRunnable implements SystemStatus {
      * Find the type of the specified meter
      */
     private Optional<MeterType> getMeterType(final String name) {
-        return Arrays.stream(MeterType.values()).filter(type -> name.contains(type.name())).findAny();
+        Optional<MeterType> optionalMeterType = null;
+        // name contains alertType and ProcessStatus
+        // if both are valid, make a new MeterType and return
+        Optional<ProcessStatus> status = Arrays.stream(ProcessStatus.values()).filter(processStatus -> name.contains(processStatus.name())).findFirst();
+        if(status.isPresent()){
+            Optional<ThresholdType> type = Arrays.stream(ThresholdType.values()).filter(thresholdType -> name.contains(thresholdType.name())).findFirst();
+            if(type.isPresent()){
+                optionalMeterType = Optional.of(new MeterType(type.get(), status.get()));
+            }
+        }
+        return optionalMeterType;
     }
 
 

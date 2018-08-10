@@ -12,13 +12,16 @@
 
     <groupId>com.salesforce.pyplyn</groupId>
     <artifactId>pyplyn</artifactId>
-    <version>10.0.0</version>
+    <version>12.0.4-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>pyplyn</name>
 
     <modules>
         <module>client/argus-client</module>
+        <module>client/influxdb-client</module>
         <module>client/refocus-client</module>
+        <module>client/trust1-client</module>
+        <module>client/virtualinstruments-client</module>
         <module>duct</module>
         <module>plugin-api</module>
     </modules>
@@ -55,6 +58,11 @@
             <name>Ian Varley</name>
             <organization>Salesforce</organization>
             <url>https://github.com/ivarley</url>
+        </developer>
+        <developer>
+            <name>Jason Schroeder</name>
+            <organization>Salesforce</organization>
+            <url>https://github.com/jasonschroeder-sfdc</url>
         </developer>
     </developers>
 
@@ -142,6 +150,9 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
+                    <argLine>-Xmx1024m</argLine>
+                    <forkCount>3</forkCount>
+                    <reuseForks>true</reuseForks>
                     <properties>
                         <property>
                             <name>surefire.testng.verbose</name>
@@ -301,10 +312,12 @@
 
         <!-- Logging framework -->
         <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-            <scope>runtime</scope>
-            <optional>true</optional>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
         </dependency>
 
         <!-- Hamcrest -->
@@ -362,12 +375,27 @@
             </dependency>
             <dependency>
                 <groupId>com.salesforce.pyplyn</groupId>
+                <artifactId>influxdb-client</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.salesforce.pyplyn</groupId>
                 <artifactId>plugin-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.salesforce.pyplyn</groupId>
                 <artifactId>refocus-client</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.salesforce.pyplyn</groupId>
+                <artifactId>trust1-client</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.salesforce.pyplyn</groupId>
+                <artifactId>virtualinstruments-client</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
@@ -413,7 +441,13 @@
             <dependency>
                 <groupId>org.immutables</groupId>
                 <artifactId>value</artifactId>
-                <version>2.5.3</version>
+                <version>2.5.5</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.immutables</groupId>
+                <artifactId>serial</artifactId>
+                <version>2.5.5</version>
             </dependency>
 
             <!-- Retrofit -->
@@ -458,7 +492,7 @@
             <dependency>
                 <groupId>io.dropwizard.metrics</groupId>
                 <artifactId>metrics-core</artifactId>
-                <version>3.1.2</version>
+                <version>4.0.2</version>
             </dependency>
 
             <!-- Logging bindings -->
@@ -470,9 +504,14 @@
 
             <!-- Logging framework -->
             <dependency>
-                <groupId>log4j</groupId>
-                <artifactId>log4j</artifactId>
-                <version>1.2.17</version>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-api</artifactId>
+                <version>2.11.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-core</artifactId>
+                <version>2.11.0</version>
             </dependency>
 
             <!-- Hamcrest -->
@@ -501,7 +540,7 @@
     <!-- Maven release settings: create a profile in settings.xml to provide the required values -->
     <scm>
         <developerConnection>${release.developerConnection}</developerConnection>
-        <tag>v10.0.0</tag>
+        <tag>HEAD</tag>
     </scm>    
     <distributionManagement>
         <repository>
